@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Operacional × Gestão · Processo Ágil</title>
+  <style>
+    :root {
+      --navy: #132a52;
+      --muted: #6b7c93;
+      --border: #dbe3ef;
+      --bg: #f5f7fb;
+      --card: #fff;
+      --gestao: #1e4f8f;
+      --gestao-bg: #e8f0fb;
+      --ops: #9a5f0c;
+      --ops-bg: #fdf3e3;
+      --hib: #1f7a52;
+      --hib-bg: #e8f6ef;
+      --cfg: #475569;
+      --cfg-bg: #eef1f5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--navy);
+      line-height: 1.5;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 56px; }
+    h1 { margin: 0 0 8px; font-size: 1.65rem; letter-spacing: -.02em; }
+    h2 { margin: 28px 0 12px; font-size: 1.15rem; }
+    h3 { margin: 0 0 8px; font-size: 1rem; }
+    .lead { margin: 0 0 20px; color: var(--muted); font-size: .95rem; max-width: 720px; }
+    .callout {
+      background: #e8f0fb;
+      border: 1px solid #c5d6ef;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+      font-size: .9rem;
+    }
+    .callout strong { display: block; margin-bottom: 4px; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .stat .n { font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em; }
+    .stat .l { font-size: .75rem; color: var(--muted); font-weight: 650; margin-top: 2px; }
+    .stat.gestao .n { color: var(--gestao); }
+    .stat.ops .n { color: var(--ops); }
+    .stat.hib .n { color: var(--hib); }
+    .stat.cfg .n { color: var(--cfg); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .card-h {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      font-size: .92rem;
+    }
+    .card-h .count {
+      font-size: .72rem;
+      font-weight: 650;
+      color: var(--muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 2px 10px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--muted);
+      background: #f8fafc;
+      font-weight: 700;
+    }
+    tr:last-child td { border-bottom: none; }
+    .pill {
+      display: inline-block;
+      font-size: .68rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .pill.Gestão { background: var(--gestao-bg); color: var(--gestao); }
+    .pill.Operacional { background: var(--ops-bg); color: var(--ops); }
+    .pill.Híbrido { background: var(--hib-bg); color: var(--hib); }
+    .pill.Config { background: var(--cfg-bg); color: var(--cfg); }
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 8px;
+    }
+    .card-body { padding: 14px 16px; font-size: .88rem; }
+    .card-body p { margin: 0 0 8px; color: var(--muted); }
+    .card-body p strong { color: var(--navy); }
+    .portal-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+    .foot {
+      margin-top: 28px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      font-size: .78rem;
+      color: var(--muted);
+    }
+    .toolbar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+    .toolbar button {
+      font: inherit;
+      font-size: .82rem;
+      font-weight: 650;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--navy);
+      cursor: pointer;
+    }
+    .toolbar button.primary {
+      background: var(--gestao);
+      border-color: var(--gestao);
+      color: #fff;
+    }
+    @media (max-width: 720px) {
+      .stats, .grid2 { grid-template-columns: 1fr 1fr; }
+      table { display: block; overflow-x: auto; }
+    }
+    @media print {
+      body { background: #fff; }
+      .toolbar { display: none; }
+      .wrap { padding: 12mm; max-width: none; }
+      .card, .stat, .callout { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="toolbar">
+      <button type="button" class="primary" onclick="window.print()">Imprimir / PDF</button>
+      <button type="button" onclick="downloadMd()">Baixar Markdown</button>
+    </div>
+
+    <h1>Operacional × Gestão · Processo Ágil</h1>
+    <p class="lead">
+      Classificação das abas e subabas do protótipo com base no propósito da tela:
+      leitura/decisão (gestão) versus execução/rotina (operacional).
+      Fonte: mapa atual de sections, FIN_TABS, CLI_PERFIL_TABS e portal do cliente.
+    </p>
+
+    <div class="callout">
+      <strong>Critério usado</strong>
+      Gestão = panorama, KPIs, relatórios e storytelling para decidir.
+      Operacional = lançar, conciliar, cobrar, entregar, auditar detalhe.
+      Config = parametrizar o sistema.
+      Híbrido = mistura as duas natures na mesma superfície.
+    </div>
+
+    <div class="stats">
+      <div class="stat gestao"><div class="n">7</div><div class="l">Gestão</div></div>
+      <div class="stat ops"><div class="n">16</div><div class="l">Operacional</div></div>
+      <div class="stat hib"><div class="n">3</div><div class="l">Híbrido</div></div>
+      <div class="stat cfg"><div class="n">3</div><div class="l">Configuração</div></div>
+    </div>
+
+    <h2>Mapa por área</h2>
+
+    <section class="card">
+      <div class="card-h">Escritório · Abas raiz <span class="count">7 itens</span></div>
+      <table>
+        <thead><tr><th>Caminho</th><th>Camada</th><th>Por quê</th><th>Audiência</th></tr></thead>
+        <tbody>
+          <tr><td>Visão Geral</td><td><span class="pill Gestão">Gestão</span></td><td>Painel consolidado (faturamento, impostos, processos, entregas) para leitura e decisão, sem execução de tarefa.</td><td>Sócio / gestor / analista</td></tr>
+          <tr><td>Gestão de Clientes (lista)</td><td><span class="pill Híbrido">Híbrido</span></td><td>Gestão da carteira + porta de entrada para o operacional do cliente selecionado.</td><td>Equipe interna</td></tr>
+          <tr><td>Módulo Contábil</td><td><span class="pill Híbrido">Híbrido</span></td><td>Contém subabas de gestão (dashboard/DRE) e de operação (conciliação, títulos, cartões, folha).</td><td>Financeiro / analista</td></tr>
+          <tr><td>Gestão de Operações e Processos</td><td><span class="pill Operacional">Operacional</span></td><td>Execução e acompanhamento de etapas de processos (coleta, protocolo, status).</td><td>Operação / paralegal</td></tr>
+          <tr><td>Gestão de Prazos e Entregas / Agenda</td><td><span class="pill Operacional">Operacional</span></td><td>Calendário, feed e quadro de entregas — rotina diária de prazos.</td><td>Operação / analista</td></tr>
+          <tr><td>Segurança e Conformidade</td><td><span class="pill Operacional">Operacional</span></td><td>Monitoramento e ação sobre certificados (vencidos / a vencer).</td><td>Operação / TI fiscal</td></tr>
+          <tr><td>Configuração</td><td><span class="pill Config">Config</span></td><td>Setup do sistema (moldes, regras, obrigações, RH, integrações) — não é execução diária.</td><td>Admin / coordenação</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <div class="card-h">Módulo Contábil · Subabas <span class="count">8 itens</span></div>
+      <table>
+        <thead><tr><th>Caminho</th><th>Camada</th><th>Por quê</th><th>Audiência</th></tr></thead>
+        <tbody>
+          <tr><td>Visão Geral (dashboard) · DRE · DFC · EBITDA</td><td><span class="pill Gestão">Gestão</span></td><td>Relatórios e KPIs de saúde financeira; leitura gerencial / storytelling.</td><td>Gestor / cliente (visão) / analista</td></tr>
+          <tr><td>Conciliação Bancária</td><td><span class="pill Operacional">Operacional</span></td><td>Extrato, XML, categorização — trabalho transacional do dia a dia.</td><td>Analista financeiro</td></tr>
+          <tr><td>Títulos a Pagar e Receber</td><td><span class="pill Operacional">Operacional</span></td><td>Gestão de contas, status, importação seletiva — execução de cobrança/pagamento.</td><td>Analista financeiro</td></tr>
+          <tr><td>Auditoria de Cartões</td><td><span class="pill Operacional">Operacional</span></td><td>Cruzamento de planilhas × taxas, divergências e laudo detalhado.</td><td>Analista financeiro</td></tr>
+          <tr><td>Cobranças Sicredi</td><td><span class="pill Operacional">Operacional</span></td><td>Emissão e acompanhamento de boletos/títulos.</td><td>Analista financeiro</td></tr>
+          <tr><td>Folha &amp; Variações</td><td><span class="pill Operacional">Operacional</span></td><td>Fechamento de folha e justificativas salariais.</td><td>DP / folha</td></tr>
+          <tr><td>Plano de Contas</td><td><span class="pill Config">Config</span></td><td>Estrutura e modelos contábeis — base para operação e relatórios.</td><td>Coordenação / contador</td></tr>
+          <tr><td>Regras &amp; Adquirentes</td><td><span class="pill Config">Config</span></td><td>Cadastro de taxas, bandeiras e acordos — parametrização.</td><td>Coordenação / financeiro</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <div class="card-h">Cliente selecionado · Perfil <span class="count">9 itens</span></div>
+      <table>
+        <thead><tr><th>Caminho</th><th>Camada</th><th>Por quê</th><th>Audiência</th></tr></thead>
+        <tbody>
+          <tr><td>Obrigações</td><td><span class="pill Operacional">Operacional</span></td><td>Acompanhamento e execução de obrigações fiscais do cliente.</td><td>Analista fiscal</td></tr>
+          <tr><td>Processos</td><td><span class="pill Operacional">Operacional</span></td><td>Processos vinculados ao cliente — mesma lógica da operação do escritório.</td><td>Operação</td></tr>
+          <tr><td>Funcionários</td><td><span class="pill Operacional">Operacional</span></td><td>Cadastro/consulta operacional de pessoal do cliente.</td><td>DP / analista</td></tr>
+          <tr><td>Documentos</td><td><span class="pill Operacional">Operacional</span></td><td>Arquivos e anexos — rotina de troca documental.</td><td>Equipe / cliente</td></tr>
+          <tr><td>Comentários</td><td><span class="pill Operacional">Operacional</span></td><td>Feed de comunicação interna sobre o cliente.</td><td>Equipe interna</td></tr>
+          <tr><td>Entregas</td><td><span class="pill Operacional">Operacional</span></td><td>Prazos e entregas do cliente — execução e status.</td><td>Operação / cliente</td></tr>
+          <tr><td>Financeiro → Relatório Executivo</td><td><span class="pill Gestão">Gestão</span></td><td>Data storytelling (4 KPIs + gráficos + alertas + export) — panorama limpo para decisão.</td><td>Operador (interno) + cliente final</td></tr>
+          <tr><td>Financeiro → Conciliação / Títulos / Plano / Auditoria (atalhos ↗)</td><td><span class="pill Operacional">Operacional</span></td><td>Atalhos para o trabalho pesado no Módulo Contábil; não são painéis gerenciais.</td><td>Analista (interno)</td></tr>
+          <tr><td>Honorários</td><td><span class="pill Híbrido">Híbrido</span></td><td>Cadastro operacional de itens + visão de total (gestão comercial do contrato).</td><td>Comercial / coordenação</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <div class="card-h">Visão do Cliente (portal) <span class="count">4 itens</span></div>
+      <table>
+        <thead><tr><th>Caminho</th><th>Camada</th><th>Por quê</th><th>Audiência</th></tr></thead>
+        <tbody>
+          <tr><td>Documentos</td><td><span class="pill Operacional">Operacional</span></td><td>Acesso a arquivos da própria empresa — rotina, não decisão estratégica.</td><td>Cliente final</td></tr>
+          <tr><td>Entregas</td><td><span class="pill Operacional">Operacional</span></td><td>Acompanhamento de prazos/entregas vinculadas.</td><td>Cliente final</td></tr>
+          <tr><td>XML</td><td><span class="pill Operacional">Operacional</span></td><td>Consulta/gestão de notas e XMLs — dado operacional fiscal.</td><td>Cliente final</td></tr>
+          <tr><td>Financeiro → Relatório Executivo</td><td><span class="pill Gestão">Gestão</span></td><td>Única superfície financeira gerencial do portal; autonomia de leitura e exportação.</td><td>Cliente final</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <h2>Leitura prática</h2>
+    <div class="grid2">
+      <section class="card">
+        <div class="card-h">O que é Gestão neste produto</div>
+        <div class="card-body">
+          <p><strong>Superfícies típicas</strong></p>
+          <p>Visão Geral do escritório · Dashboard/DRE/DFC/EBITDA do Módulo Contábil · Relatório Executivo (cliente selecionado e portal).</p>
+          <p><strong>Pergunta que responde</strong></p>
+          <p>“Como está a saúde financeira / operacional?” — sem exigir ação de lançamento.</p>
+        </div>
+      </section>
+      <section class="card">
+        <div class="card-h">O que é Operacional neste produto</div>
+        <div class="card-body">
+          <p><strong>Superfícies típicas</strong></p>
+          <p>Processos · Entregas/Agenda · Segurança · Conciliação · Títulos · Auditoria de Cartões · Cobranças · Folha · Obrigações · Documentos · XML · atalhos ↗ do Financeiro no perfil.</p>
+          <p><strong>Pergunta que responde</strong></p>
+          <p>“O que preciso fazer / registrar / conciliar hoje?” — execução e controle.</p>
+        </div>
+      </section>
+    </div>
+
+    <section class="card" style="margin-top:14px">
+      <div class="card-h">Implicação para o portal do cliente</div>
+      <div class="card-body">
+        <div class="portal-row"><span class="pill Gestão">Gestão</span> Financeiro → Relatório Executivo</div>
+        <div class="portal-row"><span class="pill Operacional">Operacional</span> Documentos · Entregas · XML</div>
+        <p>Hoje o portal já separa bem: uma superfície gerencial limpa e três superfícies operacionais leves. Não misturar conciliação/auditoria/plano no portal mantém o isolamento pretendido.</p>
+      </div>
+    </section>
+
+    <div class="foot">
+      <p><strong>Resumo:</strong> Gestão é o “termômetro e o laudo”; Operacional é a “bancada de trabalho”; Config é o “manual de regras” que alimenta os dois.</p>
+      <p>Arquivo gerado a partir do canvas Operacional × Gestão · Processo Ágil · protótipo modular.</p>
+    </div>
+  </div>
+
+  <script>
+    function downloadMd() {
+      const md = `# Operacional × Gestão · Processo Ágil
+
+Classificação das abas e subabas do protótipo.
+
+## Critério
+- **Gestão** = panorama, KPIs, relatórios e storytelling
+- **Operacional** = lançar, conciliar, cobrar, entregar, auditar
+- **Config** = parametrizar o sistema
+- **Híbrido** = mistura as duas natures
+
+## Contagem
+- Gestão: 7
+- Operacional: 16
+- Híbrido: 3
+- Configuração: 3
+
+## Escritório · Abas raiz
+| Caminho | Camada |
+|---|---|
+| Visão Geral | Gestão |
+| Gestão de Clientes (lista) | Híbrido |
+| Módulo Contábil | Híbrido |
+| Gestão de Operações e Processos | Operacional |
+| Gestão de Prazos e Entregas / Agenda | Operacional |
+| Segurança e Conformidade | Operacional |
+| Configuração | Config |
+
+## Módulo Contábil · Subabas
+| Caminho | Camada |
+|---|---|
+| Visão Geral / DRE / DFC / EBITDA | Gestão |
+| Conciliação Bancária | Operacional |
+| Títulos a Pagar e Receber | Operacional |
+| Auditoria de Cartões | Operacional |
+| Cobranças Sicredi | Operacional |
+| Folha & Variações | Operacional |
+| Plano de Contas | Config |
+| Regras & Adquirentes | Config |
+
+## Cliente selecionado · Perfil
+| Caminho | Camada |
+|---|---|
+| Obrigações | Operacional |
+| Processos | Operacional |
+| Funcionários | Operacional |
+| Documentos | Operacional |
+| Comentários | Operacional |
+| Entregas | Operacional |
+| Financeiro → Relatório Executivo | Gestão |
+| Financeiro → atalhos ↗ | Operacional |
+| Honorários | Híbrido |
+
+## Visão do Cliente (portal)
+| Caminho | Camada |
+|---|---|
+| Documentos | Operacional |
+| Entregas | Operacional |
+| XML | Operacional |
+| Financeiro → Relatório Executivo | Gestão |
+
+## Resumo
+Gestão é o termômetro e o laudo; Operacional é a bancada de trabalho; Config é o manual de regras.
+`;
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "analise-operacional-vs-gestao.md";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+  </script>
+</body>
+</html>

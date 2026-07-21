@@ -1,0 +1,101 @@
+          <div class="panel-body">
+            <div class="dashboard" id="dashboard">
+              <header class="dash-hero" id="dashHero" aria-label="Contexto da visão geral">
+                <div>
+                  <h2 id="dashHeroTitle">Visão Geral</h2>
+                  <span class="sub" id="dashHeroSub">Carregando contexto…</span>
+                </div>
+                <span class="dash-hero-badge" id="dashHeroBadge">—</span>
+              </header>
+
+              <div class="agenda-alert dash-security-alert" id="dashSecurityAlert" role="alert">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <button type="button" class="alert-body" id="dashSecurityGo" aria-label="Abrir monitoramento de certificados">
+                  <strong id="dashSecurityText">Atenção: certificados digitais exigem ação</strong>
+                  <span> — Clique para abrir o monitoramento filtrado.</span>
+                </button>
+                <button type="button" class="agenda-alert-dismiss" id="dashSecurityDismiss" aria-label="Dispensar alerta" title="Dispensar">×</button>
+              </div>
+
+              <!-- PENDENCIAS-HOJE-START -->
+              <section class="dash-panel dash-block dash-pendencias" id="dashPendencias" data-filter="pendencias" aria-label="Pendências de hoje">
+                <div class="dash-panel-head">
+                  <div>
+                    <h4>Pendências de hoje</h4>
+                    <span class="sub" id="dashPendenciasSub">Fila acionável · entrega, processo e certificado</span>
+                  </div>
+                  <span class="dash-chip" id="dashPendenciasCount">0</span>
+                </div>
+                <div class="dash-pend-list" id="dashPendenciasList" role="list"></div>
+              </section>
+              <!-- PENDENCIAS-HOJE-END -->
+
+              <div class="dash-grid dash-block" id="dashGrid" data-filter="resumo"></div>
+
+              <div class="dash-mid">
+                <div class="dash-panel dash-block dash-fat" data-filter="faturamento">
+                  <div class="dash-panel-head dash-fat-head">
+                    <div>
+                      <h4>Visão de faturamento</h4>
+                      <span class="sub" id="dashChartPeriod">Últimos 6 meses</span>
+                    </div>
+                    <span class="dash-chip tip-bottom" id="dashFatPeriodChip" data-tip="Mesmo período do filtro superior">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                      <span id="dashFatPeriodText">Últimos 6 meses</span>
+                    </span>
+                  </div>
+                  <div class="dash-fat-body">
+                    <div class="dash-overview-metric" id="dashOverviewMetric">+0%</div>
+                    <div class="line-chart-wrap" id="dashLineChart"></div>
+                  </div>
+                </div>
+
+                <div class="dash-panel dash-block dash-fiscal" data-filter="impostos">
+                  <div class="dash-panel-head dash-fiscal-head">
+                    <div>
+                      <h4>Composição Fiscal</h4>
+                      <span class="sub">Impostos do período</span>
+                    </div>
+                    <span class="dash-chip" id="dashFiscalCount">— impostos</span>
+                  </div>
+                  <div class="dash-fiscal-kpi">
+                    <span class="lab">Total de Impostos</span>
+                    <strong id="dashFiscalTotal">—</strong>
+                  </div>
+                  <div class="dash-fiscal-bars" id="dashStatusBars"></div>
+                  <button type="button" class="dash-cta" data-goto="financeiro">Ver detalhes</button>
+                </div>
+              </div>
+
+              <div class="dash-low">
+                <div class="dash-panel dash-block dash-dept" data-filter="departamentos">
+                  <div class="dash-panel-head">
+                    <div>
+                      <h4>Receita por Departamento</h4>
+                      <span class="sub">Distribuição do faturamento atual</span>
+                    </div>
+                    <span class="dash-chip tip-bottom" data-tip="Período do card">Últimos 30 dias</span>
+                  </div>
+                  <div class="dash-dept-leader" id="dashDeptLeader">
+                    <div>
+                      <span class="lab">Departamento Líder</span>
+                      <strong id="dashDeptLeaderName">—</strong>
+                    </div>
+                    <span class="share" id="dashDeptLeaderShare">—</span>
+                  </div>
+                  <div class="hbar-chart" id="dashDeptBars"></div>
+                </div>
+
+                <!-- Parte 5: Histórico Recente reformulado como Timeline -->
+                <div class="dash-panel dash-block dash-history" data-filter="processos">
+                  <div class="dash-panel-head">
+                    <div>
+                      <h4>Histórico Recente</h4>
+                      <span class="sub">Últimas atividades do sistema</span>
+                    </div>
+                    <button type="button" class="dash-history-link tip-bottom" data-tip="Abrir processos" data-goto="processos">Ver todas →</button>
+                  </div>
+                  <div class="timeline" id="dashProcessosList" role="list" aria-label="Timeline de atividades recentes"></div>
+                </div>
+              </div>
+            </div>

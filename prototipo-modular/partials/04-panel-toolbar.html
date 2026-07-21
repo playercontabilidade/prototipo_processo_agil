@@ -1,0 +1,160 @@
+          <div class="panel-toolbar">
+            <div class="tab-switcher" id="tabSwitcher">
+              <button type="button" class="tab-switcher-btn tip-bottom" id="tabSwitcherBtn" data-tip="Trocar aba" aria-haspopup="true" aria-expanded="false">
+                <span class="curr" id="tabSwitcherCurrent"></span>
+                <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div class="tab-switcher-menu" id="tabSwitcherMenu" role="menu"></div>
+            </div>
+
+            <div class="page-rich-header is-dashboard" id="pageRichHeader" aria-label="Cabeçalho da empresa">
+              <div class="page-rich-identity">
+                <img
+                  class="client-logo tip-bottom"
+                  data-tip="Logo da empresa"
+                  data-action="avatar"
+                  src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/M%C3%BCnster%2C_LVM%2C_B%C3%BCrogeb%C3%A4ude_--_2013_--_5149-51.jpg/1200px-M%C3%BCnster%2C_LVM%2C_B%C3%BCrogeb%C3%A4ude_--_2013_--_5149-51.jpg"
+                  alt=""
+                  onerror="this.style.display='none'"
+                />
+                <div class="empresa-wrap" id="empresaWrap">
+                  <button type="button" class="empresa-trigger tip-bottom" id="empresaSelectBtn" data-tip="Trocar empresa do grupo">
+                    <span class="trigger-text">
+                      <span class="name-line">
+                        <span class="empresa-code" id="empresaCode">61918</span>
+                        <span id="empresaName">Farmelhor Taquaralto</span>
+                      </span>
+                      <span class="empresa-cnpj" id="empresaCnpj">CNPJ 00.000.000/0001-00</span>
+                    </span>
+                    <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="empresa-menu" id="empresaMenu">
+                    <div class="empresa-search">
+                      <input type="search" id="empresaSearch" placeholder="Buscar empresa..." autocomplete="off" aria-label="Buscar empresa" />
+                    </div>
+                    <div class="empresa-options" id="empresaOptions">
+                      <button type="button" class="empresa-option" data-id="all" data-code="" data-short="Todas as empresas" data-cnpj="" data-prioridade="" data-status="" data-regime="" data-estado="">
+                        <span class="opt-main">Todas as empresas</span>
+                        <small>Consolida as 10 empresas do grupo</small>
+                      </button>
+                    </div>
+                    <div class="empresa-empty" id="empresaEmpty">Nenhuma empresa encontrada</div>
+                  </div>
+                </div>
+                <div class="header-actions">
+                  <button type="button" class="tip-bottom" data-tip="Adicionar empresa" data-action="externos" aria-label="Adicionar empresa">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/><path d="M12 7v.01"/></svg>
+                  </button>
+                  <button type="button" class="tip-bottom" data-tip="Configurações da empresa" data-action="empresa-config" aria-label="Configurações">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="info-chips" id="infoChips">
+                <div class="chip-select" id="priorityWrap" data-chip="prioridade">
+                  <button type="button" class="chip-select-btn priority-alta tip-bottom" id="priorityBadge" data-tip="Nível de prioridade da empresa" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+                    <span class="chip-body">
+                      <span class="chip-k">Prioridade</span>
+                      <span class="chip-v" id="priorityLabel">Alta</span>
+                    </span>
+                    <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="chip-select-menu" id="priorityMenu" role="listbox" aria-label="Prioridade"></div>
+                </div>
+                <div class="chip-select" id="statusWrap" data-chip="status">
+                  <button type="button" class="chip-select-btn tip-bottom" id="statusPill" data-tip="Status do cliente" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="dot" aria-hidden="true">
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg>
+                    </span>
+                    <span class="chip-body">
+                      <span class="chip-k">Status</span>
+                      <span class="chip-v" id="statusLabel">Ativo</span>
+                    </span>
+                    <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="chip-select-menu" id="statusMenu" role="listbox" aria-label="Status"></div>
+                </div>
+                <div class="chip-select" id="regimeWrap" data-chip="regime">
+                  <button type="button" class="chip-select-btn tip-bottom" id="regimeBtn" data-tip="Regime tributário" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="chip-body">
+                      <span class="chip-k">Regime</span>
+                      <span class="chip-v" id="chipRegime">Simples Nacional</span>
+                    </span>
+                    <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="chip-select-menu wide" id="regimeMenu" role="listbox" aria-label="Regime tributário"></div>
+                </div>
+                <div class="chip-select" id="estadoWrap" data-chip="estado">
+                  <button type="button" class="chip-select-btn tip-bottom" id="estadoBtn" data-tip="Estado (UF)" aria-haspopup="listbox" aria-expanded="false">
+                    <span class="chip-body">
+                      <span class="chip-k">Estado</span>
+                      <span class="chip-v" id="chipEstado">TO</span>
+                    </span>
+                    <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  <div class="chip-select-menu" id="estadoMenu" role="listbox" aria-label="Estado (UF)"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel-tools">
+              <div class="actions" id="tabActions" hidden>
+                <button type="button" class="btn-outline tip-bottom" data-tip="Regerar obrigações pelas regras" data-action="regerar">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-14.3-7.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 14.3 7.2L21 16"/><path d="M16 21h5v-5"/></svg>
+                  <span>Regerar</span>
+                </button>
+              </div>
+              <div class="dash-period" id="dashPeriodWrap" hidden>
+                <div class="dash-period-select-wrap">
+                  <select class="dash-period-select" id="dashPeriod" aria-label="Filtrar período do dashboard">
+                    <option value="mes">Este mês</option>
+                    <option value="3m">Últimos 3 meses</option>
+                    <option value="6m" selected>Últimos 6 meses</option>
+                    <option value="12m">Últimos 12 meses</option>
+                    <option value="ano">Ano atual</option>
+                    <option value="custom">Personalizado</option>
+                  </select>
+                </div>
+                <div class="dash-period-custom" id="dashPeriodCustom">
+                  <input type="date" id="periodFrom" value="2026-02-01" aria-label="Data inicial" />
+                  <span class="sep">até</span>
+                  <input type="date" id="periodTo" value="2026-07-13" aria-label="Data final" />
+                </div>
+              </div>
+              <div class="dash-view-tools" id="dashViewTools" hidden>
+                <div class="btn-filter-wrap" id="filterWrap">
+                  <button type="button" class="btn-filter tip-bottom" id="filterBtn" data-tip="Filtrar visão do dashboard" aria-label="Filtrar dashboard" aria-expanded="false">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                  </button>
+                  <div class="filter-panel" id="filterPanel" role="dialog" aria-label="Filtros do dashboard">
+                    <h5>Filtrar dashboard</h5>
+                    <p class="filter-hint">Escolha o que deseja visualizar. A exportação usará o mesmo filtro.</p>
+                    <div class="filter-options" id="filterOptions">
+                      <label class="filter-option"><input type="checkbox" name="dashFilter" value="pendencias" checked> Pendências de hoje</label>
+                      <label class="filter-option"><input type="checkbox" name="dashFilter" value="resumo" checked> Resumo / KPIs</label>
+                      <label class="filter-option"><input type="checkbox" name="dashFilter" value="faturamento" checked> Visão de faturamento</label>
+                      <label class="filter-option"><input type="checkbox" name="dashFilter" value="impostos" checked> Status / composição</label>
+                      <label class="filter-option"><input type="checkbox" name="dashFilter" value="departamentos" checked> Receita por departamento</label>
+                      <label class="filter-option"><input type="checkbox" name="dashFilter" value="processos" checked> Histórico recente</label>
+                    </div>
+                    <div class="filter-actions">
+                      <div>
+                        <button type="button" class="linkish" id="filterSelectAll">Marcar todos</button>
+                        ·
+                        <button type="button" class="linkish" id="filterClearAll">Limpar</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn-export tip-bottom" id="exportBtn" data-tip="Exportar o que está filtrado" aria-label="Exportar relatório">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                </button>
+              </div>
+              <div class="proc-filters" id="procFilters" hidden></div>
+              <button type="button" class="btn-expand tip-bottom" id="expandBtn" data-tip="Expandir para tela toda" aria-label="Expandir">
+                <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <svg class="icon-collapse" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+              </button>
+            </div>
+          </div>

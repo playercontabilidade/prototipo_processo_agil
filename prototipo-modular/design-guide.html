@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design Guide — Processo Ágil</title>
+  <!--
+    Design Guide v1 — documentação visual estática.
+    NÃO faz parte da aplicação. NÃO importar em telas.
+    Tokens-fonte: css/01-base.css (via styles.css gerado).
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <script>
+    try {
+      if (localStorage.getItem("pa-theme") === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    } catch (_) {}
+  </script>
+  <!-- Estilos reais do protótipo (tokens + componentes) -->
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* —— Layout exclusivo do guia (não altera o app) —— */
+    .dg-page {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 36px 22px 64px;
+    }
+
+    .dg-toc {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 36px;
+    }
+
+    .dg-toc a {
+      text-decoration: none;
+      font-size: .74rem;
+      font-weight: 650;
+      color: var(--navy);
+      padding: 7px 12px;
+      border-radius: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .dg-toc a:hover {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+      color: var(--accent);
+    }
+
+    .dg-section {
+      margin-bottom: 40px;
+      scroll-margin-top: 20px;
+    }
+
+    .dg-section > h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--navy-deep);
+      margin: 0 0 6px;
+    }
+
+    .dg-section > .dg-lead {
+      font-size: .8rem;
+      color: var(--muted);
+      margin: 0 0 16px;
+      max-width: 70ch;
+    }
+
+    .dg-hero {
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+    }
+
+    .dg-hero-kicker {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .dg-hero h1 {
+      font-size: 1.7rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--navy-deep);
+      line-height: 1.15;
+      margin: 0;
+    }
+
+    .dg-hero p {
+      margin: 12px 0 0;
+      max-width: 62ch;
+      font-size: .9rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .dg-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+      align-items: center;
+    }
+
+    .dg-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: .7rem;
+      font-weight: 650;
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+      background: var(--surface);
+      color: var(--navy);
+      box-shadow: 0 1px 3px rgba(59, 111, 212, 0.08);
+    }
+
+    .dg-theme-btn {
+      margin-left: auto;
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--navy);
+      font: inherit;
+      font-size: .74rem;
+      font-weight: 650;
+      cursor: pointer;
+    }
+
+    .dg-theme-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .dg-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .dg-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .dg-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+    @media (max-width: 800px) {
+      .dg-grid-3, .dg-grid-4 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 520px) {
+      .dg-grid-2, .dg-grid-3, .dg-grid-4 { grid-template-columns: 1fr; }
+      .dg-theme-btn { margin-left: 0; }
+    }
+
+    .dg-card {
+      background: var(--surface);
+      border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border));
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(26, 58, 110, 0.04), 0 8px 24px rgba(59, 111, 212, 0.07);
+      padding: 14px 16px;
+    }
+
+    .dg-card strong {
+      display: block;
+      font-size: .84rem;
+      font-weight: 700;
+      color: var(--navy-deep);
+      margin-bottom: 4px;
+    }
+
+    .dg-card span {
+      font-size: .76rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    /* Swatches */
+    .dg-swatch {
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .dg-swatch-color { height: 56px; }
+
+    .dg-swatch-meta { padding: 10px 12px; }
+
+    .dg-swatch-meta strong {
+      display: block;
+      font-size: .76rem;
+      font-weight: 700;
+      color: var(--navy-deep);
+    }
+
+    .dg-swatch-meta code {
+      font-size: .66rem;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    /* Tipografia */
+    .dg-type-row {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 12px;
+      align-items: baseline;
+      padding: 12px 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+    }
+
+    .dg-type-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .dg-type-row:first-child { padding-top: 0; }
+
+    .dg-type-row .dg-type-label {
+      font-size: .66rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .dg-type-page { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; color: var(--navy-deep); }
+    .dg-type-modal { font-size: .98rem; font-weight: 700; letter-spacing: -0.025em; color: var(--navy-deep); }
+    .dg-type-section { font-size: .88rem; font-weight: 700; color: var(--navy-deep); }
+    .dg-type-body { font-size: .84rem; font-weight: 400; color: var(--muted); }
+    .dg-type-label-ui { font-size: .66rem; font-weight: 700; color: color-mix(in srgb, var(--muted) 70%, var(--navy-deep)); }
+    .dg-type-meta { font-size: .7rem; color: var(--muted); }
+
+    /* Specs */
+    .dg-spec {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .72rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      color: var(--navy);
+      margin-top: 8px;
+    }
+
+    .dg-stack { display: flex; flex-direction: column; gap: 12px; }
+    .dg-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+    /* Layout schema */
+    .dg-flow {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      max-width: 420px;
+    }
+
+    .dg-flow-box {
+      text-align: center;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: .78rem;
+      font-weight: 650;
+      color: var(--navy-deep);
+    }
+
+    .dg-flow-box.is-accent {
+      background: linear-gradient(90deg, #28519c, #28519c);
+      color: #fff;
+      border: none;
+    }
+
+    .dg-flow-arrow {
+      text-align: center;
+      color: var(--muted);
+      font-size: .75rem;
+      line-height: 1;
+    }
+
+    /* Rules */
+    .dg-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px) { .dg-rules { grid-template-columns: 1fr; } }
+
+    .dg-rule {
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .dg-rule.do {
+      border-color: color-mix(in srgb, #1b6b3a 25%, var(--border));
+      background: color-mix(in srgb, #1b6b3a 4%, var(--surface));
+    }
+
+    .dg-rule.dont {
+      border-color: color-mix(in srgb, var(--danger) 25%, var(--border));
+      background: color-mix(in srgb, var(--danger) 4%, var(--surface));
+    }
+
+    .dg-rule h3 {
+      font-size: .78rem;
+      font-weight: 700;
+      margin: 0 0 10px;
+    }
+
+    .dg-rule.do h3 { color: #1b6b3a; }
+    .dg-rule.dont h3 { color: var(--danger); }
+
+    .dg-rule ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: .78rem;
+      color: var(--navy);
+    }
+
+    .dg-rule li + li { margin-top: 5px; }
+
+    .dg-foot {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .dg-foot a { color: var(--accent); font-weight: 650; text-decoration: none; }
+
+    /* Demo: badge leve (padrão do sistema) */
+    .dg-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px 4px 9px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+      background: linear-gradient(180deg, var(--surface), var(--surface-2));
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--navy-deep);
+    }
+
+    .dg-badge i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* Demo form fields alinhados ao padrão compacto */
+    .dg-demo-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px 16px;
+      max-width: 520px;
+    }
+
+    @media (max-width: 520px) { .dg-demo-form { grid-template-columns: 1fr; } }
+
+    .dg-page .fin-field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin: 0;
+    }
+
+    .dg-page .fin-field > span:first-child {
+      font-size: .66rem;
+      font-weight: 700;
+      color: color-mix(in srgb, var(--muted) 70%, var(--navy-deep));
+    }
+
+    .dg-page .fin-field input,
+    .dg-page .fin-field select {
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0 10px;
+      font: inherit;
+      font-size: .78rem;
+      background: var(--surface);
+      color: var(--navy);
+    }
+
+    .dg-page .fin-field input:focus,
+    .dg-page .fin-field select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 111, 212, 0.12);
+    }
+
+    .dg-page .fin-field input:disabled,
+    .dg-page .fin-field select:disabled,
+    .dg-page .btn-primary:disabled,
+    .dg-page .btn-ghost:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    .dg-check-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dg-check-row label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--navy-deep);
+      margin: 0;
+      cursor: pointer;
+    }
+
+    .dg-check-row input {
+      width: 15px;
+      height: 15px;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .dg-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 28px 16px;
+      text-align: center;
+      color: var(--muted);
+      font-size: .8rem;
+    }
+
+    .dg-kpi {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 600px) { .dg-kpi { grid-template-columns: 1fr; } }
+
+    .dg-kpi .dash-card {
+      padding: 12px 14px;
+    }
+
+    .dg-kpi .dash-card .k {
+      font-size: .68rem;
+      font-weight: 650;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+
+    .dg-kpi .dash-card .v {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--navy-deep);
+      letter-spacing: -0.02em;
+    }
+
+    /* Modal mock (chrome real) */
+    .dg-modal-mock {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      max-width: 480px;
+    }
+
+    .dg-modal-mock .modal-head {
+      border-radius: 0;
+    }
+
+    .dg-modal-mock .modal-body {
+      max-height: none;
+      padding: 14px 16px 16px;
+      background: linear-gradient(180deg, var(--surface-2), var(--bg));
+    }
+
+    .dg-radius-demo {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .dg-radius-box {
+      background: var(--accent);
+      opacity: .85;
+      color: #fff;
+      font-size: .68rem;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="dg-page">
+
+    <!-- ========== 1. HERO ========== -->
+    <header class="dg-hero">
+      <div class="dg-hero-kicker">Design Guide</div>
+      <h1>Processo Ágil</h1>
+      <p>
+        Esta página documenta os padrões visuais utilizados pelo Processo Ágil
+        e serve como referência para manter consistência em futuras implementações.
+      </p>
+      <div class="dg-chips">
+        <span class="dg-chip">HTML + CSS + JavaScript</span>
+        <span class="dg-chip">DM Sans</span>
+        <span class="dg-chip">Sistema Modular</span>
+        <span class="dg-chip">Tema Claro e Escuro</span>
+        <button type="button" class="dg-theme-btn" id="dgThemeToggle" aria-label="Alternar tema">Tema escuro</button>
+      </div>
+    </header>
+
+    <nav class="dg-toc" aria-label="Seções do guia">
+      <a href="#principios">Princípios</a>
+      <a href="#cores">Cores</a>
+      <a href="#tipografia">Tipografia</a>
+      <a href="#espaco">Espaço</a>
+      <a href="#componentes">Componentes</a>
+      <a href="#layout">Layout</a>
+      <a href="#regras">Fazer / Não fazer</a>
+    </nav>
+
+    <!-- ========== 2. PRINCÍPIOS ========== -->
+    <section class="dg-section" id="principios">
+      <h2>Princípios</h2>
+      <p class="dg-lead">Extraídos do visual já implementado no protótipo modular.</p>
+      <div class="dg-grid-3">
+        <div class="dg-card"><strong>Clareza acima de decoração</strong><span>Informação primeiro; ornamento só quando ajuda.</span></div>
+        <div class="dg-card"><strong>Hierarquia por tipografia e espaçamento</strong><span>Peso, tamanho e whitespace — não mais bordas.</span></div>
+        <div class="dg-card"><strong>Interface compacta</strong><span>Cabeçalhos baixos, inputs ~32px, respiro entre grupos.</span></div>
+        <div class="dg-card"><strong>Aproveitamento inteligente da tela</strong><span>Duas colunas, grades densas, sem desperdício vertical.</span></div>
+        <div class="dg-card"><strong>Poucas bordas</strong><span>Bordas suaves e baixo contraste nos cards internos.</span></div>
+        <div class="dg-card"><strong>Sombras discretas</strong><span>Apenas sombras leves azuladas (navy/accent).</span></div>
+        <div class="dg-card"><strong>Componentes reutilizáveis</strong><span>Reusar classes e padrões; não inventar variantes.</span></div>
+      </div>
+    </section>
+
+    <!-- ========== 3. PALETA ========== -->
+    <section class="dg-section" id="cores">
+      <h2>Paleta de cores</h2>
+      <p class="dg-lead">Tokens reais de <code>:root</code> em <code>css/01-base.css</code>. O preview muda com o tema.</p>
+      <div class="dg-grid-4">
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--navy)"></div>
+          <div class="dg-swatch-meta"><strong>Navy</strong><code>--navy</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--navy-deep)"></div>
+          <div class="dg-swatch-meta"><strong>Navy deep</strong><code>--navy-deep</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--navy-soft)"></div>
+          <div class="dg-swatch-meta"><strong>Navy soft</strong><code>--navy-soft</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--accent)"></div>
+          <div class="dg-swatch-meta"><strong>Accent</strong><code>--accent</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--bg)"></div>
+          <div class="dg-swatch-meta"><strong>Background</strong><code>--bg</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--surface); border-bottom: 1px solid var(--border)"></div>
+          <div class="dg-swatch-meta"><strong>Surface</strong><code>--surface</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--surface-2)"></div>
+          <div class="dg-swatch-meta"><strong>Surface 2</strong><code>--surface-2</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--muted)"></div>
+          <div class="dg-swatch-meta"><strong>Muted</strong><code>--muted</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--border)"></div>
+          <div class="dg-swatch-meta"><strong>Border</strong><code>--border</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--sidebar)"></div>
+          <div class="dg-swatch-meta"><strong>Sidebar</strong><code>--sidebar</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--header-muted)"></div>
+          <div class="dg-swatch-meta"><strong>Header muted</strong><code>--header-muted</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--danger)"></div>
+          <div class="dg-swatch-meta"><strong>Danger</strong><code>--danger</code></div>
+        </div>
+      </div>
+      <p class="dg-lead" style="margin-top:14px;margin-bottom:0">
+        Hex claro de referência: navy <code>#28519c</code> · deep <code>#1c386e</code> · accent <code>#28519c</code> · border <code>#d4dce8</code> · muted <code>#6b7c93</code>.
+        No tema escuro, os valores mudam via <code>html.dark</code>.
+      </p>
+    </section>
+
+    <!-- ========== 4. TIPOGRAFIA ========== -->
+    <section class="dg-section" id="tipografia">
+      <h2>Tipografia</h2>
+      <p class="dg-lead">Família única: DM Sans. Escala usada nas telas do protótipo.</p>
+      <div class="dg-card">
+        <div class="dg-type-row">
+          <div class="dg-type-label">Título da página</div>
+          <div class="dg-type-page">Visão Geral</div>
+        </div>
+        <div class="dg-type-row">
+          <div class="dg-type-label">Título de modal</div>
+          <div class="dg-type-modal">Regras e Adquirentes</div>
+        </div>
+        <div class="dg-type-row">
+          <div class="dg-type-label">Título de seção</div>
+          <div class="dg-type-section">Acordo comercial</div>
+        </div>
+        <div class="dg-type-row">
+          <div class="dg-type-label">Texto</div>
+          <div class="dg-type-body">Cadastre operadora, bandeiras e taxas usadas no cruzamento.</div>
+        </div>
+        <div class="dg-type-row">
+          <div class="dg-type-label">Label</div>
+          <div class="dg-type-label-ui">Nome da Adquirente</div>
+        </div>
+        <div class="dg-type-row">
+          <div class="dg-type-label">Meta</div>
+          <div class="dg-type-meta">Cliente · taxas usadas no cruzamento da auditoria</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 5. ESPAÇO E FORMA ========== -->
+    <section class="dg-section" id="espaco">
+      <h2>Espaçamento e forma</h2>
+      <p class="dg-lead">Valores recorrentes. Controles abaixo usam as alturas-alvo do sistema.</p>
+      <div class="dg-grid-2">
+        <div class="dg-card">
+          <strong>Radius</strong>
+          <div class="dg-radius-demo" style="margin-top:10px">
+            <div class="dg-radius-box" style="width:64px;height:48px;border-radius:var(--radius)">12</div>
+            <div class="dg-radius-box" style="width:56px;height:40px;border-radius:8px">8</div>
+            <div class="dg-radius-box" style="width:48px;height:32px;border-radius:999px">pill</div>
+          </div>
+          <div class="dg-spec">--radius: 12px · controles: 8px · badges: 999px</div>
+        </div>
+        <div class="dg-card">
+          <strong>Shadow</strong>
+          <div style="margin-top:10px;height:56px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--border)"></div>
+          <div class="dg-spec">--shadow · cards: sombra azulada leve</div>
+        </div>
+        <div class="dg-card">
+          <strong>Alturas</strong>
+          <div class="dg-row" style="margin-top:10px">
+            <input type="text" value="Input 32px" readonly style="height:32px;width:140px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font:inherit;font-size:.78rem;background:var(--surface);color:var(--navy)" />
+            <button type="button" class="btn-primary" style="height:36px">Botão 36px</button>
+          </div>
+          <div class="dg-spec">input/select: 32px · botão: 36px · faixa: ~30px</div>
+        </div>
+        <div class="dg-card">
+          <strong>Espaçamentos</strong>
+          <div class="dg-spec" style="margin-top:0">grade form: 14–16px · grupos: +4–8px · cards gap: 12–18px · modal head: ~12px 20px 10px</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 6. COMPONENTES (estáveis) ========== -->
+    <section class="dg-section" id="componentes">
+      <h2>Componentes</h2>
+      <p class="dg-lead">Galeria enxuta com padrões já usados no protótipo. Sem variantes novas.</p>
+
+      <div class="dg-stack">
+        <!-- Botões -->
+        <div class="dg-card">
+          <strong>Botões</strong>
+          <div class="dg-row" style="margin-top:10px">
+            <button type="button" class="btn-primary">Salvar regra</button>
+            <button type="button" class="btn-ghost">Cancelar</button>
+            <button type="button" class="btn-outline">Exportar</button>
+            <button type="button" class="btn-primary" disabled>Desabilitado</button>
+          </div>
+        </div>
+
+        <!-- Inputs / selects -->
+        <div class="dg-card">
+          <strong>Inputs e selects</strong>
+          <div class="dg-demo-form" style="margin-top:12px">
+            <label class="fin-field">
+              <span>Nome da Adquirente</span>
+              <select>
+                <option>Stone</option>
+                <option>Cielo</option>
+                <option>Rede</option>
+              </select>
+            </label>
+            <label class="fin-field">
+              <span>Início do contrato</span>
+              <input type="date" value="2026-01-01" />
+            </label>
+            <label class="fin-field">
+              <span>Desconto padrão (%)</span>
+              <input type="text" placeholder="2,49" />
+            </label>
+            <label class="fin-field">
+              <span>Campo desabilitado</span>
+              <input type="text" value="—" disabled />
+            </label>
+          </div>
+        </div>
+
+        <!-- Checkboxes + badges -->
+        <div class="dg-grid-2">
+          <div class="dg-card">
+            <strong>Checkboxes</strong>
+            <div class="dg-check-row" style="margin-top:10px">
+              <label><input type="checkbox" checked /> Visa</label>
+              <label><input type="checkbox" checked /> Mastercard</label>
+              <label><input type="checkbox" /> Elo</label>
+            </div>
+          </div>
+          <div class="dg-card">
+            <strong>Badges</strong>
+            <div class="dg-row" style="margin-top:10px">
+              <span class="dg-badge"><i style="background:#1a5fbf"></i> Visa</span>
+              <span class="dg-badge"><i style="background:#eb6c1e"></i> Mastercard</span>
+              <span class="fin-status-pill conciliado">Crédito</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cards / KPI -->
+        <div class="dg-card">
+          <strong>Cards / KPI</strong>
+          <div class="dg-kpi" style="margin-top:12px">
+            <div class="dash-card"><div class="k">Conciliado</div><div class="v">R$ 42.180</div></div>
+            <div class="dash-card"><div class="k">Em aberto</div><div class="v">R$ 8.420</div></div>
+            <div class="dash-card"><div class="k">Taxa média</div><div class="v">2,49%</div></div>
+          </div>
+        </div>
+
+        <!-- Empty -->
+        <div class="dg-card">
+          <strong>Empty state</strong>
+          <div class="dg-empty">
+            <div class="empty-icon" aria-hidden="true">∅</div>
+            <div class="fin-table-empty">Nenhum acordo cadastrado.</div>
+          </div>
+        </div>
+
+        <!-- Modal mock -->
+        <div class="dg-card">
+          <strong>Modal (chrome)</strong>
+          <div class="dg-modal-mock" style="margin-top:12px">
+            <div class="modal-head">
+              <div>
+                <h3>Regras e Adquirentes</h3>
+                <p>Cliente · taxas usadas no cruzamento da auditoria</p>
+              </div>
+            </div>
+            <div class="modal-body">
+              <p style="margin:0;font-size:.8rem;color:var(--muted)">
+                Cabeçalho navy compacto + corpo em superfície suave. Conteúdo real fica no modal do app.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 7. LAYOUT (esquema) ========== -->
+    <section class="dg-section" id="layout">
+      <h2>Layout</h2>
+      <p class="dg-lead">Estrutura padrão do sistema (esquema). Overlays (modal/drawer) ficam acima do conteúdo.</p>
+      <div class="dg-flow">
+        <div class="dg-flow-box is-accent">Topbar</div>
+        <div class="dg-flow-arrow">↓</div>
+        <div class="dg-flow-box">Tabs</div>
+        <div class="dg-flow-arrow">↓</div>
+        <div class="dg-flow-box">Toolbar</div>
+        <div class="dg-flow-arrow">↓</div>
+        <div class="dg-flow-box">Conteúdo</div>
+        <div class="dg-flow-arrow">↓ overlays</div>
+        <div class="dg-flow-box">Modal · Drawer</div>
+      </div>
+    </section>
+
+    <!-- ========== 8–9. FAZER / NÃO FAZER ========== -->
+    <section class="dg-section" id="regras">
+      <h2>Fazer / Não fazer</h2>
+      <p class="dg-lead">Contrato do protótipo — útil para pessoas e para o Agent.</p>
+      <div class="dg-rules">
+        <div class="dg-rule do">
+          <h3>Fazer</h3>
+          <ul>
+            <li>Reutilizar componentes e classes existentes</li>
+            <li>Manter tokens de <code>01-base.css</code></li>
+            <li>Manter identidade visual Processo Ágil</li>
+            <li>Aproveitar o espaço da tela</li>
+            <li>Priorizar clareza e hierarquia tipográfica</li>
+            <li>Editar em <code>partials/</code>, <code>css/</code>, <code>js/</code> + build</li>
+            <li>Seguir os padrões já implementados</li>
+          </ul>
+        </div>
+        <div class="dg-rule dont">
+          <h3>Não fazer</h3>
+          <ul>
+            <li>Não usar Tailwind</li>
+            <li>Não usar Bootstrap</li>
+            <li>Não usar React</li>
+            <li>Não criar padrões visuais novos sem necessidade</li>
+            <li>Não alterar IDs</li>
+            <li>Não modificar JavaScript sem solicitação</li>
+            <li>Não usar excesso de bordas</li>
+            <li>Não criar cabeçalhos altos</li>
+            <li>Não exagerar em cores ou sombras</li>
+            <li>Não duplicar componentes</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer class="dg-foot">
+      Guia v1 · estático · não faz parte da aplicação.
+      Protótipo: <a href="menu-suspenso.html">menu-suspenso.html</a>
+      · Tokens: <code>css/01-base.css</code>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var btn = document.getElementById("dgThemeToggle");
+      if (!btn) return;
+      function sync() {
+        var dark = document.documentElement.classList.contains("dark");
+        btn.textContent = dark ? "Tema claro" : "Tema escuro";
+      }
+      sync();
+      btn.addEventListener("click", function () {
+        var dark = document.documentElement.classList.toggle("dark");
+        try { localStorage.setItem("pa-theme", dark ? "dark" : "light"); } catch (_) {}
+        sync();
+      });
+    })();
+  </script>
+</body>
+</html>

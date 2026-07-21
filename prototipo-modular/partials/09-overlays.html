@@ -1,0 +1,41 @@
+  <button type="button" class="chat-fab tip-bottom" id="chatFab" data-tip="Chat" aria-label="Chat">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+  </button>
+
+  <div class="chat-panel" id="chatPanel">
+    <header>
+      <span>Chat de suporte</span>
+      <button type="button" id="chatClose">×</button>
+    </header>
+    <div class="body">Protótipo interativo — use o botão amarelo para abrir/fechar.</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="modal">
+      <div class="modal-head">
+        <div>
+          <h3 id="modalTitle">Modal</h3>
+          <p id="modalSub">Descrição</p>
+        </div>
+        <div class="modal-head-tools" id="modalHeadTools" hidden></div>
+        <button type="button" id="modalClose">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-foot" id="modalFoot"></div>
+    </div>
+  </div>
+
+  <div class="fin-drawer-backdrop" id="finDrawerBackdrop" aria-hidden="true"></div>
+  <aside class="fin-drawer" id="finDrawer" aria-hidden="true" role="dialog" aria-labelledby="finDrawerTitle">
+    <div class="fin-drawer-head">
+      <div>
+        <h3 id="finDrawerTitle">Detalhe</h3>
+        <p id="finDrawerSub"></p>
+      </div>
+      <button type="button" class="fin-drawer-close" id="finDrawerClose" aria-label="Fechar">×</button>
+    </div>
+    <div class="fin-drawer-body" id="finDrawerBody"></div>
+    <div class="fin-drawer-foot" id="finDrawerFoot">Top 5 composição do saldo · dados do período filtrado</div>
+  </aside>

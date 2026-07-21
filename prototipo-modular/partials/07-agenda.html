@@ -1,0 +1,115 @@
+            <div class="agenda-wrap" id="agendaWrap">
+              <div class="agenda-top">
+                <div class="agenda-main" id="agendaMain">
+                  <div class="agenda-alert is-visible" id="agendaSecurityAlert" role="alert">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <button type="button" class="alert-body" id="agendaSecurityGo" aria-label="Abrir monitoramento de certificados">
+                      <strong id="agendaSecurityText">Atenção: certificados digitais exigem ação</strong>
+                      <span> — Clique para abrir o monitoramento (vencidos e a vencer).</span>
+                    </button>
+                    <button type="button" class="agenda-alert-dismiss" id="agendaSecurityDismiss" aria-label="Dispensar alerta" title="Dispensar">×</button>
+                  </div>
+
+                  <section class="agenda-overview" aria-label="Visão Geral">
+                    <div class="agenda-overview-head">
+                      <div>
+                        <h3>Visão Geral</h3>
+                        <span class="sub">Indicadores com base nas entregas do período · clique para filtrar</span>
+                      </div>
+                      <div class="agenda-overview-meta">
+                        <span class="agenda-overview-period">Julho / 2026</span>
+                        <button type="button" class="agenda-kpi-clear" id="agendaKpiClear">Limpar filtro</button>
+                      </div>
+                    </div>
+                    <div class="agenda-kpis" id="agendaKpis"></div>
+                  </section>
+
+                  <section class="agenda-block agenda-ops">
+                    <div class="agenda-block-head">
+                      <div>
+                        <h4>Gestão de Operações e Processos</h4>
+                        <span class="sub">Fluxos ativos · cliente, responsável, datas e progresso</span>
+                      </div>
+                    </div>
+                    <div class="agenda-table-wrap">
+                      <table class="agenda-table" id="agendaOpsTable">
+                        <thead>
+                          <tr>
+                            <th>Processo</th>
+                            <th>Cliente</th>
+                            <th>Responsável</th>
+                            <th>Datas</th>
+                            <th>Progresso</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody id="agendaOpsBody"></tbody>
+                      </table>
+                    </div>
+                  </section>
+                </div>
+
+                <!-- Agenda alinhada à altura de Operações -->
+                <aside class="agenda-panel" aria-label="Agenda — seleção de datas">
+                  <div class="agenda-panel-head">
+                    <div class="agenda-panel-head-top">
+                      <div>
+                        <h3>Agenda</h3>
+                        <span class="sub agenda-panel-sub">Selecione uma data para filtrar o quadro</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="agenda-cal" id="agendaCal"></div>
+                  <div class="agenda-day-summary" id="agendaDaySummary" aria-live="polite">
+                    <strong id="agendaFeedTitle">Tarefas do dia</strong>
+                    <span id="agendaFeedCount">0 tarefas</span>
+                  </div>
+                </aside>
+              </div>
+
+              <!-- Quadro em largura total abaixo -->
+              <section class="agenda-block agenda-entregas" aria-label="Quadro de entregas">
+                <div class="agenda-block-head agenda-entregas-head">
+                  <div>
+                    <h4 id="agendaEntregasTitle">Quadro de Entregas</h4>
+                    <span class="sub" id="agendaEntregasSub">Selecione uma data na Agenda</span>
+                  </div>
+                  <div class="agenda-entregas-filters" id="agendaEntregasFilters">
+                    <div class="proc-filter field">
+                      <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                      <select id="agendaEntregaView" aria-label="Visualização">
+                        <option value="tarefas">Tarefas</option>
+                        <option value="empresas">Empresas</option>
+                        <option value="funcionarios">Funcionários</option>
+                      </select>
+                    </div>
+                    <div class="proc-filter search">
+                      <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                      <input type="search" id="agendaEntregaSearch" placeholder="Nome, razão social ou CNPJ" autocomplete="off" aria-label="Buscar entregas" />
+                    </div>
+                    <div class="proc-filter field agenda-ops-status" id="agendaEntregaStatusWrap">
+                      <button type="button" class="agenda-ops-status-btn" id="agendaEntregaStatusBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Filtrar status">
+                        <i class="status-dot" id="agendaEntregaStatusDot" aria-hidden="true"></i>
+                        <span class="status-label" id="agendaEntregaStatusLabel">Status</span>
+                        <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                      </button>
+                      <div class="agenda-ops-status-menu" id="agendaEntregaStatusMenu" role="listbox" aria-label="Status"></div>
+                    </div>
+                    <div class="proc-filter field">
+                      <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <select id="agendaEntregaFuncionario" aria-label="Filtrar funcionário">
+                        <option value="">Funcionário</option>
+                      </select>
+                    </div>
+                    <div class="proc-filter field">
+                      <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      <select id="agendaEntregaResp" aria-label="Filtrar responsável">
+                        <option value="">Responsável</option>
+                      </select>
+                    </div>
+                  </div>
+                  <span class="agenda-entregas-count" id="agendaEntregasCount">0 entregas</span>
+                </div>
+                <div class="agenda-entregas-board" id="agendaEntregasBoard"></div>
+              </section>
+            </div>

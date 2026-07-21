@@ -1,0 +1,37 @@
+/* Handoff · só Gestão de Clientes (perfil e sub-abas liberados) */
+
+/* Topbar inteira bloqueada (marca, tema, notif, mensagens, usuário) */
+html.handoff-auditoria .topbar {
+  pointer-events: none;
+  user-select: none;
+}
+
+html.handoff-auditoria .topbar-right,
+html.handoff-auditoria .theme-toggle,
+html.handoff-auditoria .notif-wrap,
+html.handoff-auditoria .user-wrap,
+html.handoff-auditoria .brand {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+html.handoff-auditoria .text-tab:not([data-id="clientes"]),
+html.handoff-auditoria .tab-add-wrap,
+html.handoff-auditoria .tab-close,
+html.handoff-auditoria #tabSwitcher {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+html.handoff-auditoria .page-rich-header,
+html.handoff-auditoria #pageRichHeader {
+  display: none !important;
+}
+
+/* FAB de chat / mensagens flutuante, se existir */
+html.handoff-auditoria .btn-fab,
+html.handoff-auditoria #chatFab,
+html.handoff-auditoria .chat-fab {
+  pointer-events: none;
+  opacity: 0.45;
+}
