@@ -13,7 +13,7 @@
     .cfg-secao-field label .opt {
       margin-left: 4px;
       padding: 1px 8px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: var(--toolbar);
       border: 1px solid var(--border);
       font-size: .66rem;
@@ -25,7 +25,7 @@
     .cfg-secao-field textarea {
       width: 100%;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 10px 12px;
       font: inherit;
       font-size: .86rem;
@@ -47,7 +47,7 @@
       gap: 12px;
       padding: 12px 14px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       margin-bottom: 4px;
     }
@@ -71,7 +71,7 @@
 
     .cfg-email-vars {
       border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       overflow: hidden;
       background: var(--surface);
     }
@@ -81,7 +81,7 @@
       align-items: center;
       gap: 8px;
       padding: 10px 12px;
-      background: rgba(59, 111, 212, 0.08);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
       color: var(--navy-deep);
       font-size: .78rem;
       font-weight: 650;
@@ -101,7 +101,7 @@
       border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
       background: var(--surface);
       color: var(--accent);
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       padding: 5px 11px;
       font: inherit;
       font-size: .7rem;
@@ -110,7 +110,7 @@
     }
 
     .cfg-email-var:hover {
-      background: rgba(59, 111, 212, 0.1);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
     }
 
     .cfg-email-field label {
@@ -125,7 +125,7 @@
       width: 100%;
       min-height: 110px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 10px 12px;
       font: inherit;
       font-size: .84rem;
@@ -139,7 +139,7 @@
     .cfg-email-field textarea:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59, 111, 212, 0.12);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
     }
 
     .cfg-molde-detail { display: flex; flex-direction: column; gap: 14px; }
@@ -187,7 +187,7 @@
       height: 32px;
       padding: 0 12px;
       border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: var(--surface);
       color: var(--accent);
       font: inherit;
@@ -197,7 +197,7 @@
     }
 
     .cfg-molde-detail-actions button:hover {
-      background: rgba(59, 111, 212, 0.08);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
     }
 
     .cfg-molde-detail-actions button.danger {
@@ -211,7 +211,7 @@
       gap: 16px 22px;
       padding: 10px 14px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--toolbar);
       font-size: .78rem;
       color: var(--navy-deep);
@@ -236,7 +236,7 @@
       gap: 4px;
       padding: 12px 14px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface);
     }
 
@@ -251,16 +251,16 @@
       display: inline-flex;
       align-items: center;
       padding: 2px 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .68rem;
       font-weight: 700;
       border: 1px solid transparent;
     }
 
     .cfg-molde-etapa .status.espera {
-      color: #28519c;
-      background: rgba(59, 111, 212, 0.12);
-      border-color: rgba(59, 111, 212, 0.22);
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 22%, transparent);
     }
 
     .cfg-molde-etapa .status.pendente {
@@ -284,7 +284,7 @@
     .cfg-molde-etapa .obrigatoria {
       display: inline-flex;
       padding: 2px 8px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .66rem;
       font-weight: 700;
       color: #b42318;
@@ -302,7 +302,7 @@
 
     .cfg-regras-filtros {
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       padding: 12px;
       background: var(--toolbar);
       display: flex;
@@ -334,9 +334,9 @@
 
     .cfg-regras-filtros-grid input,
     .cfg-regras-filtros-grid select {
-      height: 34px;
+      height: 36px;
       border: 1px solid var(--border);
-      border-radius: 7px;
+      border-radius: var(--radius-sm);
       padding: 0 10px;
       font: inherit;
       font-size: .78rem;
@@ -386,7 +386,7 @@
       align-items: center;
       padding: 12px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
     }
 
@@ -437,8 +437,8 @@
       height: 32px;
       padding: 0 14px;
       border: none;
-      border-radius: 7px;
-      background: #28519c;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
       color: #fff;
       font: inherit;
       font-size: .74rem;
@@ -471,7 +471,7 @@
     .cfg-regra-form textarea {
       height: 36px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 0 10px;
       font: inherit;
       font-size: .84rem;
@@ -552,7 +552,7 @@
       margin: 0 !important;
       padding: 8px 12px !important;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       font: inherit;
       font-size: clamp(.74rem, .62rem + .55cqi, .86rem);
@@ -593,7 +593,7 @@
     .cfg-obr-field > select:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59, 111, 212, 0.12);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
     }
 
     .cfg-obr-field .counter {
@@ -702,7 +702,7 @@
       border: 1px solid var(--border);
       background: var(--toolbar);
       color: var(--navy);
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       padding: 6px 12px;
       font: inherit;
       font-size: .68rem;
@@ -714,8 +714,8 @@
 
     .cfg-obr-regra:hover { border-color: var(--accent); color: var(--accent); }
     .cfg-obr-regra.on {
-      background: rgba(59, 111, 212, 0.12);
-      border-color: rgba(59, 111, 212, 0.35);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 35%, transparent);
       color: var(--accent);
     }
 
@@ -728,7 +728,7 @@
       height: 32px;
       padding: 0 14px;
       border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: transparent;
       color: var(--accent);
       font: inherit;
@@ -738,7 +738,7 @@
       cursor: pointer;
     }
 
-    .cfg-obr-add-regra:hover { background: rgba(59,111,212,.08); }
+    .cfg-obr-add-regra:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 
     .cfg-obr-foot-hint {
       font-size: .72rem;
@@ -756,7 +756,7 @@
       flex: 1;
       max-width: none;
       height: 42px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .9rem;
       font-weight: 700;
     }
@@ -899,16 +899,13 @@
 
     .cfg-molde-box {
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: color-mix(in srgb, var(--toolbar) 70%, var(--surface));
       padding: 12px;
       min-height: 56px;
     }
 
     .cfg-molde-empty {
-      text-align: center;
-      font-size: .78rem;
-      color: var(--muted);
       padding: 8px 0;
     }
 
@@ -917,8 +914,8 @@
       margin-top: 8px;
       height: 36px;
       border: 1px dashed color-mix(in srgb, var(--accent) 45%, var(--border));
-      border-radius: 8px;
-      background: rgba(59,111,212,.04);
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--accent) 4%, transparent);
       color: var(--accent);
       font: inherit;
       font-size: .78rem;
@@ -927,7 +924,7 @@
     }
 
     .cfg-molde-add:hover {
-      background: rgba(59,111,212,.08);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
       border-color: var(--accent);
     }
 
@@ -938,7 +935,7 @@
       gap: 8px;
       padding: 8px 10px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       margin-bottom: 6px;
       font-size: .78rem;
@@ -995,7 +992,7 @@
       width: 32px;
       height: 32px;
       border: 1px solid var(--border);
-      border-radius: 7px;
+      border-radius: var(--radius-sm);
       background: transparent;
       color: var(--navy);
       cursor: pointer;
@@ -1023,7 +1020,7 @@
     .cfg-cal-grid button {
       aspect-ratio: 1;
       border: 1px solid transparent;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: transparent;
       color: var(--navy-deep);
       font: inherit;
@@ -1033,8 +1030,8 @@
     }
 
     .cfg-cal-grid button:hover:not(:disabled) {
-      background: rgba(59,111,212,.08);
-      border-color: rgba(59,111,212,.2);
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 20%, transparent);
     }
 
     .cfg-cal-grid button:disabled {
@@ -1043,7 +1040,7 @@
     }
 
     .cfg-cal-grid button.in-range {
-      background: rgba(59,111,212,.12);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
       color: var(--accent);
     }
 
@@ -1083,7 +1080,7 @@
       gap: 8px;
       padding: 10px 12px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
     }
 
     .cfg-list-modal .row strong {
@@ -1098,7 +1095,7 @@
     }
 
     .modal-head {
-      background: linear-gradient(90deg, #28519c 0%, #3a64b4 55%, #28519c 100%);
+      background: linear-gradient(90deg, var(--accent) 0%, #3a64b4 55%, var(--accent) 100%);
       color: #fff;
       padding: 18px 22px 14px;
       display: flex;
@@ -1106,7 +1103,7 @@
       gap: 10px;
       margin: 0;
       border: none;
-      border-radius: 14px 14px 0 0;
+      border-radius: var(--radius) var(--radius) 0 0;
       flex-shrink: 0;
     }
 
@@ -1147,7 +1144,7 @@
       border: none;
       background: rgba(255, 255, 255, 0.14);
       color: #fff;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
     }
 
     .modal-head-tools .btn-filter:hover,
@@ -1178,23 +1175,7 @@
     }
 
     .modal-head > #modalClose {
-      background: rgba(255, 255, 255, 0.14);
-      border: none;
-      color: #fff;
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: grid;
-      place-items: center;
-      font-size: 1.15rem;
-      line-height: 1;
-      flex-shrink: 0;
-    }
-
-    .modal-head > #modalClose:hover {
-      background: rgba(255, 255, 255, 0.24);
-      color: #fff;
+      display: none !important;
     }
 
     .modal-body {
@@ -1226,7 +1207,7 @@
       height: 36px;
       padding: 0 11px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       font-family: inherit;
       font-size: .8125rem;
       margin-bottom: 12px;
@@ -1327,7 +1308,7 @@
     }
 
     .cfg-regerar-item:hover {
-      background: rgba(59, 111, 212, 0.04);
+      background: color-mix(in srgb, var(--accent) 4%, transparent);
     }
 
     .cfg-regerar-item:hover .txt {
@@ -1415,7 +1396,7 @@
     .entrega-detail-grid .cell {
       background: var(--surface-2);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 8px 10px;
     }
 
@@ -1454,7 +1435,7 @@
       max-height: 200px;
       overflow-y: auto;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface-2);
       padding: 4px 0;
     }
@@ -1540,7 +1521,7 @@
     .tool-item {
       border: 1px solid var(--border);
       background: var(--toolbar);
-      border-radius: 12px;
+      border-radius: var(--radius);
       padding: 16px 12px;
       cursor: pointer;
       text-align: center;
@@ -1590,7 +1571,7 @@
 
     .btn-ghost, .btn-primary {
       padding: 9px 14px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       font-family: inherit;
       font-size: .84rem;
       font-weight: 600;

@@ -51,6 +51,10 @@
         gamma: { validade: "05/08/2026", titular: "Diego Gamma Serviços" },
         delta: { validade: "30/09/2026", titular: "Camila Delta Comércio" },
       };
+      const desdeMes = [
+        "03/2019", "08/2020", "01/2021", "11/2018", "06/2022",
+        "02/2020", "09/2021", "04/2019", "07/2023", "12/2018",
+      ];
       CLIENTES.forEach((c, i) => {
         const isFilial = i === 2 || i === 6 || i === 8;
         const cert = certMap[c.id] || { validade: "15/03/2027", titular: `${c.short} Certificado` };
@@ -58,6 +62,7 @@
           tipoUnidade: isFilial ? "Filial" : "Matriz",
           funcInternos: 4 + ((i * 3) % 11),
           funcExternos: 1 + (i % 5),
+          clienteDesde: desdeMes[i] || "01/2020",
           endereco: enderecos[c.id] || `${c.estado} — Brasil`,
           ie: `${10 + i}.${200 + i * 3}.${1000 + i * 17}`,
           im: `${50000 + i * 123}`,
@@ -382,8 +387,8 @@
     let appAccessMode = "escritorio";
     /** Pool de abas do portal do cliente (+ / fechar no topo). */
     const CLIENT_PORTAL_TAB_POOL = [
-      { id: "documentos", label: "Documentos", tip: "Arquivos e anexos da empresa" },
       { id: "entregas", label: "Entregas", tip: "Prazos e entregas vinculadas" },
+      { id: "documentos", label: "Documentos", tip: "Arquivos e anexos da empresa" },
       { id: "xml", label: "XML", tip: "Notas fiscais e XMLs" },
       { id: "financeiro", label: "Financeiro", tip: "Relatório Executivo e panorama financeiro" },
     ];
@@ -820,8 +825,8 @@
     let finDash = {
       tab: "dashboard",
       /** Todas as abas do módulo ficam visíveis na barra (sem menu +). */
-      openTabIds: ["dashboard", "conciliacao", "titulos", "cartoes", "cobrancas", "folha", "plano", "config"],
-      /** Sub-abas analíticas da Visão Geral: visao | dre | dfc | ebitda */
+      openTabIds: ["dashboard", "conciliacao", "titulos", "cartoes", "plano", "config"],
+      /** Sub-abas analíticas do Painel: visao | dre | dfc | ebitda */
       reportTab: "visao",
       /** Sub-aba de Títulos: pagar | receber */
       titulosSub: "pagar",
@@ -1257,19 +1262,17 @@
     ];
 
     const FIN_TABS = [
-      { id: "dashboard", label: "Visão Geral", tip: "Painel consolidado de saúde e fluxo de caixa" },
+      { id: "dashboard", label: "Painel", tip: "Painel consolidado de saúde e fluxo de caixa" },
       { id: "conciliacao", label: "Conciliação Bancária", tip: "Extrato, XML e categorização na DRE" },
       { id: "titulos", label: "Títulos a Pagar e Receber", tip: "Gestão unificada de contas a pagar e a receber" },
       { id: "cartoes", label: "Auditoria de Cartões", tip: "Cruzamento Stone/Cielo × taxas cadastradas" },
-      { id: "cobrancas", label: "Cobranças Sicredi", tip: "Emissão de boletos e títulos a receber/pagar" },
-      { id: "folha", label: "Folha & Variações", tip: "Fechamento da folha e justificativas salariais" },
       { id: "plano", label: "Plano de Contas", tip: "Modelos e estrutura do plano de contas do cliente" },
       { id: "config", label: "Regras & Adquirentes", tip: "Acordos comerciais, bandeiras, faixas e taxas" },
     ];
 
     /** Navegação hierárquica do Módulo Contábil (UI apenas — ids de tela inalterados). */
     const FIN_NAV_GROUPS = [
-      { id: "visao", type: "direct", tab: "dashboard", label: "Visão Geral" },
+      { id: "visao", type: "direct", tab: "dashboard", label: "Painel" },
       {
         id: "financeiro",
         type: "dropdown",
@@ -1277,7 +1280,6 @@
         items: [
           { tab: "titulos", label: "Títulos a Pagar e Receber" },
           { tab: "conciliacao", label: "Conciliação Bancária" },
-          { tab: "cobrancas", label: "Cobranças" },
         ],
       },
       {
@@ -1289,19 +1291,11 @@
         ],
       },
       {
-        id: "administrativo",
-        type: "dropdown",
-        label: "Administrativo",
-        items: [
-          { tab: "folha", label: "Folha & Variações" },
-          { tab: "plano", label: "Plano de Contas" },
-        ],
-      },
-      {
         id: "configuracoes",
         type: "dropdown",
         label: "Configurações",
         items: [
+          { tab: "plano", label: "Plano de Contas" },
           { tab: "config", label: "Regras Financeiras", configSection: "adquirentes" },
           { tab: "config", label: "Adquirentes", configSection: "adquirentes" },
         ],
@@ -1698,10 +1692,10 @@
       openTabIds = [...CLIENT_PORTAL_TAB_IDS];
       cliView = "perfil";
       cliPerfilId = c.id;
-      cliPerfilTab = "documentos";
+      cliPerfilTab = "entregas";
       syncAccessChrome();
       skipToast = true;
-      setSection("documentos", true);
+      setSection("entregas", true);
       toast(`Acesso Cliente · ${c.fantasia || c.nome}`);
     }
 
@@ -2111,6 +2105,7 @@
       } else {
         modalBody.innerHTML = bodyHtml;
         modalFoot.innerHTML = footHtml;
+        syncModalCloseWithFoot();
         enhanceUiSelects(modalBody);
       }
       bindClienteCadastroEvents(modalBody);

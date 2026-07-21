@@ -51,6 +51,10 @@
         gamma: { validade: "05/08/2026", titular: "Diego Gamma Serviços" },
         delta: { validade: "30/09/2026", titular: "Camila Delta Comércio" },
       };
+      const desdeMes = [
+        "03/2019", "08/2020", "01/2021", "11/2018", "06/2022",
+        "02/2020", "09/2021", "04/2019", "07/2023", "12/2018",
+      ];
       CLIENTES.forEach((c, i) => {
         const isFilial = i === 2 || i === 6 || i === 8;
         const cert = certMap[c.id] || { validade: "15/03/2027", titular: `${c.short} Certificado` };
@@ -58,6 +62,7 @@
           tipoUnidade: isFilial ? "Filial" : "Matriz",
           funcInternos: 4 + ((i * 3) % 11),
           funcExternos: 1 + (i % 5),
+          clienteDesde: desdeMes[i] || "01/2020",
           endereco: enderecos[c.id] || `${c.estado} — Brasil`,
           ie: `${10 + i}.${200 + i * 3}.${1000 + i * 17}`,
           im: `${50000 + i * 123}`,
@@ -382,8 +387,8 @@
     let appAccessMode = "escritorio";
     /** Pool de abas do portal do cliente (+ / fechar no topo). */
     const CLIENT_PORTAL_TAB_POOL = [
-      { id: "documentos", label: "Documentos", tip: "Arquivos e anexos da empresa" },
       { id: "entregas", label: "Entregas", tip: "Prazos e entregas vinculadas" },
+      { id: "documentos", label: "Documentos", tip: "Arquivos e anexos da empresa" },
       { id: "xml", label: "XML", tip: "Notas fiscais e XMLs" },
       { id: "financeiro", label: "Financeiro", tip: "Relatório Executivo e panorama financeiro" },
     ];
@@ -820,8 +825,8 @@
     let finDash = {
       tab: "dashboard",
       /** Todas as abas do módulo ficam visíveis na barra (sem menu +). */
-      openTabIds: ["dashboard", "conciliacao", "titulos", "cartoes", "cobrancas", "folha", "plano", "config"],
-      /** Sub-abas analíticas da Visão Geral: visao | dre | dfc | ebitda */
+      openTabIds: ["dashboard", "conciliacao", "titulos", "cartoes", "plano", "config"],
+      /** Sub-abas analíticas do Painel: visao | dre | dfc | ebitda */
       reportTab: "visao",
       /** Sub-aba de Títulos: pagar | receber */
       titulosSub: "pagar",
@@ -1257,19 +1262,17 @@
     ];
 
     const FIN_TABS = [
-      { id: "dashboard", label: "Visão Geral", tip: "Painel consolidado de saúde e fluxo de caixa" },
+      { id: "dashboard", label: "Painel", tip: "Painel consolidado de saúde e fluxo de caixa" },
       { id: "conciliacao", label: "Conciliação Bancária", tip: "Extrato, XML e categorização na DRE" },
       { id: "titulos", label: "Títulos a Pagar e Receber", tip: "Gestão unificada de contas a pagar e a receber" },
       { id: "cartoes", label: "Auditoria de Cartões", tip: "Cruzamento Stone/Cielo × taxas cadastradas" },
-      { id: "cobrancas", label: "Cobranças Sicredi", tip: "Emissão de boletos e títulos a receber/pagar" },
-      { id: "folha", label: "Folha & Variações", tip: "Fechamento da folha e justificativas salariais" },
       { id: "plano", label: "Plano de Contas", tip: "Modelos e estrutura do plano de contas do cliente" },
       { id: "config", label: "Regras & Adquirentes", tip: "Acordos comerciais, bandeiras, faixas e taxas" },
     ];
 
     /** Navegação hierárquica do Módulo Contábil (UI apenas — ids de tela inalterados). */
     const FIN_NAV_GROUPS = [
-      { id: "visao", type: "direct", tab: "dashboard", label: "Visão Geral" },
+      { id: "visao", type: "direct", tab: "dashboard", label: "Painel" },
       {
         id: "financeiro",
         type: "dropdown",
@@ -1277,7 +1280,6 @@
         items: [
           { tab: "titulos", label: "Títulos a Pagar e Receber" },
           { tab: "conciliacao", label: "Conciliação Bancária" },
-          { tab: "cobrancas", label: "Cobranças" },
         ],
       },
       {
@@ -1289,19 +1291,11 @@
         ],
       },
       {
-        id: "administrativo",
-        type: "dropdown",
-        label: "Administrativo",
-        items: [
-          { tab: "folha", label: "Folha & Variações" },
-          { tab: "plano", label: "Plano de Contas" },
-        ],
-      },
-      {
         id: "configuracoes",
         type: "dropdown",
         label: "Configurações",
         items: [
+          { tab: "plano", label: "Plano de Contas" },
           { tab: "config", label: "Regras Financeiras", configSection: "adquirentes" },
           { tab: "config", label: "Adquirentes", configSection: "adquirentes" },
         ],
@@ -1698,10 +1692,10 @@
       openTabIds = [...CLIENT_PORTAL_TAB_IDS];
       cliView = "perfil";
       cliPerfilId = c.id;
-      cliPerfilTab = "documentos";
+      cliPerfilTab = "entregas";
       syncAccessChrome();
       skipToast = true;
-      setSection("documentos", true);
+      setSection("entregas", true);
       toast(`Acesso Cliente · ${c.fantasia || c.nome}`);
     }
 
@@ -2111,6 +2105,7 @@
       } else {
         modalBody.innerHTML = bodyHtml;
         modalFoot.innerHTML = footHtml;
+        syncModalCloseWithFoot();
         enhanceUiSelects(modalBody);
       }
       bindClienteCadastroEvents(modalBody);
@@ -4114,7 +4109,6 @@
       const parent = sel.parentElement;
       if (!parent) return;
       const standalone = !parent.classList.contains("proc-filter")
-        && !parent.classList.contains("agenda-ops-filter")
         && !parent.classList.contains("cli-fin-period-field");
 
       const wrap = document.createElement("div");
@@ -4179,10 +4173,15 @@
       root.querySelectorAll("select").forEach(enhanceUiSelect);
     }
 
+    function syncModalCloseWithFoot() {
+      const closeBtn = document.getElementById("modalClose");
+      if (closeBtn) closeBtn.hidden = true;
+    }
+
     function openModal({ title, sub, body, foot, wide, molde, obr, regras, moldeDetail, emailTpl, classif, tipoDoc, aviso, cadastro, audit, auditRules, report }) {
       modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "is-expanded");
       const resetClose = document.getElementById("modalClose");
-      if (resetClose) resetClose.hidden = false;
+      if (resetClose) resetClose.hidden = true;
       const resetTools = document.getElementById("modalHeadTools");
       if (resetTools && !(finDash.conc?.ofx?.modalOpen)) {
         resetTools.innerHTML = "";
@@ -4219,6 +4218,7 @@
         modalBody.style.maxHeight = "min(56vh, 480px)";
       }
       modalFoot.innerHTML = foot || `<button type="button" class="btn-ghost" data-close>Fechar</button>`;
+      syncModalCloseWithFoot();
       backdrop.classList.add("open");
       enhanceUiSelects(modalBody);
     }
@@ -4262,7 +4262,7 @@
         headTools.hidden = true;
       }
       const closeBtn = document.getElementById("modalClose");
-      if (closeBtn) closeBtn.hidden = false;
+      if (closeBtn) closeBtn.hidden = true;
       backdrop.classList.remove("open");
       if (wasReport) {
         destroyCliFinReportCharts();
@@ -4913,7 +4913,7 @@
         wide: true,
         body,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" data-close onclick="toast('Processo atualizado')">Atualizar</button>`,
       });
     }
@@ -4961,6 +4961,54 @@
       });
     }
 
+    function getCliGestaoPendenciasCount(c) {
+      if (!c) return 0;
+      let n = 0;
+      const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
+      if (cert && cert.status !== "ok") n += 1;
+      n += agendaTasks.filter((t) =>
+        t.clienteId === c.id
+        && !t.arquivada
+        && (t.status === "atrasada" || t.status === "ent-atrasada" || t.status === "justificativa-atrasada")
+      ).length;
+      const procs = (sections.find((s) => s.id === "processos")?.items || []).filter((p) =>
+        p.clienteId === c.id && !p.arquivado && p.sucesso === false
+      );
+      n += procs.length;
+      return n;
+    }
+
+    function openClienteEmpresaConfigModal(c) {
+      if (!c) return;
+      openModal({
+        title: "Configurações da empresa",
+        sub: c.fantasia || c.nome,
+        wide: true,
+        body: `
+          <label>Razão social</label>
+          <input value="${uiSelectEscape(c.razaoSocial || c.nome)}" />
+          <label>Nome fantasia</label>
+          <input value="${uiSelectEscape(c.fantasia || c.nome)}" />
+          <label>CNPJ</label>
+          <input value="${uiSelectEscape(c.cnpj || "")}" />
+          <label>Regime</label>
+          <select>
+            ${REGIME_OPTIONS.map((r) => `<option ${c.regime === r ? "selected" : ""}>${r}</option>`).join("")}
+          </select>
+          <label>Prioridade</label>
+          <select>
+            <option ${c.prioridade === "alta" ? "selected" : ""}>Alta</option>
+            <option ${c.prioridade === "media" ? "selected" : ""}>Média</option>
+            <option ${c.prioridade === "baixa" ? "selected" : ""}>Baixa</option>
+          </select>
+          <label>Cliente desde</label>
+          <input value="${uiSelectEscape(c.clienteDesde || "—")}" />`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" data-close onclick="toast('Configurações salvas')">Salvar</button>`,
+      });
+    }
+
     function renderClientesList() {
       const wrap = document.getElementById("clientesWrap");
       if (!wrap) return;
@@ -4974,6 +5022,19 @@
       if (cliRegimeFilter) {
         list = list.filter((c) => c.regime === cliRegimeFilter);
       }
+      const rowsMeta = list.map((c) => ({
+        c,
+        colabs: (c.funcInternos || 0) + (c.funcExternos || 0),
+        pendencias: getCliGestaoPendenciasCount(c),
+        cert: typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null,
+      }));
+      const kpis = {
+        empresas: list.length,
+        ativos: list.filter((c) => c.status === "Ativo").length,
+        pendencias: rowsMeta.filter((r) => r.pendencias > 0).length,
+        colabs: rowsMeta.reduce((acc, r) => acc + r.colabs, 0),
+        certAlerta: rowsMeta.filter((r) => r.cert && r.cert.status !== "ok").length,
+      };
       wrap.innerHTML = `
         <div class="cli-list-toolbar">
           <div class="proc-filter search">
@@ -4987,29 +5048,74 @@
               ${REGIME_OPTIONS.map((r) => `<option value="${r}" ${cliRegimeFilter === r ? "selected" : ""}>${r}</option>`).join("")}
             </select>
           </div>
-          <span class="cli-count">${list.length} empresa${list.length === 1 ? "" : "s"}</span>
+          <span class="cli-count">${list.length} empresa${list.length === 1 ? "" : "s"} no filtro</span>
           <button type="button" class="btn-primary cli-add-btn" data-cli-add-empresa>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             Nova empresa
           </button>
         </div>
+        <div class="cli-list-kpis" aria-label="Indicadores da carteira filtrada">
+          <div class="cli-list-kpi">
+            <span class="lab">Empresas</span>
+            <strong>${kpis.empresas}</strong>
+          </div>
+          <div class="cli-list-kpi ok">
+            <span class="lab">Ativas</span>
+            <strong>${kpis.ativos}</strong>
+          </div>
+          <div class="cli-list-kpi${kpis.pendencias ? " warn" : ""}">
+            <span class="lab">Com pendências</span>
+            <strong>${kpis.pendencias}</strong>
+          </div>
+          <div class="cli-list-kpi">
+            <span class="lab">Colaboradores</span>
+            <strong>${kpis.colabs}</strong>
+          </div>
+          <div class="cli-list-kpi${kpis.certAlerta ? " bad" : ""}">
+            <span class="lab">Cert. em alerta</span>
+            <strong>${kpis.certAlerta}</strong>
+          </div>
+        </div>
         <div class="cli-grid" id="cliGrid">
           <div class="cli-list-head">
             <span>Identificação</span>
             <span>Unidade</span>
+            <span>Cliente desde</span>
+            <span>Colaboradores</span>
+            <span>Pendências</span>
             <span>Regime</span>
+            <span class="cli-head-actions">Config</span>
           </div>
-          ${list.length ? list.map((c) => {
+          ${rowsMeta.length ? rowsMeta.map(({ c, colabs, pendencias }) => {
             const tipo = c.tipoUnidade || "Matriz";
             const tipoCls = tipo === "Filial" ? "filial" : "matriz";
+            const pendLabel = pendencias === 0
+              ? "Em dia"
+              : `${pendencias} pendência${pendencias === 1 ? "" : "s"}`;
             return `
               <div class="cli-list-row is-${tipoCls}" data-cli-id="${c.id}" data-cli-open="${c.id}" role="button" tabindex="0" aria-label="Abrir ${c.fantasia || c.nome}">
                 <div class="cli-id-cell">
-                  <strong title="${c.razaoSocial || c.nome}">${c.razaoSocial || c.nome}</strong>
+                  <strong title="${c.razaoSocial || c.nome}">${c.fantasia || c.nome}</strong>
                   <span>${c.cnpj} · ${c.code}</span>
                 </div>
                 <div class="cell-tipo"><span class="cli-badge ${tipoCls}">${tipo}</span></div>
-                <div class="cell-regime" style="font-size:.78rem;color:var(--navy)">${c.regime}</div>
+                <div class="cli-meta-cell cli-meta-desde">
+                  <strong>${c.clienteDesde || "—"}</strong>
+                  <i>Cliente desde</i>
+                </div>
+                <div class="cli-meta-cell cli-meta-colab">
+                  <strong>${colabs}</strong>
+                  <i>${c.funcInternos || 0} int. · ${c.funcExternos || 0} ext.</i>
+                </div>
+                <div class="cli-pend-cell">
+                  <span class="cli-pend-pill${pendencias ? " has-pend" : " ok"}">${pendLabel}</span>
+                </div>
+                <div class="cell-regime">${c.regime}</div>
+                <div class="cli-actions">
+                  <button type="button" class="cli-config-btn tip-bottom" data-cli-config="${c.id}" data-tip="Configurações da empresa" aria-label="Configurações de ${c.fantasia || c.nome}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  </button>
+                </div>
               </div>`;
           }).join("") : `<div class="cli-empty-panel">${q || cliRegimeFilter ? "Nenhuma empresa correspondente aos filtros" : "Nenhum cliente cadastrado"}</div>`}
         </div>`;
@@ -5315,18 +5421,6 @@
           uteis: 1,
           utilMe: false,
         },
-        {
-          id: `${c.id}-f6`,
-          autor: "Ana Costa",
-          cargo: "Fiscal",
-          visibilidade: "mim",
-          tema: "preferencias",
-          texto: "Lembrete pessoal\n• Confirmar com o João o WhatsApp atualizado antes da próxima competência\n• Número mudou em junho",
-          at: new Date(2026, 6, 7, 18, 20),
-          pinned: false,
-          uteis: 0,
-          utilMe: false,
-        },
       ];
     }
 
@@ -5336,7 +5430,6 @@
     }
 
     function cliFeedVisLabel(vis) {
-      if (vis === "mim") return "Só para mim";
       if (vis === "privado") return "Privado";
       return "Geral";
     }
@@ -5345,7 +5438,7 @@
       const posts = ensureCliFeed(c).slice();
       const filtered = posts.filter((p) => {
         if (filter === "todos") return true;
-        if (filter === "geral" || filter === "privado" || filter === "mim") return p.visibilidade === filter;
+        if (filter === "geral" || filter === "privado") return p.visibilidade === filter;
         return p.tema === filter;
       });
       filtered.sort((a, b) => {
@@ -5357,12 +5450,12 @@
 
     function renderCliFeed(c) {
       const me = CLI_FEED_ME;
+      if (cliFeedFilter === "mim") cliFeedFilter = "todos";
       const posts = getCliFeedPosts(c);
       const filters = [
         { id: "todos", label: "Todos" },
         { id: "geral", label: "Gerais" },
         { id: "privado", label: "Privados" },
-        { id: "mim", label: "Só para mim" },
         ...CLI_FEED_TEMAS,
       ];
       const temaOpts = CLI_FEED_TEMAS.map((t) => `<option value="${t.id}">${t.label}</option>`).join("");
@@ -5412,7 +5505,6 @@
                 <select id="cliFeedVis" aria-label="Visibilidade">
                   <option value="geral">Geral — todo o time</option>
                   <option value="privado">Privado — só analistas</option>
-                  <option value="mim">Privado — só para mim</option>
                 </select>
                 <select id="cliFeedTema" aria-label="Tema">${temaOpts}</select>
                 <button type="button" class="btn-primary" data-cli-feed-publish>Publicar</button>
@@ -5792,13 +5884,13 @@
 
     const CLI_DOCS_FOLDERS = [
       { id: "recentes", title: "Recentes", badgeUnit: "items", icon: "clock", kind: "recent" },
-      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
+      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "shield-check", kind: "dept" },
+      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "calculator", kind: "dept" },
+      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "users", kind: "dept" },
+      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "wallet", kind: "dept" },
+      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "receipt", kind: "dept" },
+      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "rocket", kind: "dept" },
+      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "scale", kind: "dept" },
       { id: "outros", title: "Outros", badgeUnit: "arquivos", icon: "folder", kind: "plain" },
     ];
 
@@ -5878,12 +5970,68 @@
             <div class="cell"><span class="lab">Tamanho</span><span class="val">${file.tamanho}</span></div>
             <div class="cell"><span class="lab">Atualizado</span><span class="val">${file.atualizado}</span></div>
           </div>`,
-        foot: `<button type="button" class="btn-primary" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
       });
+    }
+
+    function formatCliDocsFileSize(bytes) {
+      const n = Number(bytes) || 0;
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatCliDocsTodayLabel() {
+      const d = APP_TODAY;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    }
+
+    function ingestCliDocsUpload(fileList) {
+      const files = Array.from(fileList || []).filter(Boolean);
+      if (!files.length) return false;
+      const target = cliDocsFolderId || "recentes";
+      if (!cliDocsFilesByFolder[target]) cliDocsFilesByFolder[target] = [];
+      if (!cliDocsFilesByFolder.recentes) cliDocsFilesByFolder.recentes = [];
+      const when = formatCliDocsTodayLabel();
+      files.forEach((file, idx) => {
+        const ext = ((file.name || "").split(".").pop() || "FILE").toUpperCase();
+        const entry = {
+          id: `u${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+          nome: file.name || "arquivo",
+          tipo: ext,
+          atualizado: when,
+          tamanho: formatCliDocsFileSize(file.size),
+        };
+        cliDocsFilesByFolder[target].unshift(entry);
+        if (target !== "recentes") {
+          cliDocsFilesByFolder.recentes.unshift({ ...entry, id: `${entry.id}-r` });
+        }
+      });
+      toast(files.length === 1
+        ? `Arquivo enviado · ${files[0].name}`
+        : `${files.length} arquivos enviados`);
+      renderClientes();
+      return true;
+    }
+
+    function renderCliDocsDropzoneHtml(folderMeta) {
+      const dest = folderMeta ? folderMeta.title : "Recentes";
+      return `
+        <div class="cli-docs-dropzone" data-cli-docs-drop tabindex="0" role="button" aria-label="Enviar arquivos. Arraste e solte ou clique para escolher">
+          <div class="cli-docs-drop-ico" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <h3>Arraste e solte seus arquivos aqui</h3>
+          <p>PDF, imagens, planilhas ou ZIP — um ou vários de uma vez.</p>
+          <span class="btn-primary cli-docs-drop-cta">Escolher arquivos</span>
+          <span class="cli-docs-drop-hint">ou clique em qualquer lugar desta área · destino: <strong>${dest}</strong></span>
+        </div>`;
     }
 
     function renderCliDocumentosPastas(c) {
       const folderMeta = cliDocsFolderId ? getCliDocsFolderMeta(cliDocsFolderId) : null;
+      const portal = isClientePortal();
       const generateMenu = CLI_DOCS_GENERATE_TYPES.map((label) => `
         <button type="button" role="menuitem" data-cli-doc-generate="${label.replace(/"/g, "&quot;")}">${label}</button>
       `).join("");
@@ -5900,6 +6048,7 @@
             ` : `<h3 class="cli-docs-folder-heading">Documentos</h3>`}
           </div>
           <div class="cli-docs-toolbar-actions">
+            ${portal ? "" : `
             <button type="button" class="btn-ghost" data-cli-doc-novo>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               Novo Arquivo
@@ -5910,10 +6059,12 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
               </button>
               <div class="cli-docs-generate-menu" role="menu" aria-label="Tipos de documento">${generateMenu}</div>
-            </div>
-            <input type="file" id="cliDocsUploadInput" class="cli-docs-upload-input" tabindex="-1" aria-hidden="true" />
+            </div>`}
+            <input type="file" id="cliDocsUploadInput" class="cli-docs-upload-input" multiple tabindex="-1" aria-hidden="true" />
           </div>
         </div>`;
+
+      const dropzone = portal ? renderCliDocsDropzoneHtml(folderMeta) : "";
 
       if (folderMeta) {
         const files = getCliDocsFiles(folderMeta.id);
@@ -5942,8 +6093,9 @@
           : `<div class="cli-empty-panel">Nenhum documento nesta pasta</div>`;
 
         return `
-          <div class="cli-docs-hub" data-cliente="${c.id}">
+          <div class="cli-docs-hub${portal ? " is-portal" : ""}" data-cliente="${c.id}">
             ${toolbar}
+            ${dropzone}
             <div class="cli-docs-files" role="list" aria-label="Arquivos em ${folderMeta.title}">${list}</div>
           </div>`;
       }
@@ -5960,9 +6112,13 @@
       }).join("");
 
       return `
-        <div class="cli-docs-hub" data-cliente="${c.id}">
+        <div class="cli-docs-hub${portal ? " is-portal" : ""}" data-cliente="${c.id}">
           ${toolbar}
-          <div class="cli-docs-folders" role="list" aria-label="Pastas de documentos">${grid}</div>
+          ${dropzone}
+          <div class="cli-docs-folders-block">
+            <div class="cli-docs-folders-label">Pastas do gerenciador</div>
+            <div class="cli-docs-folders" role="list" aria-label="Pastas de documentos">${grid}</div>
+          </div>
         </div>`;
     }
 
@@ -6265,7 +6421,7 @@
       if (isClientePortal()) {
         const pageId = CLIENT_PORTAL_TAB_IDS.includes(cliPerfilTab)
           ? cliPerfilTab
-          : (CLIENT_PORTAL_TAB_IDS.includes(current) ? current : "documentos");
+          : (CLIENT_PORTAL_TAB_IDS.includes(current) ? current : "entregas");
         renderPortalClientePage(pageId);
         return;
       }
@@ -7655,8 +7811,8 @@
               <span class="laudo-pill">Cliente · <strong>${uiSelectEscape(L.cliente)}</strong></span>
               <span class="laudo-pill">${uiSelectEscape(L.periodoLabel)}</span>
               <button type="button" class="laudo-export" data-cli-fin-audit="export-laudo">
-                <i data-lucide="download"></i>
-                Exportar PDF
+                <i data-lucide="file-search"></i>
+                Pré-visualizar laudo
               </button>
             </div>
           </div>
@@ -7767,23 +7923,32 @@
               <p>Evidências transacionais · busca, filtros e paginação.</p>
             </div>
             <div class="laudo-table-tools">
-              <input type="search" id="cliLaudoTableSearch" placeholder="Buscar data, adquirente, bandeira…" value="${uiSelectEscape(cliFinAudit.laudoQuery || "")}" data-cli-fin-laudo="search" />
-              <select id="cliLaudoTableBandeira" data-cli-fin-laudo="bandeira" data-no-ui="1" aria-label="Filtrar bandeira">
-                <option value="" ${!cliFinAudit.laudoBandeira ? "selected" : ""}>Bandeira · todas</option>
-                ${(L.bandeirasOpts || []).map((b) => `
-                  <option value="${uiSelectEscape(b)}" ${cliFinAudit.laudoBandeira === b ? "selected" : ""}>${uiSelectEscape(b)}</option>`).join("")}
-              </select>
-              <select id="cliLaudoTableStatus" data-cli-fin-laudo="status" data-no-ui="1" aria-label="Filtrar status">
-                <option value="" ${!cliFinAudit.laudoStatus ? "selected" : ""}>Status · todos</option>
-                <option value="Alerta" ${cliFinAudit.laudoStatus === "Alerta" ? "selected" : ""}>Alerta</option>
-                <option value="OK" ${cliFinAudit.laudoStatus === "OK" ? "selected" : ""}>OK</option>
-              </select>
-              <select id="cliLaudoTableSort" data-cli-fin-laudo="sort" data-no-ui="1" aria-label="Ordenar">
-                <option value="diff-desc" ${cliFinAudit.laudoSort === "diff-desc" ? "selected" : ""}>Maior diferença</option>
-                <option value="diff-asc" ${cliFinAudit.laudoSort === "diff-asc" ? "selected" : ""}>Menor diferença</option>
-                <option value="valor-desc" ${cliFinAudit.laudoSort === "valor-desc" ? "selected" : ""}>Maior valor</option>
-                <option value="data-asc" ${cliFinAudit.laudoSort === "data-asc" ? "selected" : ""}>Data</option>
-              </select>
+              <div class="proc-filter search">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" id="cliLaudoTableSearch" placeholder="Buscar data, adquirente, bandeira…" value="${uiSelectEscape(cliFinAudit.laudoQuery || "")}" data-cli-fin-laudo="search" aria-label="Buscar divergências" />
+              </div>
+              <div class="proc-filter field">
+                <select id="cliLaudoTableBandeira" data-cli-fin-laudo="bandeira" data-no-ui="1" aria-label="Filtrar bandeira">
+                  <option value="" ${!cliFinAudit.laudoBandeira ? "selected" : ""}>Bandeira · todas</option>
+                  ${(L.bandeirasOpts || []).map((b) => `
+                    <option value="${uiSelectEscape(b)}" ${cliFinAudit.laudoBandeira === b ? "selected" : ""}>${uiSelectEscape(b)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="proc-filter field">
+                <select id="cliLaudoTableStatus" data-cli-fin-laudo="status" data-no-ui="1" aria-label="Filtrar status">
+                  <option value="" ${!cliFinAudit.laudoStatus ? "selected" : ""}>Status · todos</option>
+                  <option value="Alerta" ${cliFinAudit.laudoStatus === "Alerta" ? "selected" : ""}>Alerta</option>
+                  <option value="OK" ${cliFinAudit.laudoStatus === "OK" ? "selected" : ""}>OK</option>
+                </select>
+              </div>
+              <div class="proc-filter field">
+                <select id="cliLaudoTableSort" data-cli-fin-laudo="sort" data-no-ui="1" aria-label="Ordenar">
+                  <option value="diff-desc" ${cliFinAudit.laudoSort === "diff-desc" ? "selected" : ""}>Maior diferença</option>
+                  <option value="diff-asc" ${cliFinAudit.laudoSort === "diff-asc" ? "selected" : ""}>Menor diferença</option>
+                  <option value="valor-desc" ${cliFinAudit.laudoSort === "valor-desc" ? "selected" : ""}>Maior valor</option>
+                  <option value="data-asc" ${cliFinAudit.laudoSort === "data-asc" ? "selected" : ""}>Data</option>
+                </select>
+              </div>
             </div>
             <div class="laudo-full-table-wrap">
               <table class="laudo-full-table">
@@ -7893,9 +8058,10 @@
     --ok: #2f9e6b;
     --bad: #b33a4a;
     --warn: #c47f16;
-    --bg: #f3f5f8;
-    --card: #fff;
-    --border: #dbe3ef;
+    --bg: #e8edf4;
+    --card: #ffffff;
+    --surface-2: #f5f8fc;
+    --border: #d4dce8;
   }
   * { box-sizing: border-box; }
   body {
@@ -7926,8 +8092,8 @@
   .client p { margin: 0; color: var(--muted); font-size: .88rem; }
   .badge {
     display: inline-flex; flex-direction: column; justify-content: center; gap: 2px;
-    min-width: 160px; padding: 8px 12px; border-radius: 10px;
-    border: 1px solid var(--border); background: #f7f9fc; font-weight: 700; font-size: .88rem;
+    min-width: 160px; padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-2); font-weight: 700; font-size: .88rem;
   }
   .badge .lab { font-size: .66rem; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .badge.ok { color: #1f7a52; background: rgba(47,158,107,.1); border-color: rgba(47,158,107,.28); }
@@ -7961,7 +8127,7 @@
     margin-bottom: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px;
     font-size: .82rem;
   }
-  .facts div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed #e8eef6; padding: 4px 0; }
+  .facts div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding: 4px 0; }
   .facts div:nth-last-child(-n+2) { border-bottom: 0; }
   .facts span { color: var(--muted); }
   .facts strong { color: var(--navy); font-weight: 700; text-align: right; }
@@ -7970,22 +8136,22 @@
   .insights { margin: 0; padding: 0; list-style: none; }
   .insights li {
     margin: 0 0 8px; padding: 10px 12px 10px 14px; border: 1px solid var(--border);
-    border-radius: 10px; background: #fafbfd; font-size: .84rem; line-height: 1.45;
+    border-radius: 8px; background: var(--surface-2); font-size: .84rem; line-height: 1.45;
     box-shadow: inset 3px 0 0 var(--warn);
   }
   .insights li.bad { box-shadow: inset 3px 0 0 var(--bad); }
   .insights li.alerta { box-shadow: inset 3px 0 0 var(--warn); }
-  .insights li.warn { box-shadow: inset 3px 0 0 #c9a227; }
+  .insights li.warn { box-shadow: inset 3px 0 0 var(--warn); }
   .insights li.ok { box-shadow: inset 3px 0 0 var(--ok); }
   .insights li strong { display: inline; }
   .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: .74rem; }
   th {
     text-align: left; font-size: .66rem; color: var(--muted); font-weight: 700;
-    padding: 9px 8px; border-bottom: 1px solid var(--border); background: #f7f9fc;
+    padding: 9px 8px; border-bottom: 1px solid var(--border); background: var(--surface-2);
     white-space: nowrap;
   }
-  td { padding: 8px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
   tr:last-child td { border-bottom: 0; }
   .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td.bad { color: var(--bad); font-weight: 700; }
@@ -8521,7 +8687,7 @@
                 </div>
               </div>
               <div class="fin-emit-actions">
-                ${editing ? `<button type="button" class="btn-ghost" data-fin-acq="cancel-edit">Cancelar edição</button>` : ""}
+                ${editing ? `<button type="button" class="btn-ghost" data-fin-acq="cancel-edit">Descartar alterações</button>` : ""}
                 <button type="button" class="btn-primary" ${saveAttr}>${saveLabel}</button>
               </div>
             </div>
@@ -8574,6 +8740,7 @@
         body: renderFinAdquirentesHtml({ stacked: true, saveLabel: "Salvar regra", saveAttr: 'data-fin-cfg="save-acq"' }),
         wide: true,
         auditRules: true,
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
       });
       const tools = document.getElementById("modalHeadTools");
       const closeBtn = document.getElementById("modalClose");
@@ -8691,7 +8858,7 @@
       if (cancelEdit) {
         e.preventDefault();
         resetAcqForm({ refresh: true });
-        toast("Edição cancelada");
+        toast("Alterações descartadas");
         return true;
       }
       if (e.target.closest("[data-fin-cfg-del-acq]")) return false;
@@ -8779,7 +8946,7 @@
       }
       tools.innerHTML = "";
       tools.hidden = true;
-      if (closeBtn) closeBtn.hidden = false;
+      if (closeBtn) closeBtn.hidden = true;
     }
 
     function setCliFinAuditExpanded(on) {
@@ -8841,6 +9008,7 @@
       modalSub.textContent = `${c?.fantasia || c?.nome || "Cliente"} · ${cliFinAuditPeriodLabel()}${cliFinAudit.fileName ? ` · ${cliFinAudit.fileName}` : ""}`;
       modalBody.innerHTML = renderCliFinAuditModalInner();
       modalFoot.innerHTML = `<button type="button" class="btn-ghost" data-close>Fechar</button>`;
+      syncModalCloseWithFoot();
       enhanceUiSelects(modalBody);
       syncCliFinAuditHeadTools();
       applyCliFinAuditView();
@@ -10060,67 +10228,74 @@
       const q = normalizeSearchText(finDash.empresaQuery);
       return CLIENTES.filter((c) => {
         if (!q) return true;
-        return normalizeSearchText([c.fantasia, c.nome, c.razaoSocial, c.cnpj].join(" ")).includes(q);
+        return normalizeSearchText([c.fantasia, c.nome, c.razaoSocial, c.cnpj, c.code].join(" ")).includes(q);
       }).slice(0, limit);
     }
 
-    function renderFinClientAcMenuHtml() {
-      const q = normalizeSearchText(finDash.empresaQuery);
-      const showAll = !q || "todos os clientes".includes(q) || "carteira".includes(q);
-      const acMatches = getFinClientAcMatches();
-      const allBtn = showAll
-        ? `<button type="button" class="fin-ac-all${isFinAllClientsScope() ? " is-current" : ""}" data-fin-ac="all">
-            <strong>Todos os Clientes</strong>
-            <span>Visão consolidada da carteira · ${CLIENTES.length} empresas</span>
-          </button>`
-        : "";
-      const list = acMatches.length
-        ? acMatches.map((c) => `
-            <button type="button" data-fin-ac="${c.id}" class="${finDash.empresaId === c.id ? "is-current" : ""}">
-              <strong>${uiSelectEscape(c.fantasia || c.nome)}</strong>
-              <span>${uiSelectEscape(c.cnpj || "")}</span>
-            </button>`).join("")
-        : (showAll ? "" : `<div class="fin-ac-empty">Nenhum cliente encontrado</div>`);
-      return `${allBtn}${list}` || `<div class="fin-ac-empty">Nenhum cliente encontrado</div>`;
+    function filterFinEmpresaOptions(term) {
+      const q = normalizeSearchText(term || "");
+      const wrap = document.getElementById("finEmpresaOptions");
+      const empty = document.getElementById("finEmpresaEmpty");
+      if (!wrap) return;
+      let visible = 0;
+      wrap.querySelectorAll(".empresa-option").forEach((opt) => {
+        const isAll = (opt.dataset.finEmpresaOpt || opt.dataset.id) === "all";
+        const hay = normalizeSearchText([
+          opt.dataset.short,
+          opt.dataset.code,
+          opt.dataset.cnpj,
+          opt.textContent,
+          isAll ? "todos as empresas consolidada carteira" : "",
+        ].join(" "));
+        const match = !q || hay.includes(q) || (isAll && ("todos".includes(q) || "carteira".includes(q)));
+        opt.classList.toggle("hidden", !match);
+        if (match) visible += 1;
+      });
+      empty?.classList.toggle("show", visible === 0);
     }
 
     function renderFinClientPickerHtml() {
-      if (!finDash.acOpen) {
-        if (isFinAllClientsScope()) {
-          return `
-            <div class="fin-client-picker">
-              <button type="button" class="fin-client-chip is-all" data-fin-client-change aria-label="Trocar escopo de cliente">
-                <div class="info">
-                  <strong>Todos os Clientes</strong>
-                  <span>Visão consolidada · ${CLIENTES.length} empresas</span>
-                </div>
-                <span class="fin-client-change" aria-hidden="true">Trocar</span>
-              </button>
-            </div>`;
-        }
-        const selected = getFinSelectedCliente();
-        if (selected) {
-          const nome = uiSelectEscape(selected.fantasia || selected.nome || "Cliente");
-          const cnpj = uiSelectEscape(selected.cnpj || "CNPJ não informado");
-          return `
-            <div class="fin-client-picker">
-              <button type="button" class="fin-client-chip" data-fin-client-change aria-label="Trocar cliente">
-                <div class="info">
-                  <strong>${nome}</strong>
-                  <span>${cnpj}</span>
-                </div>
-                <span class="fin-client-change" aria-hidden="true">Trocar</span>
-              </button>
-            </div>`;
-        }
-      }
+      const isAll = isFinAllClientsScope();
+      const selected = getFinSelectedCliente();
+      const code = isAll ? "" : (selected?.code || "");
+      const name = isAll ? "Todas as empresas" : (selected?.fantasia || selected?.nome || "Cliente");
+      const cnpjLine = isAll
+        ? "Visão consolidada do grupo"
+        : (selected?.cnpj ? `CNPJ ${selected.cnpj}` : "");
+      const options = CLIENTES.map((c) => {
+        const active = !isAll && finDash.empresaId === c.id ? " active" : "";
+        const label = uiSelectEscape(c.nome || c.fantasia || "");
+        return `
+            <button type="button" class="empresa-option${active}" data-fin-empresa-opt="${c.id}" data-code="${uiSelectEscape(c.code || "")}" data-short="${label}" data-cnpj="${uiSelectEscape(c.cnpj || "")}">
+              <span class="opt-main"><span class="opt-code">${uiSelectEscape(c.code || "")}</span>${label}</span>
+              <small>CNPJ ${uiSelectEscape(c.cnpj || "")}${c.estado ? ` · ${uiSelectEscape(c.estado)}` : ""}${c.status ? ` · ${uiSelectEscape(c.status)}` : ""}</small>
+            </button>`;
+      }).join("");
       return `
         <div class="fin-client-picker">
-          <div class="proc-filter search">
-            <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" id="finDashEmpresa" placeholder="Buscar cliente, CNPJ ou Todos..." value="${(finDash.empresaQuery || "").replace(/"/g, "&quot;")}" autocomplete="off" aria-label="Buscar cliente" aria-expanded="${finDash.acOpen ? "true" : "false"}" aria-controls="finDashAcMenu" />
-            <div class="fin-ac-menu${finDash.acOpen ? " open" : ""}" id="finDashAcMenu" role="listbox">
-              ${renderFinClientAcMenuHtml()}
+          <div class="empresa-wrap${finDash.acOpen ? " open" : ""}" id="finEmpresaWrap">
+            <button type="button" class="empresa-trigger tip-bottom" id="finEmpresaSelectBtn" data-tip="Trocar empresa do grupo" aria-expanded="${finDash.acOpen ? "true" : "false"}" aria-haspopup="listbox">
+              <span class="trigger-text">
+                <span class="name-line">
+                  <span class="empresa-code" id="finEmpresaCode"${code ? "" : " hidden"}>${uiSelectEscape(code)}</span>
+                  <span id="finEmpresaName">${uiSelectEscape(name)}</span>
+                </span>
+                <span class="empresa-cnpj" id="finEmpresaCnpj"${cnpjLine ? "" : " hidden"}>${uiSelectEscape(cnpjLine)}</span>
+              </span>
+              <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="empresa-menu" id="finEmpresaMenu">
+              <div class="empresa-search">
+                <input type="search" id="finEmpresaSearch" placeholder="Buscar empresa..." autocomplete="off" aria-label="Buscar empresa" />
+              </div>
+              <div class="empresa-options" id="finEmpresaOptions">
+                <button type="button" class="empresa-option${isAll ? " active" : ""}" data-fin-empresa-opt="all" data-code="" data-short="Todas as empresas" data-cnpj="">
+                  <span class="opt-main">Todas as empresas</span>
+                  <small>Consolida as ${CLIENTES.length} empresas do grupo</small>
+                </button>
+                ${options}
+              </div>
+              <div class="empresa-empty" id="finEmpresaEmpty">Nenhuma empresa encontrada</div>
             </div>
           </div>
         </div>`;
@@ -10130,47 +10305,53 @@
       const host = document.querySelector("#financeiroWrap .fin-global-header");
       const current = host?.querySelector(".fin-client-picker");
       if (!host || !current) return false;
-      const keepFocus = opts.focus !== false;
-      const pos = opts.selectionStart;
+      const keepFocus = opts.focus === true;
       const tmp = document.createElement("div");
       tmp.innerHTML = renderFinClientPickerHtml().trim();
       const next = tmp.firstElementChild;
       if (!next) return false;
       current.replaceWith(next);
       if (keepFocus && finDash.acOpen) {
-        const el = document.getElementById("finDashEmpresa");
+        const el = document.getElementById("finEmpresaSearch");
         if (el) {
           el.focus();
-          if (typeof pos === "number") {
-            try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
-          }
+          el.value = "";
+          filterFinEmpresaOptions("");
         }
       }
       return true;
     }
 
     function refreshFinClientAcMenu() {
-      const menu = document.getElementById("finDashAcMenu");
-      const input = document.getElementById("finDashEmpresa");
-      if (!menu) return refreshFinClientPicker({ focus: true, selectionStart: input?.selectionStart });
-      menu.innerHTML = renderFinClientAcMenuHtml();
-      menu.classList.toggle("open", !!finDash.acOpen);
-      if (input) input.setAttribute("aria-expanded", finDash.acOpen ? "true" : "false");
-      return true;
+      return refreshFinClientPicker({ focus: !!finDash.acOpen });
     }
 
     let finClientAcTimer = null;
 
-    function scheduleFinClientAcRefresh(selectionStart) {
+    function scheduleFinClientAcRefresh() {
       if (finClientAcTimer) clearTimeout(finClientAcTimer);
       finClientAcTimer = setTimeout(() => {
         finClientAcTimer = null;
-        refreshFinClientAcMenu();
-        const el = document.getElementById("finDashEmpresa");
-        if (el && typeof selectionStart === "number") {
-          try { el.setSelectionRange(selectionStart, selectionStart); } catch (_) { /* ignore */ }
+        filterFinEmpresaOptions(document.getElementById("finEmpresaSearch")?.value || "");
+      }, 40);
+    }
+
+    function toggleFinEmpresaMenu(forceOpen) {
+      const wrap = document.getElementById("finEmpresaWrap");
+      const btn = document.getElementById("finEmpresaSelectBtn");
+      if (!wrap || !btn) return;
+      const willOpen = forceOpen ?? !wrap.classList.contains("open");
+      finDash.acOpen = willOpen;
+      wrap.classList.toggle("open", willOpen);
+      btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      if (willOpen) {
+        const search = document.getElementById("finEmpresaSearch");
+        if (search) {
+          search.value = "";
+          filterFinEmpresaOptions("");
+          setTimeout(() => search.focus(), 0);
         }
-      }, 60);
+      }
     }
 
     function finTabIcon(id) {
@@ -10579,7 +10760,7 @@
             </div>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finConcAddSave">Salvar lançamento</button>`,
       });
       prepareFinConcModalChrome();
@@ -11669,7 +11850,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Relatório Executivo — ${d.nome}</title>
 <style>
-  :root { --navy:#1c386e; --accent:#28519c; --muted:#6b7c93; --ok:#2f9e6b; --bad:#b33a4a; --bg:#f3f5f8; --card:#fff; --border:#dbe3ef; }
+  :root { --navy:#1c386e; --accent:#28519c; --muted:#6b7c93; --ok:#2f9e6b; --bad:#b33a4a; --bg:#e8edf4; --card:#ffffff; --surface-2:#f5f8fc; --border:#d4dce8; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: "DM Sans", "Segoe UI", system-ui, sans-serif; background:#fff; color:var(--navy); }
   .wrap { max-width: 820px; margin: 0 auto; padding: 28px 24px 40px; }
@@ -11681,7 +11862,7 @@
     .client { margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
   .client h1 { margin:0 0 6px; font-size:1.35rem; }
   .client p { margin:0; color:var(--muted); font-size:.9rem; }
-  .badge { display:inline-flex; flex-direction:column; justify-content:center; gap:2px; min-width:140px; min-height:44px; padding:6px 12px; border-radius:10px; border:1px solid var(--border); background:#f7f9fc; font-weight:700; font-size:.92rem; color:var(--navy); box-sizing:border-box; }
+  .badge { display:inline-flex; flex-direction:column; justify-content:center; gap:2px; min-width:140px; min-height:44px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); font-weight:700; font-size:.92rem; color:var(--navy); box-sizing:border-box; }
   .badge .lab { font-size:.66rem; font-weight:650; color:var(--muted); }
   .badge.ok,.badge.excel { color:#1f7a52; }
   .badge.warn { color:#9a5f0c; }
@@ -11814,34 +11995,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Dashboard Financeiro — ${d.nome}</title>
 <style>
-  :root { --navy:#1c386e; --accent:#28519c; --muted:#6b7c93; --ok:#2f9e6b; --bad:#b33a4a; --bg:#f3f5f8; --card:#fff; --border:#dbe3ef; }
+  :root { --navy:#1c386e; --accent:#28519c; --muted:#6b7c93; --ok:#2f9e6b; --bad:#b33a4a; --bg:#e8edf4; --card:#ffffff; --surface-2:#f5f8fc; --border:#d4dce8; }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: "Segoe UI", system-ui, sans-serif; background: linear-gradient(160deg,#e8eef8,#f7f9fc 40%,#eef6f2); color:var(--navy); }
+  body { margin:0; font-family: "Segoe UI", system-ui, sans-serif; background: linear-gradient(160deg,var(--bg),var(--surface-2) 40%,#eef6f2); color:var(--navy); }
   .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 48px; }
-  .hero { background: var(--card); border:1px solid var(--border); border-radius:16px; padding:22px 24px; margin-bottom:18px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .hero { background: var(--card); border:1px solid var(--border); border-radius:12px; padding:22px 24px; margin-bottom:18px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .hero h1 { margin:0 0 6px; font-size:1.35rem; }
   .hero p { margin:0; color:var(--muted); font-size:.9rem; }
-  .badge { align-self:flex-start; padding:6px 12px; border-radius:999px; font-weight:700; font-size:.75rem; background:rgba(59,111,212,.12); color:var(--accent); }
+  .badge { align-self:flex-start; padding:6px 12px; border-radius:var(--radius-pill); font-weight:700; font-size:.75rem; background:color-mix(in srgb, var(--accent) 12%, transparent); color:var(--accent); }
   .badge.ok,.badge.excel { background:rgba(47,158,107,.14); color:#1f7a52; }
   .badge.warn { background:rgba(196,127,22,.16); color:#9a5f0c; }
   .badge.bad { background:rgba(179,58,74,.14); color:var(--bad); }
   .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px; }
-  .kpi { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; border-left:4px solid var(--accent); }
+  .kpi { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:18px; border-left:4px solid var(--accent); }
   .kpi.receber { border-left-color:var(--ok); }
   .kpi.pagar { border-left-color:var(--bad); }
   .kpi .lab { font-size:.75rem; color:var(--muted); font-weight:650; }
   .kpi .val { font-size:1.55rem; font-weight:800; margin-top:6px; letter-spacing:-.02em; }
   .kpi .sub { font-size:.72rem; color:var(--muted); margin-top:4px; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:18px 20px; }
   .card h2 { margin:0 0 4px; font-size:1.05rem; }
   .card .sub { color:var(--muted); font-size:.78rem; margin-bottom:12px; }
   table { width:100%; border-collapse:collapse; font-size:.86rem; }
   th { text-align:left; font-size:.7rem; color:var(--muted); padding:8px 6px; border-bottom:1px solid var(--border); }
-  td { padding:9px 6px; border-bottom:1px solid #eef2f7; }
-  tr.parent td { background:#f7f9fc; }
+  td { padding:9px 6px; border-bottom:1px solid var(--border); }
+  tr.parent td { background:var(--surface-2); }
   td.child { padding-left:18px; color:#3a4d6b; }
   .num { text-align:right; font-variant-numeric:tabular-nums; }
-  .delta { font-weight:700; font-size:.75rem; padding:2px 8px; border-radius:999px; }
+  .delta { font-weight:700; font-size:.75rem; padding:2px 8px; border-radius:var(--radius-pill); }
   .delta.up { background:rgba(47,158,107,.12); color:#1f7a52; }
   .delta.down { background:rgba(179,58,74,.12); color:var(--bad); }
   .foot { margin-top:18px; font-size:.72rem; color:var(--muted); text-align:center; }
@@ -12274,7 +12455,7 @@
             <button type="button" class="btn-primary" id="finOfxPickFile">Importar</button>
             <div class="hub-hint">Protótipo: ao clicar em Importar, a listagem de movimentações é aberta.</div>
           </div>`,
-        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
       });
       prepareFinConcModalChrome();
       document.getElementById("finOfxPickFile")?.addEventListener("click", () => {
@@ -12554,9 +12735,9 @@
             </div>
           </div>`,
         foot: isExport ? `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finOfxExportAll">Exportar tudo</button>` : `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finOfxImportAll">Importar tudo</button>`,
       });
 
@@ -12865,7 +13046,7 @@
         sub,
         wide: true,
         body: renderFinConcRegrasBodyHtml(),
-        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
       });
       prepareFinConcModalChrome();
       bindFinConcRegrasEvents(() => openFinConcRegrasModal());
@@ -13025,7 +13206,7 @@
             </div>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" id="finBancoEditCancel">Fechar</button>
+          <button type="button" class="btn-ghost" id="finBancoEditCancel">Cancelar</button>
           <button type="button" class="btn-primary" id="finBancoEditSave">Salvar</button>`,
       });
       prepareFinConcModalChrome();
@@ -13130,7 +13311,7 @@
             </label>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finConcBancoConfirm">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
             Confirmar
@@ -14748,7 +14929,7 @@
 
       const tabsHtml = `
         <nav class="fin-report-nav" role="tablist" aria-label="Relatórios financeiros">
-          <button type="button" role="tab" data-fin-report-tab="visao" class="${isVisao ? "active" : ""}" aria-selected="${isVisao}">Visão Geral</button>
+          <button type="button" role="tab" data-fin-report-tab="visao" class="${isVisao ? "active" : ""}" aria-selected="${isVisao}">Resumo</button>
           <button type="button" role="tab" data-fin-report-tab="dre" class="${reportTab === "dre" ? "active" : ""}" aria-selected="${reportTab === "dre"}">DRE</button>
           <button type="button" role="tab" data-fin-report-tab="dfc" class="${reportTab === "dfc" ? "active" : ""}" aria-selected="${reportTab === "dfc"}">DFC</button>
           <button type="button" role="tab" data-fin-report-tab="ebitda" class="${reportTab === "ebitda" ? "active" : ""}" aria-selected="${reportTab === "ebitda"}">EBITDA</button>
@@ -15759,7 +15940,7 @@
               <div class="empty-ico" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
-              <p>Selecione um cliente específico para operar nesta aba. A visão consolidada está disponível em <strong>Visão Geral</strong>.</p>
+              <p>Selecione um cliente específico para operar nesta aba. A visão consolidada está disponível em <strong>Painel</strong>.</p>
             </div>
           </div>`;
       }
@@ -16108,7 +16289,7 @@
         sub: "Informe a data inicial e a data final do filtro",
         body: `
           <div class="cfg-date-range-modal">
-            <p class="hint">Escolha o período no mesmo formato da Visão Geral.</p>
+            <p class="hint">Escolha o período no mesmo formato do Painel.</p>
             ${renderCfgDateRangeHtml({
               iniId: "cfgPeriodoIni",
               fimId: "cfgPeriodoFim",
@@ -16528,7 +16709,7 @@
             <div class="cfg-molde-chip"><span>${t}</span><button type="button" data-del-tag="${i}">Remover</button></div>
           `).join("") : `<div class="cfg-molde-empty">Nenhuma tag cadastrada.</div>`}</div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="cfgTagAdd">Adicionar tag</button>`,
       });
       const refresh = () => openCfgMoldeTagsModal(id);
@@ -16613,7 +16794,7 @@
             <span>${i.cliente}</span>
             <span class="proc-badge ${i.status === "Ativa" ? "sucesso" : "arquivado"}">${i.status}</span>
           </div>`).join("") || `<div class="cfg-molde-empty">Nenhuma instância</div>`,
-        foot: `<button type="button" class="btn-primary" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
       });
     }
 
@@ -16935,7 +17116,7 @@
           <label style="margin-top:12px">Novo grupo</label>
           <input id="cfgGrupoNome" placeholder="Nome do grupo" />`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="cfgGrupoAdd">Criar grupo</button>`,
       });
       document.getElementById("cfgGrupoAdd")?.addEventListener("click", () => {
@@ -17437,9 +17618,9 @@
             </div>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-ghost" id="cfgEmailTest">Testar envio</button>
-          <button type="button" class="btn-primary" id="cfgEmailSave" style="min-width:110px;border-radius:999px">Salvar</button>`,
+          <button type="button" class="btn-primary" id="cfgEmailSave" style="min-width:110px;border-radius:var(--radius-pill)">Salvar</button>`,
       });
 
       const pendente = document.getElementById("cfgEmailPendente");
@@ -17495,7 +17676,7 @@
               <div class="meta">${r.tempo}</div>
             </div>
           </div>`).join(""),
-        foot: `<button type="button" class="btn-primary" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
       });
     }
 
@@ -17707,7 +17888,7 @@
                   <h3>Classificador inteligente</h3>
                   <p>Operação, métricas e configuração do fluxo documental automático.</p>
                 </div>
-                <button type="button" class="btn-primary" id="cfgClassifRefresh" style="border-radius:999px">
+                <button type="button" class="btn-primary" id="cfgClassifRefresh" style="border-radius:var(--radius-pill)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:-2px"><path d="M21 12a9 9 0 0 0-14.3-7.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 14.3 7.2L21 16"/><path d="M16 21h5v-5"/></svg>
                   Atualizar
                 </button>
@@ -17721,11 +17902,11 @@
                     <input type="search" id="cfgClassifQ" placeholder="Empresas" value="${(query || "").replace(/"/g, "&quot;")}" />
                     <button type="button" class="clear" id="cfgClassifClearQ" aria-label="Limpar busca">×</button>
                   </div>
-                  <button type="button" class="btn-primary" id="cfgClassifBuscar" style="border-radius:999px;height:38px">
+                  <button type="button" class="btn-primary" id="cfgClassifBuscar" style="border-radius:var(--radius-pill);height:38px">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:-2px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     Buscar
                   </button>
-                  <button type="button" class="btn-ghost" id="cfgClassifLimpar" style="border-radius:999px;height:38px">
+                  <button type="button" class="btn-ghost" id="cfgClassifLimpar" style="border-radius:var(--radius-pill);height:38px">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:-2px"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                     Limpar filtros
                   </button>
@@ -17738,7 +17919,7 @@
                   </button>
                   <div id="cfgClassifTagsMenu" hidden style="display:none;flex-wrap:wrap;gap:6px;margin-top:8px">
                     ${allTags.map((t) => `
-                      <label class="cfg-obr-check" style="border:1px solid var(--border);border-radius:999px;padding:4px 10px">
+                      <label class="cfg-obr-check" style="border:1px solid var(--border);border-radius:var(--radius-pill);padding:4px 10px">
                         <input type="checkbox" data-cfg-classif-tag="${t}" ${selectedTags.includes(t) ? "checked" : ""} /> ${t}
                       </label>`).join("")}
                   </div>
@@ -17997,7 +18178,7 @@
                 <article class="cfg-sess-card">
                   <div class="cfg-sess-card-head">
                     <h3>Atividade ao longo do tempo</h3>
-                    <select aria-label="Granularidade" style="height:30px;border:1px solid var(--border);border-radius:7px;padding:0 8px;font:inherit;font-size:.72rem;background:transparent;color:var(--navy-deep)">
+                    <select aria-label="Granularidade" style="height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 8px;font:inherit;font-size:.72rem;background:transparent;color:var(--navy-deep)">
                       <option>Diário</option>
                       <option>Semanal</option>
                       <option>Mensal</option>
@@ -18067,7 +18248,7 @@
                     <button type="button" aria-label="Anterior" data-cfg-act="sess-prev">‹</button>
                     <button type="button" aria-label="Próxima" data-cfg-act="sess-next">›</button>
                     <span>Itens por página</span>
-                    <select aria-label="Itens por página" style="height:28px;border:1px solid var(--border);border-radius:6px;padding:0 6px;font:inherit;font-size:.72rem;background:transparent">
+                    <select aria-label="Itens por página" style="height:28px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 6px;font:inherit;font-size:.72rem;background:transparent">
                       <option>10</option>
                       <option selected>25</option>
                       <option>50</option>
@@ -18780,7 +18961,7 @@
               sub: "Tentativa de reconexão",
               body: `<p style="margin:0;font-size:.86rem;line-height:1.5">Reconsultando <code>/robos/painel</code>…<br><br>Último erro: <strong style="color:#b42318">503 Connection refused</strong> no host automation-worker:8090.</p>`,
               foot: `
-                <button type="button" class="btn-ghost" data-close>Fechar</button>
+                <button type="button" class="btn-ghost" data-close>Cancelar</button>
                 <button type="button" class="btn-primary" id="cfgRobRetry">Tentar novamente</button>`,
             });
             document.getElementById("cfgRobRetry")?.addEventListener("click", () => {
@@ -18897,11 +19078,19 @@
                 ? `<button type="button" class="btn-ghost" id="secClearCliFilter" style="height:30px;padding:0 10px;font-size:.72rem">Limpar filtros</button>`
                 : ""}
             </div>
-            <div class="sec-kpis" aria-label="Resumo de certificados">
-              <div class="sec-kpi total"><span class="lab">Total</span><strong>${counts.total}</strong></div>
-              <div class="sec-kpi ok"><span class="lab">Válidos</span><strong>${counts.ok}</strong></div>
-              <div class="sec-kpi warn"><span class="lab">A vencer</span><strong>${counts.aVencer}</strong></div>
-              <div class="sec-kpi bad"><span class="lab">Vencidos</span><strong>${counts.vencidos}</strong></div>
+            <div class="sec-kpis" role="toolbar" aria-label="Filtrar por status">
+              <button type="button" class="sec-kpi total${securityCertFilterMode === "all" ? " active" : ""}" data-sec-filter="all" aria-pressed="${securityCertFilterMode === "all"}">
+                <span class="lab">Total</span><strong>${counts.total}</strong>
+              </button>
+              <button type="button" class="sec-kpi ok${securityCertFilterMode === "ok" ? " active" : ""}" data-sec-filter="ok" aria-pressed="${securityCertFilterMode === "ok"}">
+                <span class="lab">Válidos</span><strong>${counts.ok}</strong>
+              </button>
+              <button type="button" class="sec-kpi warn${securityCertFilterMode === "a-vencer" ? " active" : ""}" data-sec-filter="a-vencer" aria-pressed="${securityCertFilterMode === "a-vencer"}">
+                <span class="lab">A vencer</span><strong>${counts.aVencer}</strong>
+              </button>
+              <button type="button" class="sec-kpi bad${securityCertFilterMode === "vencido" ? " active" : ""}" data-sec-filter="vencido" aria-pressed="${securityCertFilterMode === "vencido"}">
+                <span class="lab">Vencidos</span><strong>${counts.vencidos}</strong>
+              </button>
             </div>
           </div>
           <div class="sec-filters" role="toolbar" aria-label="Filtros de certificado">
@@ -19631,8 +19820,16 @@
         openClienteCadastro();
         return;
       }
+      const cfgBtn = e.target.closest("[data-cli-config]");
+      if (cfgBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const c = CLIENTES.find((x) => x.id === cfgBtn.dataset.cliConfig);
+        if (c) openClienteEmpresaConfigModal(c);
+        return;
+      }
       const openBtn = e.target.closest("[data-cli-open], .cli-list-row[data-cli-id]");
-      if (openBtn) {
+      if (openBtn && !e.target.closest("[data-cli-config]")) {
         openClientePerfil(openBtn.dataset.cliOpen || openBtn.dataset.cliId);
         return;
       }
@@ -19656,7 +19853,7 @@
         renderClientes();
         return;
       }
-      if (e.target.closest("[data-cli-doc-novo]")) {
+      if (e.target.closest("[data-cli-doc-novo]") || e.target.closest("[data-cli-docs-drop]")) {
         document.getElementById("cliDocsUploadInput")?.click();
         return;
       }
@@ -19769,7 +19966,7 @@
         const texto = (input?.value || "").trim();
         if (!texto) return;
         const visRaw = document.getElementById("cliFeedVis")?.value || "geral";
-        const vis = visRaw === "mim" || visRaw === "privado" ? visRaw : "geral";
+        const vis = visRaw === "privado" ? "privado" : "geral";
         const tema = document.getElementById("cliFeedTema")?.value || "operacional";
         const posts = ensureCliFeed(c);
         posts.unshift({
@@ -20148,9 +20345,9 @@
       }
       if (handleCliFinTitCheckChange(e)) return;
       if (e.target.id === "cliDocsUploadInput") {
-        const file = e.target.files?.[0];
+        const files = e.target.files;
         e.target.value = "";
-        if (file) toast(`Upload iniciado · ${file.name}`);
+        if (files?.length) ingestCliDocsUpload(files);
         return;
       }
       if (e.target.id === "cliRegimeFilter") {
@@ -20249,14 +20446,16 @@
         }
         return;
       }
-      const changeClient = e.target.closest("[data-fin-client-change]");
-      if (changeClient) {
+      const finEmpBtn = e.target.closest("#finEmpresaSelectBtn");
+      if (finEmpBtn) {
         e.preventDefault();
         e.stopPropagation();
         if (Date.now() < (finDash._clientPickLockUntil || 0)) return;
-        finDash.empresaQuery = "";
-        finDash.acOpen = true;
-        refreshFinClientPicker({ focus: true, selectionStart: 0 });
+        toggleFinEmpresaMenu();
+        return;
+      }
+      if (e.target.closest("#finEmpresaSearch") || e.target.closest("#finEmpresaMenu .empresa-search")) {
+        e.stopPropagation();
         return;
       }
       /* Seleção de cliente: tratada em mousedown (evita race com document click). */
@@ -20715,10 +20914,9 @@
         }
         return;
       }
-      if (e.target.id === "finDashEmpresa") {
+      if (e.target.id === "finEmpresaSearch") {
         finDash.empresaQuery = e.target.value || "";
-        finDash.acOpen = true;
-        scheduleFinClientAcRefresh(e.target.selectionStart);
+        scheduleFinClientAcRefresh();
         return;
       }
       if (e.target.id === "finConcValor") {
@@ -20778,27 +20976,62 @@
     });
 
     document.getElementById("financeiroWrap")?.addEventListener("focusin", (e) => {
-      if (e.target.id !== "finDashEmpresa") return;
-      if (finDash.acOpen) return;
-      finDash.acOpen = true;
-      refreshFinClientAcMenu();
+      if (e.target.id !== "finEmpresaSearch") return;
+      if (!finDash.acOpen) toggleFinEmpresaMenu(true);
     });
 
     document.addEventListener("mousedown", (e) => {
-      const acPick = e.target.closest("#financeiroWrap [data-fin-ac]");
-      if (acPick) {
+      const finEmpOpt = e.target.closest("#financeiroWrap [data-fin-empresa-opt]");
+      if (finEmpOpt) {
         e.preventDefault();
         e.stopPropagation();
-        applyFinClientScope(acPick.dataset.finAc || "");
+        if (finEmpOpt.classList.contains("hidden")) return;
+        applyFinClientScope(finEmpOpt.dataset.finEmpresaOpt || "all");
         return;
       }
       if (!finDash.acOpen) return;
-      const wrap = document.getElementById("financeiroWrap");
-      if (!wrap?.contains(e.target)) return;
-      if (e.target.closest(".fin-client-picker")) return;
+      const wrap = document.getElementById("finEmpresaWrap");
+      if (!wrap) return;
+      if (wrap.contains(e.target)) return;
       finDash.acOpen = false;
-      refreshFinClientPicker({ focus: false });
+      wrap.classList.remove("open");
+      document.getElementById("finEmpresaSelectBtn")?.setAttribute("aria-expanded", "false");
     });
+
+    (function bindCliDocsDrop() {
+      const wrap = document.getElementById("clientesWrap");
+      if (!wrap || wrap.dataset.cliDocsDropBound) return;
+      wrap.dataset.cliDocsDropBound = "1";
+      let dragDepth = 0;
+      wrap.addEventListener("dragenter", (e) => {
+        const zone = e.target.closest("[data-cli-docs-drop]");
+        if (!zone) return;
+        e.preventDefault();
+        dragDepth += 1;
+        zone.classList.add("is-drag");
+      });
+      wrap.addEventListener("dragover", (e) => {
+        if (!e.target.closest("[data-cli-docs-drop]")) return;
+        e.preventDefault();
+      });
+      wrap.addEventListener("dragleave", (e) => {
+        const zone = e.target.closest("[data-cli-docs-drop]");
+        if (!zone) return;
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (!zone.contains(e.relatedTarget)) {
+          dragDepth = 0;
+          zone.classList.remove("is-drag");
+        }
+      });
+      wrap.addEventListener("drop", (e) => {
+        const zone = e.target.closest("[data-cli-docs-drop]");
+        if (!zone) return;
+        e.preventDefault();
+        dragDepth = 0;
+        zone.classList.remove("is-drag");
+        ingestCliDocsUpload(e.dataTransfer?.files);
+      });
+    })();
 
     (function bindFinCartaoDrop() {
       const bindDropHost = (wrap) => {
@@ -21008,7 +21241,7 @@
           title: "Criar recorrência",
           sub: "Molde com recorrência (simulação)",
           body: `<p style="font-size:.84rem;color:var(--muted)">Simulação do <code>SelecaoProcessoMoldeRecorrenciaDialog</code>.</p>`,
-          foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>
+          foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>
             <button type="button" class="btn-primary" data-close onclick="toast('Recorrência criada')">Confirmar</button>`,
         });
       } else if (kind === "arquivados") {
@@ -21513,7 +21746,7 @@
           <ul style="padding-left:18px;line-height:1.7;font-size:.88rem">
             ${selected.map((s) => `<li>${s}</li>`).join("")}
           </ul>`,
-        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" data-close onclick="toast('Download iniciado')">Baixar PDF</button>`,
       });
     });
@@ -21573,10 +21806,11 @@
         cliDocsFileMenuId = null;
         syncCliDocsFileMenusDom();
       }
-      if (!e.target.closest(".fin-client-picker") && finDash.acOpen) {
+      if (!e.target.closest("#finEmpresaWrap") && finDash.acOpen) {
         finDash.acOpen = false;
-        const wrap = document.getElementById("financeiroWrap");
-        if (wrap?.classList.contains("show")) refreshFinClientPicker({ focus: false });
+        const wrap = document.getElementById("finEmpresaWrap");
+        wrap?.classList.remove("open");
+        document.getElementById("finEmpresaSelectBtn")?.setAttribute("aria-expanded", "false");
       }
       const addWrap = document.getElementById("tabAddWrap");
       if (addWrap && !addWrap.contains(e.target) && !e.target.closest("#addMenu")) {
@@ -21629,7 +21863,7 @@
               <label>Cargo</label>
               <input value="Analista Fiscal" />`,
             foot: `
-              <button type="button" class="btn-ghost" data-close>Fechar</button>
+              <button type="button" class="btn-ghost" data-close>Cancelar</button>
               <button type="button" class="btn-primary" data-close onclick="toast('Conta atualizada')">Salvar</button>`,
           });
         },
@@ -22162,6 +22396,78 @@
       return map[status] || map.saudavel;
     }
 
+    /** Comparativo visual compra × venda (lista, resumo e detalhe). */
+    function renderCliXmlCompraVendaVisual({
+      compraCents = 0,
+      vendaCents = 0,
+      qtdCompra = null,
+      qtdVenda = null,
+      compact = false,
+      title = "Compra vs. Venda",
+      hint = "Comparativo do recorte atual",
+    } = {}) {
+      const max = Math.max(compraCents, vendaCents, 1);
+      const compraW = Math.max(4, Math.round((compraCents / max) * 100));
+      const vendaW = Math.max(vendaCents > 0 ? 4 : 0, Math.round((vendaCents / max) * 100));
+      const diff = vendaCents - compraCents;
+      const diffCls = vendaCents <= 0 ? "muted" : (diff < 0 ? "neg" : "ok");
+      const diffLabel = vendaCents <= 0
+        ? "Sem venda no período"
+        : `${diff >= 0 ? "+" : "−"}${xmlMoney(Math.abs(diff))}`;
+      const metaCompra = qtdCompra != null ? `${qtdCompra} un` : "Entrada";
+      const metaVenda = qtdVenda != null
+        ? (qtdVenda > 0 ? `${qtdVenda} un` : "Sem saída")
+        : "Saída";
+      return `
+        <article class="cli-xml-cv${compact ? " is-compact" : ""}" aria-label="${uiSelectEscape(title)}">
+          ${compact ? "" : `
+            <div class="cli-xml-cv-head">
+              <div>
+                <h4>${uiSelectEscape(title)}</h4>
+                <p class="hint">${uiSelectEscape(hint)}</p>
+              </div>
+              <div class="cli-xml-cv-diff is-${diffCls}">
+                <span class="lab">Resultado bruto</span>
+                <strong>${diffLabel}</strong>
+              </div>
+            </div>`}
+          <div class="cli-xml-cv-sides">
+            <div class="cli-xml-cv-side is-compra">
+              <span class="lab">Compra</span>
+              <strong>${xmlMoney(compraCents)}</strong>
+              <span class="meta">${uiSelectEscape(metaCompra)}</span>
+            </div>
+            <div class="cli-xml-cv-side is-venda">
+              <span class="lab">Venda</span>
+              <strong>${vendaCents > 0 ? xmlMoney(vendaCents) : "—"}</strong>
+              <span class="meta">${uiSelectEscape(metaVenda)}</span>
+            </div>
+          </div>
+          <div class="cli-xml-cv-bars" aria-hidden="true">
+            <div class="row is-compra">
+              <span>Compra</span>
+              <div class="track"><i style="width:${compraW}%"></i></div>
+            </div>
+            <div class="row is-venda">
+              <span>Venda</span>
+              <div class="track"><i style="width:${vendaW}%"></i></div>
+            </div>
+          </div>
+          ${compact ? `<p class="cli-xml-cv-compact-diff is-${diffCls}">${diffLabel}</p>` : ""}
+        </article>`;
+    }
+
+    function renderCliXmlCvMiniBars(compraCents, vendaCents) {
+      const max = Math.max(compraCents, vendaCents, 1);
+      const compraW = Math.max(3, Math.round((compraCents / max) * 100));
+      const vendaW = Math.max(vendaCents > 0 ? 3 : 0, Math.round((vendaCents / max) * 100));
+      return `
+        <div class="cli-xml-cv-mini" title="Compra ${xmlMoney(compraCents)} · Venda ${vendaCents > 0 ? xmlMoney(vendaCents) : "—"}" aria-label="Comparativo compra e venda">
+          <span class="seg is-compra" style="width:${compraW}%"></span>
+          <span class="seg is-venda" style="width:${vendaW}%"></span>
+        </div>`;
+    }
+
     function getCliXmlProdutosCalc(c) {
       const st = ensureCliXmlAnalise(c);
       const seed = st._seed;
@@ -22260,24 +22566,24 @@
     function renderCliXmlImportTab(c) {
       const st = ensureCliXmlAnalise(c);
       const imp = st.import;
-      const cnpjDigits = xmlOnlyDigits(st.cnpj);
+      const cnpjDigits = xmlOnlyDigits(st.cnpj || c?.cnpj || "");
       const cnpjOk = xmlValidCnpj(cnpjDigits);
-      const cnpjShow = cnpjDigits.length === 14 ? xmlFormatCnpj(cnpjDigits) : cnpjDigits;
+      const cnpjShow = cnpjDigits.length === 14 ? xmlFormatCnpj(cnpjDigits) : (cnpjDigits || "—");
 
       return `
         <section class="cli-xml-import" aria-label="Importação de XMLs">
           <div class="cli-xml-import-grid">
-            <div class="cli-xml-card cli-xml-card-cnpj">
+            <div class="cli-xml-card cli-xml-rules">
               <div class="cli-xml-card-inner">
-                <h4>1. CNPJ da empresa analisada</h4>
-                <p class="hint">Formato canônico sem pontuação na validação · exibição mascarada.</p>
-                <label class="cli-xml-field">
-                  <span>CNPJ</span>
-                  <input type="text" id="cliXmlCnpj" inputmode="numeric" maxlength="18" value="${uiSelectEscape(cnpjShow)}" placeholder="00.000.000/0000-00" aria-invalid="${cnpjDigits && !cnpjOk ? "true" : "false"}" />
-                </label>
-                <p class="cli-xml-field-msg ${cnpjOk ? "is-ok" : (cnpjDigits ? "is-bad" : "")}">
-                  ${cnpjOk ? `Válido · armazenado como ${cnpjDigits}` : (cnpjDigits ? "CNPJ inválido — confira os dígitos verificadores" : "Informe o CNPJ para classificar entradas e saídas")}
-                </p>
+                <h4>1. Regras de classificação automática</h4>
+                <p class="hint">CNPJ do cliente · ${uiSelectEscape(cnpjShow)} · usado para Entrada/Saída sem preenchimento manual.</p>
+                <ul>
+                  <li><strong>Entrada/Compra</strong> — CNPJ analisado como destinatário + CFOP de entrada</li>
+                  <li><strong>Saída/Venda</strong> — CNPJ analisado como emitente + CFOP de saída</li>
+                  <li><strong>Deduplicação</strong> — chave de acesso da NF-e + hash do arquivo</li>
+                  <li><strong>Exclusões</strong> — notas canceladas e eventos sem efeito econômico fora dos totais</li>
+                  <li><strong>Créditos</strong> — imposto destacado ≠ aumento automático de custo (créditos recuperáveis vs. não recuperáveis)</li>
+                </ul>
               </div>
             </div>
 
@@ -22325,17 +22631,6 @@
                   </li>`).join("") || `<li class="is-info"><span>Sem eventos ainda</span></li>`}
               </ul>
             </div>
-          </div>
-
-          <div class="cli-xml-card cli-xml-rules">
-            <h4>Regras de classificação automática</h4>
-            <ul>
-              <li><strong>Entrada/Compra</strong> — CNPJ analisado como destinatário + CFOP de entrada</li>
-              <li><strong>Saída/Venda</strong> — CNPJ analisado como emitente + CFOP de saída</li>
-              <li><strong>Deduplicação</strong> — chave de acesso da NF-e + hash do arquivo</li>
-              <li><strong>Exclusões</strong> — notas canceladas e eventos sem efeito econômico fora dos totais</li>
-              <li><strong>Créditos</strong> — imposto destacado ≠ aumento automático de custo (créditos recuperáveis vs. não recuperáveis)</li>
-            </ul>
           </div>
         </section>`;
     }
@@ -22433,37 +22728,49 @@
               <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               <input type="search" id="cliXmlFiltroQ" placeholder="Buscar nome ou código…" value="${uiSelectEscape(f.q)}" aria-label="Buscar produto" />
             </div>
-            <label class="cli-xml-mini-field"><span>De</span><input type="date" id="cliXmlFiltroDe" value="${uiSelectEscape(f.de)}" /></label>
-            <label class="cli-xml-mini-field"><span>Até</span><input type="date" id="cliXmlFiltroAte" value="${uiSelectEscape(f.ate)}" /></label>
-            <label class="cli-xml-mini-field"><span>NCM</span><input type="text" id="cliXmlFiltroNcm" value="${uiSelectEscape(f.ncm)}" placeholder="NCM" /></label>
-            <label class="cli-xml-mini-field"><span>CFOP</span><input type="text" id="cliXmlFiltroCfop" value="${uiSelectEscape(f.cfop)}" placeholder="CFOP" /></label>
-            <label class="cli-xml-mini-field"><span>Fornecedor</span><input type="text" id="cliXmlFiltroForn" value="${uiSelectEscape(f.fornecedor)}" placeholder="Fornecedor" /></label>
-            <label class="cli-xml-mini-field"><span>Cliente</span><input type="text" id="cliXmlFiltroCli" value="${uiSelectEscape(f.cliente)}" placeholder="Cliente" /></label>
-            <label class="cli-xml-mini-field"><span>Margem</span>
-              <select id="cliXmlFiltroMargem">
-                <option value="">Todas</option>
+            <div class="proc-filter field">
+              <input type="date" id="cliXmlFiltroDe" value="${uiSelectEscape(f.de)}" aria-label="De" title="De" />
+            </div>
+            <div class="proc-filter field">
+              <input type="date" id="cliXmlFiltroAte" value="${uiSelectEscape(f.ate)}" aria-label="Até" title="Até" />
+            </div>
+            <div class="proc-filter field">
+              <input type="text" id="cliXmlFiltroNcm" value="${uiSelectEscape(f.ncm)}" placeholder="NCM" aria-label="NCM" />
+            </div>
+            <div class="proc-filter field">
+              <input type="text" id="cliXmlFiltroCfop" value="${uiSelectEscape(f.cfop)}" placeholder="CFOP" aria-label="CFOP" />
+            </div>
+            <div class="proc-filter field">
+              <input type="text" id="cliXmlFiltroForn" value="${uiSelectEscape(f.fornecedor)}" placeholder="Fornecedor" aria-label="Fornecedor" />
+            </div>
+            <div class="proc-filter field">
+              <input type="text" id="cliXmlFiltroCli" value="${uiSelectEscape(f.cliente)}" placeholder="Cliente" aria-label="Cliente" />
+            </div>
+            <div class="proc-filter field">
+              <select id="cliXmlFiltroMargem" aria-label="Margem">
+                <option value="">Margem · todas</option>
                 <option value="sem" ${f.margem === "sem" ? "selected" : ""}>Sem venda</option>
                 <option value="neg" ${f.margem === "neg" ? "selected" : ""}>Negativa</option>
                 <option value="pos" ${f.margem === "pos" ? "selected" : ""}>Positiva</option>
               </select>
-            </label>
-            <label class="cli-xml-mini-field"><span>Regime</span>
-              <select id="cliXmlFiltroRegime">
-                <option value="">Todos</option>
+            </div>
+            <div class="proc-filter field">
+              <select id="cliXmlFiltroRegime" aria-label="Regime">
+                <option value="">Regime · todos</option>
                 <option value="Simples Nacional" ${f.regime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option>
                 <option value="Lucro Presumido" ${f.regime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option>
               </select>
-            </label>
-            <label class="cli-xml-mini-field"><span>Status</span>
-              <select id="cliXmlFiltroStatus">
-                <option value="">Todos</option>
+            </div>
+            <div class="proc-filter field">
+              <select id="cliXmlFiltroStatus" aria-label="Status">
+                <option value="">Status · todos</option>
                 <option value="sem-venda" ${f.status === "sem-venda" ? "selected" : ""}>Sem venda</option>
                 <option value="prejuizo" ${f.status === "prejuizo" ? "selected" : ""}>Prejuízo</option>
                 <option value="baixa" ${f.status === "baixa" ? "selected" : ""}>Baixa</option>
                 <option value="atencao" ${f.status === "atencao" ? "selected" : ""}>Atenção</option>
                 <option value="saudavel" ${f.status === "saudavel" ? "selected" : ""}>Saudável</option>
               </select>
-            </label>
+            </div>
           </div>
           <div class="cli-xml-table-wrap">
             <table class="cli-xml-table">
@@ -22478,6 +22785,7 @@
                   <th class="num">Qtd. Compra</th>
                   <th class="num">Custo Unit.</th>
                   <th class="num">Total Compra</th>
+                  <th class="num">Total Venda</th>
                   <th class="num">Tributos</th>
                   <th class="num">Carga Ent.</th>
                   <th class="num">Margem Líq.</th>
@@ -22498,16 +22806,17 @@
                     <td class="num">${p.qtdCompra}</td>
                     <td class="num">${xmlMoney(p.calc.cef)}</td>
                     <td class="num">${xmlMoney(p.calc.totalCompraCents)}</td>
+                    <td class="num">${p.calc.semVenda ? "—" : xmlMoney(p.calc.totalVendaCents)}</td>
                     <td class="num">${xmlMoney(p.calc.tribEntradaTotalCents)}</td>
                     <td class="num">${xmlPctLabel(p.calc.cargaEntradaPct)}</td>
                     <td class="num ${p.calc.semVenda ? "" : (p.calc.mlPct < 0 ? "neg" : "")}">${p.calc.semVenda ? "—" : xmlPctLabel(p.calc.mlPct)}</td>
                     <td><span class="cli-xml-status is-${st.cls}">${st.label}</span></td>
                   </tr>`;
-                }).join("") : `<tr><td colspan="13"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
+                }).join("") : `<tr><td colspan="14"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
               </tbody>
             </table>
           </div>
-          <p class="cli-xml-legend">Status por prioridade: Sem venda → Prejuízo → Baixa → Atenção → Saudável. Produtos sem saída nunca recebem margem zero.</p>
+          <p class="cli-xml-legend">Clique em um produto para ver o comparativo compra × venda e a memória de cálculo. Status: Sem venda → Prejuízo → Baixa → Atenção → Saudável.</p>
         </section>`;
     }
 
@@ -22572,6 +22881,35 @@
         wide: true,
         body: `
           <div class="cli-xml-prod-detail">
+            <div class="cli-xml-prod-cv-grid">
+              ${renderCliXmlCompraVendaVisual({
+                compraCents: calc.totalCompraCents,
+                vendaCents: calc.totalVendaCents,
+                qtdCompra: p.qtdCompra,
+                qtdVenda: p.qtdVenda,
+                title: "Compra vs. Venda",
+                hint: "Totais do produto no período · custo efetivo × preço praticado",
+              })}
+              <div class="cli-xml-cv-unit">
+                <h4>Unitário</h4>
+                <div class="cli-xml-cv-sides">
+                  <div class="cli-xml-cv-side is-compra">
+                    <span class="lab">Custo efetivo</span>
+                    <strong>${xmlMoney(calc.cef)}</strong>
+                    <span class="meta">C_ef por unidade</span>
+                  </div>
+                  <div class="cli-xml-cv-side is-venda">
+                    <span class="lab">Preço de venda</span>
+                    <strong>${calc.semVenda ? "—" : xmlMoney(calc.pv)}</strong>
+                    <span class="meta">${calc.semVenda ? "Sem saída" : "P_v praticado"}</span>
+                  </div>
+                </div>
+                <p class="cli-xml-cv-unit-ml ${calc.semVenda ? "is-muted" : (calc.mlPct < 0 ? "is-neg" : "is-ok")}">
+                  Margem líquida:
+                  <strong>${calc.semVenda ? "Sem venda" : `${xmlMoney(calc.mlCents)} · ${xmlPctLabel(calc.mlPct)}`}</strong>
+                </p>
+              </div>
+            </div>
             <div class="cli-xml-memoria">
               <h4>Memória de cálculo</h4>
               <dl>
@@ -22654,7 +22992,7 @@
         chart: { ...base, type: "bar", height: 220 },
         series: [{ name: "R$ vendido", data: top.map((p) => xmlFromCents(p.calc.totalVendaCents)) }],
         plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
-        colors: ["#284A8E"],
+        colors: ["#28519c"],
         xaxis: { categories: top.map((p) => p.codigo) },
         dataLabels: { enabled: false },
         grid: { borderColor: "#d4dce8", strokeDashArray: 4 },
@@ -22683,7 +23021,7 @@
         chart: { ...base, type: "donut", height: 220 },
         series: [xmlFromCents(k.totalCompra), xmlFromCents(k.totalVenda)],
         labels: ["Comprado", "Vendido"],
-        colors: ["#c47f16", "#284A8E"],
+        colors: ["#c47f16", "#28519c"],
         legend: { position: "bottom" },
         dataLabels: { enabled: false },
         plotOptions: { pie: { donut: { size: "62%" } } },
@@ -22728,8 +23066,10 @@
     function startCliXmlImportPipeline(opts = {}) {
       const st = cliXmlAnalise;
       if (st.import.running) return;
+      const c = CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+      if (c?.cnpj) st.cnpj = xmlOnlyDigits(c.cnpj);
       if (!xmlValidCnpj(st.cnpj)) {
-        toast("Informe um CNPJ válido antes de importar");
+        toast("Cliente sem CNPJ válido para classificação automática");
         return;
       }
       if (st.import.timer) clearInterval(st.import.timer);
@@ -22869,26 +23209,6 @@
     }
 
     function handleCliXmlModInput(e) {
-      if (e.target.id === "cliXmlCnpj") {
-        const digits = xmlOnlyDigits(e.target.value).slice(0, 14);
-        cliXmlAnalise.cnpj = digits;
-        const pos = e.target.selectionStart;
-        const show = digits.length === 14 ? xmlFormatCnpj(digits) : digits;
-        e.target.value = show;
-        try { e.target.setSelectionRange(Math.min(pos, show.length), Math.min(pos, show.length)); } catch (_) { /* ignore */ }
-        const msg = e.target.closest(".cli-xml-card")?.querySelector(".cli-xml-field-msg");
-        if (msg) {
-          const ok = xmlValidCnpj(digits);
-          msg.className = `cli-xml-field-msg ${ok ? "is-ok" : (digits ? "is-bad" : "")}`;
-          msg.textContent = ok
-            ? `Válido · armazenado como ${digits}`
-            : (digits ? "CNPJ inválido — confira os dígitos verificadores" : "Informe o CNPJ para classificar entradas e saídas");
-        }
-        const startBtn = document.querySelector("[data-cli-xml='start-import']");
-        if (startBtn) startBtn.disabled = !xmlValidCnpj(digits) || cliXmlAnalise.import.running;
-        return true;
-      }
-
       if (e.target.id === "cliXmlFileInput") {
         const files = Array.from(e.target.files || []);
         e.target.value = "";

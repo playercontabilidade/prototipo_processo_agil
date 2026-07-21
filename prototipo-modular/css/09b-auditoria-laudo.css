@@ -8,47 +8,28 @@
     }
 
     .cli-laudo .laudo-table-tools {
-      display: grid;
-      grid-template-columns: minmax(160px, 1.5fr) repeat(3, minmax(120px, 1fr));
+      display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       margin: 0 0 12px;
       align-items: center;
     }
 
-    .cli-laudo .laudo-table-tools > * {
-      width: 100%;
-      min-width: 0;
+    .cli-laudo .laudo-table-tools .proc-filter.search {
+      flex: 1.4 1 200px;
+      min-width: 160px;
     }
 
-    .cli-laudo .laudo-table-tools input[type="search"] {
-      flex: unset;
-      min-width: 0;
-      height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0 12px;
-      font: inherit;
-      font-size: .8rem;
-      background: #fff;
-      color: var(--text);
-    }
-
-    .cli-laudo .laudo-table-tools select {
-      height: 36px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0 10px;
-      font: inherit;
-      font-size: .78rem;
-      background: #fff;
-      color: var(--text);
-      min-width: 0;
+    .cli-laudo .laudo-table-tools .proc-filter.field {
+      flex: 1 1 120px;
+      min-width: 120px;
+      max-width: 200px;
     }
 
     .cli-laudo .laudo-full-table-wrap {
       overflow: auto;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       max-height: min(420px, 55vh);
     }
 
@@ -62,7 +43,7 @@
     .cli-laudo .laudo-full-table th,
     .cli-laudo .laudo-full-table td {
       padding: 10px 12px;
-      border-bottom: 1px solid #eef1f5;
+      border-bottom: 1px solid var(--border);
       text-align: left;
       white-space: nowrap;
     }
@@ -71,7 +52,7 @@
       position: sticky;
       top: 0;
       z-index: 1;
-      background: #f7f9fc;
+      background: var(--surface-2);
       font-size: .66rem;
       font-weight: 750;
       letter-spacing: .04em;
@@ -96,7 +77,7 @@
       display: inline-flex;
       align-items: center;
       padding: 2px 8px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .66rem;
       font-weight: 750;
     }
@@ -129,9 +110,9 @@
     .cli-laudo .laudo-pager button {
       height: 32px;
       padding: 0 12px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border);
-      background: #fff;
+      background: var(--surface);
       font: inherit;
       font-size: .74rem;
       font-weight: 650;
@@ -151,8 +132,8 @@
       align-items: center;
       justify-content: flex-start;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      background: #f7f9fc;
+      border-radius: var(--radius);
+      background: var(--surface-2);
       padding: 12px 16px;
       margin-top: 2px;
     }
@@ -201,8 +182,10 @@
         grid-template-columns: 1fr;
         gap: 6px;
       }
-      .cli-laudo .laudo-table-tools {
-        grid-template-columns: 1fr 1fr;
+      .cli-laudo .laudo-table-tools .proc-filter.search,
+      .cli-laudo .laudo-table-tools .proc-filter.field {
+        flex: 1 1 calc(50% - 4px);
+        max-width: none;
       }
     }
 
@@ -300,17 +283,17 @@
 
     .fin-dual-legend i.bar-bad { background: #b33a4a; }
     .fin-dual-legend i.bar-ok { background: #2f9e6b; }
-    .fin-dual-legend i.bar-liq { background: #28519c; }
+    .fin-dual-legend i.bar-liq { background: var(--accent); }
     .fin-dual-legend i.bar-tarifa { background: #c5ced9; }
     .fin-dual-legend i.bar-erro { background: #e53935; }
     .fin-dual-legend i.line-vol {
       height: 3px;
       width: 14px;
       border-radius: 2px;
-      background: #28519c;
+      background: var(--accent);
     }
 
-    .fin-stack-day-chart .seg-liq { fill: #28519c; }
+    .fin-stack-day-chart .seg-liq { fill: var(--accent); }
     .fin-stack-day-chart .seg-tarifa { fill: #c5ced9; }
     .fin-stack-day-chart .seg-erro { fill: #e53935; }
     .fin-stack-day-chart .bar-hit {
@@ -351,7 +334,7 @@
     .fin-stack-bars .track {
       display: flex;
       height: 12px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       overflow: hidden;
       background: rgba(107, 124, 147, 0.12);
       min-width: 0;
@@ -389,7 +372,7 @@
       z-index: 6;
       min-width: 168px;
       padding: 8px 10px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: var(--surface);
       box-shadow: 0 8px 22px rgba(19, 42, 82, 0.14);
@@ -434,7 +417,7 @@
       color: var(--navy-deep);
       font-weight: 650;
     }
-    .fin-dia-tooltip .tip-row.is-eq b { color: #28519c; }
+    .fin-dia-tooltip .tip-row.is-eq b { color: var(--accent); }
     .fin-dia-tooltip .tip-row.is-erro b { color: #e53935; }
     .fin-dia-tooltip {
       min-width: 200px;
@@ -459,7 +442,7 @@
       gap: 12px 16px;
       padding: 12px 14px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface);
     }
 
@@ -563,7 +546,7 @@
       max-width: none;
       height: calc(100vh - 24px);
       max-height: calc(100vh - 24px);
-      border-radius: 12px;
+      border-radius: var(--radius);
     }
 
     .modal.cli-fin-audit-rules-modal.is-expanded .modal-body {
@@ -642,16 +625,16 @@
     .modal.cli-fin-audit-rules-modal .fin-emit-card,
     .modal.cli-fin-audit-rules-modal .fin-acq-list-card {
       border: 1px solid color-mix(in srgb, var(--accent) 12%, #dce4f0);
-      border-radius: 14px;
+      border-radius: var(--radius);
       background: var(--surface);
-      box-shadow: 0 1px 2px rgba(26, 58, 110, 0.04), 0 8px 24px rgba(59, 111, 212, 0.07);
+      box-shadow: 0 1px 2px rgba(26, 58, 110, 0.04), 0 8px 24px color-mix(in srgb, var(--accent) 7%, transparent);
       padding: 16px 18px 18px;
     }
 
     .modal.cli-fin-audit-rules-modal .fin-acq-form-card .fin-emit-head {
       margin-bottom: 18px;
       padding-bottom: 12px;
-      border-bottom: 1px solid color-mix(in srgb, var(--accent) 8%, #e8eef6);
+      border-bottom: 1px solid color-mix(in srgb, var(--accent) 8%, var(--surface-2));
     }
 
     .modal.cli-fin-audit-rules-modal .fin-acq-form-card .fin-emit-head h3 {
@@ -699,10 +682,10 @@
       height: 32px !important;
       min-height: 32px;
       border: 1px solid color-mix(in srgb, var(--border) 85%, #c5d0e0);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 0 10px;
       font-size: .78rem;
-      background: #fff;
+      background: var(--surface);
       box-shadow: 0 1px 2px rgba(26, 58, 110, 0.03);
       transition: border-color .15s, box-shadow .15s;
     }
@@ -716,7 +699,7 @@
     .modal.cli-fin-audit-rules-modal .fin-acq-form .fin-field input:not([type="checkbox"]):not([type="radio"]):focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59, 111, 212, 0.12);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
     }
 
     .modal.cli-fin-audit-rules-modal .fin-acq-form .ui-select-btn,
@@ -740,7 +723,7 @@
       padding: 12px 12px 10px;
       margin-top: 2px;
       border: 1px solid color-mix(in srgb, var(--accent) 10%, #e4ebf5);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: linear-gradient(180deg, #f9fbff, #f5f8fc);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
     }
@@ -780,7 +763,7 @@
     .modal.cli-fin-audit-rules-modal .fin-emit-actions {
       margin-top: 8px;
       padding-top: 14px;
-      border-top: 1px solid color-mix(in srgb, var(--accent) 8%, #e8eef6);
+      border-top: 1px solid color-mix(in srgb, var(--accent) 8%, var(--surface-2));
       gap: 10px;
     }
 
@@ -795,7 +778,7 @@
     .modal.cli-fin-audit-rules-modal .fin-acq-list-card .fin-card-head {
       margin: 0;
       padding: 14px 16px 12px;
-      border-bottom: 1px solid color-mix(in srgb, var(--accent) 8%, #e8eef6);
+      border-bottom: 1px solid color-mix(in srgb, var(--accent) 8%, var(--surface-2));
     }
 
     .modal.cli-fin-audit-rules-modal .fin-acq-list-card .fin-card-head h4 {
@@ -819,21 +802,21 @@
 
     .modal.cli-fin-audit-rules-modal .fin-acq-item {
       border: 1px solid color-mix(in srgb, var(--accent) 10%, #e2eaf4);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       padding: 12px 13px;
       background: linear-gradient(180deg, #fafcfe, #f5f8fc);
-      box-shadow: 0 1px 3px rgba(59, 111, 212, 0.05);
+      box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 5%, transparent);
     }
 
     .modal.cli-fin-audit-rules-modal .fin-acq-item:hover {
       border-color: color-mix(in srgb, var(--accent) 28%, #d4deec);
-      box-shadow: 0 2px 10px rgba(59, 111, 212, 0.1);
+      box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 10%, transparent);
     }
 
     .modal.cli-fin-audit-rules-modal .fin-acq-item.is-editing {
       border-color: color-mix(in srgb, var(--accent) 55%, #c5d4ea);
-      background: #f3f7ff;
-      box-shadow: 0 0 0 3px rgba(59, 111, 212, 0.1), 0 4px 14px rgba(59, 111, 212, 0.08);
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent), 0 4px 14px color-mix(in srgb, var(--accent) 8%, transparent);
     }
 
     .modal.cli-fin-audit-rules-modal .fin-acq-item-top strong {
@@ -939,7 +922,7 @@
     .modal.cli-cad-modal .cli-cad-form textarea {
       height: 36px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 0 11px;
       background: var(--surface);
       font-size: .8125rem;
@@ -1063,7 +1046,7 @@
 
     .modal.cli-cad-modal .ui-select-btn {
       height: 36px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       font-size: .8125rem;
       box-shadow: none;
@@ -1123,7 +1106,7 @@
 
     .cfg-classif-search {
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       padding: 14px;
       background: var(--toolbar);
       display: flex;
@@ -1148,7 +1131,7 @@
       width: 100%;
       height: 38px;
       border: 1px solid var(--border);
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       padding: 0 36px 0 36px;
       font: inherit;
       font-size: .82rem;
@@ -1176,7 +1159,7 @@
 
     .cfg-classif-tags {
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       padding: 10px 12px;
     }
@@ -1222,7 +1205,7 @@
       height: 34px;
       padding: 0 14px;
       border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: var(--surface);
       color: var(--accent);
       font: inherit;
@@ -1231,7 +1214,7 @@
       cursor: pointer;
     }
 
-    .cfg-classif-actions button:hover { background: rgba(59,111,212,.08); }
+    .cfg-classif-actions button:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 
     .cfg-classif-info {
       display: flex;
@@ -1239,15 +1222,15 @@
       align-items: flex-start;
       padding: 14px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: color-mix(in srgb, var(--toolbar) 80%, var(--surface));
     }
 
     .cfg-classif-info .ico {
       width: 36px;
       height: 36px;
-      border-radius: 10px;
-      background: rgba(59,111,212,.1);
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
       color: var(--accent);
       display: grid;
       place-items: center;
@@ -1282,7 +1265,7 @@
       gap: 8px;
       padding: 10px 12px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       cursor: pointer;
       text-align: left;
@@ -1292,7 +1275,7 @@
 
     .cfg-classif-empresa:hover {
       border-color: var(--accent);
-      background: rgba(59,111,212,.05);
+      background: color-mix(in srgb, var(--accent) 5%, transparent);
     }
 
     .cfg-classif-empresa strong {
@@ -1343,7 +1326,7 @@
       gap: 12px;
       padding: 14px 16px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
     }
 
@@ -1409,7 +1392,7 @@
       gap: 12px;
       padding: 14px 16px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
     }
 
@@ -1434,7 +1417,7 @@
       gap: 12px;
       padding: 14px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: color-mix(in srgb, var(--toolbar) 55%, var(--surface));
     }
 
@@ -1452,7 +1435,7 @@
     .cfg-tipo-block .cfg-secao-field select {
       width: 100%;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 10px 12px;
       font: inherit;
       font-size: .86rem;
@@ -1469,8 +1452,8 @@
       gap: 10px;
       padding: 12px;
       border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
-      border-radius: 10px;
-      background: rgba(59, 111, 212, 0.06);
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
       cursor: pointer;
       user-select: none;
       margin: 0 !important;
@@ -1524,7 +1507,7 @@
       gap: 8px;
       padding: 10px 12px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       font-size: .78rem;
       font-weight: 550;
@@ -1561,7 +1544,7 @@
     .modal-foot #cfgTipoDocSave {
       width: 100%;
       height: 42px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .9rem;
       font-weight: 700;
     }
@@ -1582,7 +1565,7 @@
       gap: 10px;
       padding: 14px;
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: color-mix(in srgb, var(--toolbar) 55%, var(--surface));
     }
 
@@ -1625,7 +1608,7 @@
       margin: 0 !important;
       padding: 10px 12px !important;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       color: var(--navy-deep);
       font: inherit;
@@ -1643,7 +1626,7 @@
     .cfg-aviso-field textarea:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59, 111, 212, 0.12);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
     }
 
     .cfg-aviso-dt {
@@ -1661,14 +1644,14 @@
       min-width: 0;
       height: 38px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       padding: 0 8px 0 34px;
     }
 
     .cfg-aviso-dt-box:focus-within {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(59, 111, 212, 0.12);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
     }
 
     .cfg-aviso-dt-box .ico {
@@ -1703,7 +1686,7 @@
       width: 30px;
       height: 30px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       color: var(--muted);
       display: grid;
@@ -1772,7 +1755,7 @@
       height: 34px;
       padding: 0 14px;
       border: 1px solid var(--border);
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: var(--surface);
       color: var(--navy);
       font: inherit;
@@ -1788,8 +1771,8 @@
     }
 
     .cfg-aviso-chip.on {
-      background: rgba(59, 111, 212, 0.12);
-      border-color: rgba(59, 111, 212, 0.4);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 40%, transparent);
       color: var(--accent);
     }
 
@@ -1807,7 +1790,7 @@
       height: 36px;
       padding: 0 14px;
       border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: var(--surface);
       color: var(--accent);
       font: inherit;
@@ -1816,7 +1799,7 @@
       cursor: pointer;
     }
 
-    .cfg-aviso-capa-btn:hover { background: rgba(59, 111, 212, 0.08); }
+    .cfg-aviso-capa-btn:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 
     .cfg-aviso-capa-name {
       font-size: .74rem;
@@ -1840,17 +1823,17 @@
       align-items: center;
       gap: 12px;
       padding: 12px 14px;
-      border-radius: 10px;
-      background: rgba(59, 111, 212, 0.1);
-      border: 1px solid rgba(59, 111, 212, 0.18);
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
       margin-bottom: 14px;
     }
 
     .cfg-secao-banner .ico {
       width: 36px;
       height: 36px;
-      border-radius: 10px;
-      background: rgba(59, 111, 212, 0.16);
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
       color: var(--accent);
       display: grid;
       place-items: center;

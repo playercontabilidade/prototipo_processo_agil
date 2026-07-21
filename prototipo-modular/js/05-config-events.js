@@ -698,7 +698,7 @@
               sub: "Tentativa de reconexão",
               body: `<p style="margin:0;font-size:.86rem;line-height:1.5">Reconsultando <code>/robos/painel</code>…<br><br>Último erro: <strong style="color:#b42318">503 Connection refused</strong> no host automation-worker:8090.</p>`,
               foot: `
-                <button type="button" class="btn-ghost" data-close>Fechar</button>
+                <button type="button" class="btn-ghost" data-close>Cancelar</button>
                 <button type="button" class="btn-primary" id="cfgRobRetry">Tentar novamente</button>`,
             });
             document.getElementById("cfgRobRetry")?.addEventListener("click", () => {
@@ -815,11 +815,19 @@
                 ? `<button type="button" class="btn-ghost" id="secClearCliFilter" style="height:30px;padding:0 10px;font-size:.72rem">Limpar filtros</button>`
                 : ""}
             </div>
-            <div class="sec-kpis" aria-label="Resumo de certificados">
-              <div class="sec-kpi total"><span class="lab">Total</span><strong>${counts.total}</strong></div>
-              <div class="sec-kpi ok"><span class="lab">Válidos</span><strong>${counts.ok}</strong></div>
-              <div class="sec-kpi warn"><span class="lab">A vencer</span><strong>${counts.aVencer}</strong></div>
-              <div class="sec-kpi bad"><span class="lab">Vencidos</span><strong>${counts.vencidos}</strong></div>
+            <div class="sec-kpis" role="toolbar" aria-label="Filtrar por status">
+              <button type="button" class="sec-kpi total${securityCertFilterMode === "all" ? " active" : ""}" data-sec-filter="all" aria-pressed="${securityCertFilterMode === "all"}">
+                <span class="lab">Total</span><strong>${counts.total}</strong>
+              </button>
+              <button type="button" class="sec-kpi ok${securityCertFilterMode === "ok" ? " active" : ""}" data-sec-filter="ok" aria-pressed="${securityCertFilterMode === "ok"}">
+                <span class="lab">Válidos</span><strong>${counts.ok}</strong>
+              </button>
+              <button type="button" class="sec-kpi warn${securityCertFilterMode === "a-vencer" ? " active" : ""}" data-sec-filter="a-vencer" aria-pressed="${securityCertFilterMode === "a-vencer"}">
+                <span class="lab">A vencer</span><strong>${counts.aVencer}</strong>
+              </button>
+              <button type="button" class="sec-kpi bad${securityCertFilterMode === "vencido" ? " active" : ""}" data-sec-filter="vencido" aria-pressed="${securityCertFilterMode === "vencido"}">
+                <span class="lab">Vencidos</span><strong>${counts.vencidos}</strong>
+              </button>
             </div>
           </div>
           <div class="sec-filters" role="toolbar" aria-label="Filtros de certificado">
@@ -1549,8 +1557,16 @@
         openClienteCadastro();
         return;
       }
+      const cfgBtn = e.target.closest("[data-cli-config]");
+      if (cfgBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const c = CLIENTES.find((x) => x.id === cfgBtn.dataset.cliConfig);
+        if (c) openClienteEmpresaConfigModal(c);
+        return;
+      }
       const openBtn = e.target.closest("[data-cli-open], .cli-list-row[data-cli-id]");
-      if (openBtn) {
+      if (openBtn && !e.target.closest("[data-cli-config]")) {
         openClientePerfil(openBtn.dataset.cliOpen || openBtn.dataset.cliId);
         return;
       }
@@ -1574,7 +1590,7 @@
         renderClientes();
         return;
       }
-      if (e.target.closest("[data-cli-doc-novo]")) {
+      if (e.target.closest("[data-cli-doc-novo]") || e.target.closest("[data-cli-docs-drop]")) {
         document.getElementById("cliDocsUploadInput")?.click();
         return;
       }
@@ -1687,7 +1703,7 @@
         const texto = (input?.value || "").trim();
         if (!texto) return;
         const visRaw = document.getElementById("cliFeedVis")?.value || "geral";
-        const vis = visRaw === "mim" || visRaw === "privado" ? visRaw : "geral";
+        const vis = visRaw === "privado" ? "privado" : "geral";
         const tema = document.getElementById("cliFeedTema")?.value || "operacional";
         const posts = ensureCliFeed(c);
         posts.unshift({
@@ -2066,9 +2082,9 @@
       }
       if (handleCliFinTitCheckChange(e)) return;
       if (e.target.id === "cliDocsUploadInput") {
-        const file = e.target.files?.[0];
+        const files = e.target.files;
         e.target.value = "";
-        if (file) toast(`Upload iniciado · ${file.name}`);
+        if (files?.length) ingestCliDocsUpload(files);
         return;
       }
       if (e.target.id === "cliRegimeFilter") {
@@ -2167,14 +2183,16 @@
         }
         return;
       }
-      const changeClient = e.target.closest("[data-fin-client-change]");
-      if (changeClient) {
+      const finEmpBtn = e.target.closest("#finEmpresaSelectBtn");
+      if (finEmpBtn) {
         e.preventDefault();
         e.stopPropagation();
         if (Date.now() < (finDash._clientPickLockUntil || 0)) return;
-        finDash.empresaQuery = "";
-        finDash.acOpen = true;
-        refreshFinClientPicker({ focus: true, selectionStart: 0 });
+        toggleFinEmpresaMenu();
+        return;
+      }
+      if (e.target.closest("#finEmpresaSearch") || e.target.closest("#finEmpresaMenu .empresa-search")) {
+        e.stopPropagation();
         return;
       }
       /* Seleção de cliente: tratada em mousedown (evita race com document click). */
@@ -2633,10 +2651,9 @@
         }
         return;
       }
-      if (e.target.id === "finDashEmpresa") {
+      if (e.target.id === "finEmpresaSearch") {
         finDash.empresaQuery = e.target.value || "";
-        finDash.acOpen = true;
-        scheduleFinClientAcRefresh(e.target.selectionStart);
+        scheduleFinClientAcRefresh();
         return;
       }
       if (e.target.id === "finConcValor") {
@@ -2696,27 +2713,62 @@
     });
 
     document.getElementById("financeiroWrap")?.addEventListener("focusin", (e) => {
-      if (e.target.id !== "finDashEmpresa") return;
-      if (finDash.acOpen) return;
-      finDash.acOpen = true;
-      refreshFinClientAcMenu();
+      if (e.target.id !== "finEmpresaSearch") return;
+      if (!finDash.acOpen) toggleFinEmpresaMenu(true);
     });
 
     document.addEventListener("mousedown", (e) => {
-      const acPick = e.target.closest("#financeiroWrap [data-fin-ac]");
-      if (acPick) {
+      const finEmpOpt = e.target.closest("#financeiroWrap [data-fin-empresa-opt]");
+      if (finEmpOpt) {
         e.preventDefault();
         e.stopPropagation();
-        applyFinClientScope(acPick.dataset.finAc || "");
+        if (finEmpOpt.classList.contains("hidden")) return;
+        applyFinClientScope(finEmpOpt.dataset.finEmpresaOpt || "all");
         return;
       }
       if (!finDash.acOpen) return;
-      const wrap = document.getElementById("financeiroWrap");
-      if (!wrap?.contains(e.target)) return;
-      if (e.target.closest(".fin-client-picker")) return;
+      const wrap = document.getElementById("finEmpresaWrap");
+      if (!wrap) return;
+      if (wrap.contains(e.target)) return;
       finDash.acOpen = false;
-      refreshFinClientPicker({ focus: false });
+      wrap.classList.remove("open");
+      document.getElementById("finEmpresaSelectBtn")?.setAttribute("aria-expanded", "false");
     });
+
+    (function bindCliDocsDrop() {
+      const wrap = document.getElementById("clientesWrap");
+      if (!wrap || wrap.dataset.cliDocsDropBound) return;
+      wrap.dataset.cliDocsDropBound = "1";
+      let dragDepth = 0;
+      wrap.addEventListener("dragenter", (e) => {
+        const zone = e.target.closest("[data-cli-docs-drop]");
+        if (!zone) return;
+        e.preventDefault();
+        dragDepth += 1;
+        zone.classList.add("is-drag");
+      });
+      wrap.addEventListener("dragover", (e) => {
+        if (!e.target.closest("[data-cli-docs-drop]")) return;
+        e.preventDefault();
+      });
+      wrap.addEventListener("dragleave", (e) => {
+        const zone = e.target.closest("[data-cli-docs-drop]");
+        if (!zone) return;
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (!zone.contains(e.relatedTarget)) {
+          dragDepth = 0;
+          zone.classList.remove("is-drag");
+        }
+      });
+      wrap.addEventListener("drop", (e) => {
+        const zone = e.target.closest("[data-cli-docs-drop]");
+        if (!zone) return;
+        e.preventDefault();
+        dragDepth = 0;
+        zone.classList.remove("is-drag");
+        ingestCliDocsUpload(e.dataTransfer?.files);
+      });
+    })();
 
     (function bindFinCartaoDrop() {
       const bindDropHost = (wrap) => {
@@ -2926,7 +2978,7 @@
           title: "Criar recorrência",
           sub: "Molde com recorrência (simulação)",
           body: `<p style="font-size:.84rem;color:var(--muted)">Simulação do <code>SelecaoProcessoMoldeRecorrenciaDialog</code>.</p>`,
-          foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>
+          foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>
             <button type="button" class="btn-primary" data-close onclick="toast('Recorrência criada')">Confirmar</button>`,
         });
       } else if (kind === "arquivados") {
@@ -3431,7 +3483,7 @@
           <ul style="padding-left:18px;line-height:1.7;font-size:.88rem">
             ${selected.map((s) => `<li>${s}</li>`).join("")}
           </ul>`,
-        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" data-close onclick="toast('Download iniciado')">Baixar PDF</button>`,
       });
     });
@@ -3491,10 +3543,11 @@
         cliDocsFileMenuId = null;
         syncCliDocsFileMenusDom();
       }
-      if (!e.target.closest(".fin-client-picker") && finDash.acOpen) {
+      if (!e.target.closest("#finEmpresaWrap") && finDash.acOpen) {
         finDash.acOpen = false;
-        const wrap = document.getElementById("financeiroWrap");
-        if (wrap?.classList.contains("show")) refreshFinClientPicker({ focus: false });
+        const wrap = document.getElementById("finEmpresaWrap");
+        wrap?.classList.remove("open");
+        document.getElementById("finEmpresaSelectBtn")?.setAttribute("aria-expanded", "false");
       }
       const addWrap = document.getElementById("tabAddWrap");
       if (addWrap && !addWrap.contains(e.target) && !e.target.closest("#addMenu")) {
@@ -3547,7 +3600,7 @@
               <label>Cargo</label>
               <input value="Analista Fiscal" />`,
             foot: `
-              <button type="button" class="btn-ghost" data-close>Fechar</button>
+              <button type="button" class="btn-ghost" data-close>Cancelar</button>
               <button type="button" class="btn-primary" data-close onclick="toast('Conta atualizada')">Salvar</button>`,
           });
         },

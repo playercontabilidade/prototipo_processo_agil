@@ -29,15 +29,15 @@
       white-space: nowrap;
       margin-bottom: -1px;
     }
-    .fin-report-nav button:hover { color: #28519c; background: transparent; }
+    .fin-report-nav button:hover { color: var(--accent); background: transparent; }
     .fin-report-nav button.active {
-      color: #28519c;
+      color: var(--accent);
       background: transparent;
-      border-bottom-color: #28519c;
+      border-bottom-color: var(--accent);
       box-shadow: none;
     }
     .fin-report-nav button:focus-visible {
-      outline: 2px solid color-mix(in srgb, #28519c 45%, transparent);
+      outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
       outline-offset: 2px;
     }
 
@@ -56,12 +56,12 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-left: 3px solid var(--col-accent);
-      border-radius: 12px;
+      border-radius: var(--radius);
       padding: 16px 18px 14px;
       box-shadow: none;
       min-width: 0;
     }
-    .fin-exec-col.onde { --col-accent: #28519c; }
+    .fin-exec-col.onde { --col-accent: var(--accent); }
     .fin-exec-col.para { --col-accent: #2f9e6b; }
     .fin-exec-col.fazer { --col-accent: #c47f16; }
 
@@ -108,7 +108,7 @@
       font-size: .64rem;
       font-weight: 750;
       padding: 3px 8px;
-      border-radius: 6px;
+      border-radius: var(--radius-sm);
       background: rgba(47, 158, 107, .12);
       color: #1f7a4d;
     }
@@ -165,7 +165,7 @@
       border-radius: 0;
       background: transparent;
       border: 0;
-      border-bottom: 1px solid #eef1f5;
+      border-bottom: 1px solid var(--border);
     }
     .fin-proj-row:last-child { border-bottom: 0; padding-bottom: 0; }
     .fin-proj-row:first-child { padding-top: 0; }
@@ -206,7 +206,7 @@
       line-height: 1.5;
       color: var(--navy-deep);
       padding: 10px 0;
-      border-bottom: 1px solid #eef1f5;
+      border-bottom: 1px solid var(--border);
     }
     .fin-action-list li:last-child { border-bottom: 0; padding-bottom: 0; }
     .fin-action-list li:first-child { padding-top: 0; }
@@ -227,9 +227,9 @@
       gap: 10px;
     }
     .fin-exec-kpi {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       padding: 14px 14px 12px;
       box-shadow: 0 1px 2px rgba(19, 42, 82, 0.045);
       text-align: left;
@@ -237,7 +237,7 @@
       color: inherit;
       cursor: pointer;
       min-width: 0;
-      border-left: 3px solid var(--kpi-accent, #28519c);
+      border-left: 3px solid var(--kpi-accent, var(--accent));
       transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
     }
     .fin-exec-kpi:hover {
@@ -245,8 +245,8 @@
       border-color: color-mix(in srgb, var(--kpi-accent) 32%, var(--border));
       box-shadow: 0 8px 20px rgba(19, 42, 82, 0.09);
     }
-    .fin-exec-kpi.saldo { --kpi-accent: #28519c; }
-    .fin-exec-kpi.fluxo { --kpi-accent: #28519c; }
+    .fin-exec-kpi.saldo { --kpi-accent: var(--accent); }
+    .fin-exec-kpi.fluxo { --kpi-accent: var(--accent); }
     .fin-exec-kpi.margem { --kpi-accent: #2f9e6b; }
     .fin-exec-kpi.inad { --kpi-accent: #c47f16; }
     .fin-exec-kpi.inad.is-alert { --kpi-accent: #b33a4a; }
@@ -281,7 +281,7 @@
       font-size: .62rem;
       font-weight: 700;
       padding: 2px 6px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: rgba(196, 127, 22, .14);
       color: #9a5f0c;
       text-transform: none;
@@ -297,7 +297,7 @@
     }
 
     .fin-exec-card {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 16px 18px;
@@ -325,9 +325,9 @@
       font: inherit;
       font-size: .78rem;
       padding: 6px 10px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border);
-      background: #fff;
+      background: var(--surface);
       color: var(--text);
     }
     .fin-exec-legend {
@@ -379,17 +379,17 @@
       gap: 12px;
       align-items: center;
       padding: 12px 4px;
-      border-bottom: 1px solid #eef1f5;
+      border-bottom: 1px solid var(--border);
     }
     .fin-exec-feed li:last-child { border-bottom: 0; }
     .fin-exec-feed .avatar {
       width: 36px;
       height: 36px;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       display: grid;
       place-items: center;
       font-size: .85rem;
-      background: #eef2f7;
+      background: var(--surface-2);
       color: var(--navy);
       font-weight: 700;
     }
@@ -428,7 +428,7 @@
     #relatorios-placeholder[hidden] { display: none !important; }
 
     .fin-rpt-card {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 8px 4px;
@@ -468,18 +468,18 @@
       gap: 10px;
     }
     .fin-rpt-kpi {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       padding: 14px 16px;
-      border-left: 3px solid #28519c;
+      border-left: 3px solid var(--accent);
       box-shadow: 0 1px 2px rgba(19, 42, 82, 0.045);
       min-width: 0;
       transition: transform .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease);
     }
     .fin-rpt-kpi:hover {
       transform: translateY(-2px);
-      border-color: color-mix(in srgb, #28519c 32%, var(--border));
+      border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
       box-shadow: 0 8px 20px rgba(19, 42, 82, 0.09);
     }
     .fin-rpt-kpi.green:hover { border-color: color-mix(in srgb, #2f9e6b 32%, var(--border)); }
@@ -518,9 +518,9 @@
       gap: 10px;
     }
     .fin-rpt-note {
-      background: #fff;
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       padding: 14px 16px;
       box-shadow: 0 1px 2px rgba(19, 42, 82, 0.04);
       text-align: left;
@@ -553,7 +553,7 @@
       text-transform: uppercase;
       color: var(--muted);
       padding: 12px 20px;
-      border-bottom: 1px solid #eef1f5;
+      border-bottom: 1px solid var(--border);
     }
     .fin-rpt-table th.num,
     .fin-rpt-table td.num {
@@ -636,7 +636,7 @@
       justify-content: space-between;
       gap: 12px;
       padding: 11px 0;
-      border-bottom: 1px solid #eef1f5;
+      border-bottom: 1px solid var(--border);
       font-size: .86rem;
     }
     .fin-rpt-summary li:last-child { border-bottom: 0; padding-bottom: 0; }
@@ -679,17 +679,17 @@
     .fin-ebitda-metrics .m-bar {
       grid-column: 1 / -1;
       height: 7px;
-      border-radius: 999px;
-      background: #eef1f5;
+      border-radius: var(--radius-pill);
+      background: var(--surface-2);
       overflow: hidden;
     }
     .fin-ebitda-metrics .m-bar > i {
       display: block;
       height: 100%;
-      border-radius: 999px;
-      background: #28519c;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
     }
-    .fin-ebitda-metrics .m-bar > i.tone-2 { background: #28519c; }
+    .fin-ebitda-metrics .m-bar > i.tone-2 { background: var(--accent); }
     .fin-ebitda-metrics .m-bar > i.tone-3 { background: #6b8caf; }
     .fin-ebitda-metrics .m-bar > i.tone-4 { background: #2f9e6b; }
 
@@ -743,7 +743,7 @@
       place-items: center;
       margin: 0 auto 16px;
       color: var(--accent);
-      background: rgba(59, 111, 212, 0.12);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
     }
 
     .fin-empty-state .empty-ico svg { width: 34px; height: 34px; }
@@ -751,15 +751,12 @@
     .fin-empty-state p {
       margin: 0;
       max-width: 360px;
-      font-size: .95rem;
-      line-height: 1.45;
-      color: var(--muted);
       font-weight: 550;
     }
 
     .fin-tab-stub {
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 28px 24px;
       text-align: center;

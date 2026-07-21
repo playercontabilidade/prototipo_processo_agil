@@ -42,7 +42,7 @@
       font-weight: 650;
       color: var(--navy);
       padding: 7px 12px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       background: var(--surface);
       border: 1px solid var(--border);
     }
@@ -116,7 +116,7 @@
       display: inline-flex;
       align-items: center;
       padding: 5px 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .7rem;
       font-weight: 650;
       border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
@@ -129,7 +129,7 @@
       margin-left: auto;
       height: 32px;
       padding: 0 12px;
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: var(--surface);
       color: var(--navy);
@@ -237,7 +237,7 @@
       font-size: .72rem;
       background: var(--surface-2);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 10px 12px;
       color: var(--navy);
       margin-top: 8px;
@@ -284,7 +284,7 @@
     @media (max-width: 700px) { .dg-rules { grid-template-columns: 1fr; } }
 
     .dg-rule {
-      border-radius: 12px;
+      border-radius: var(--radius);
       padding: 14px 16px;
       border: 1px solid var(--border);
       background: var(--surface);
@@ -334,7 +334,7 @@
       align-items: center;
       gap: 6px;
       padding: 4px 8px 4px 9px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
       background: linear-gradient(180deg, var(--surface), var(--surface-2));
       font-size: .7rem;
@@ -376,7 +376,7 @@
     .dg-page .fin-field select {
       height: 32px;
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 0 10px;
       font: inherit;
       font-size: .78rem;
@@ -462,7 +462,7 @@
 
     /* Modal mock (chrome real) */
     .dg-modal-mock {
-      border-radius: 14px;
+      border-radius: var(--radius);
       overflow: hidden;
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
@@ -556,8 +556,8 @@
           <div class="dg-swatch-meta"><strong>Navy deep</strong><code>--navy-deep</code></div>
         </div>
         <div class="dg-swatch">
-          <div class="dg-swatch-color" style="background: var(--navy-soft)"></div>
-          <div class="dg-swatch-meta"><strong>Navy soft</strong><code>--navy-soft</code></div>
+          <div class="dg-swatch-color" style="background: var(--secondary)"></div>
+          <div class="dg-swatch-meta"><strong>Secondary</strong><code>--secondary</code></div>
         </div>
         <div class="dg-swatch">
           <div class="dg-swatch-color" style="background: var(--accent)"></div>
@@ -595,9 +595,19 @@
           <div class="dg-swatch-color" style="background: var(--danger)"></div>
           <div class="dg-swatch-meta"><strong>Danger</strong><code>--danger</code></div>
         </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--ok)"></div>
+          <div class="dg-swatch-meta"><strong>Ok</strong><code>--ok</code></div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background: var(--warn)"></div>
+          <div class="dg-swatch-meta"><strong>Warn</strong><code>--warn</code></div>
+        </div>
       </div>
       <p class="dg-lead" style="margin-top:14px;margin-bottom:0">
-        Hex claro de referência: navy <code>#28519c</code> · deep <code>#1c386e</code> · accent <code>#28519c</code> · border <code>#d4dce8</code> · muted <code>#6b7c93</code>.
+        Hex claro de referência (só em <code>:root</code>): navy/accent <code>#28519c</code> · deep <code>#1c386e</code> · secondary <code>#ffd519</code> · ok <code>#2f9e6b</code> · warn <code>#c47f16</code> · danger <code>#b42318</code> · border <code>#d4dce8</code>.
+        No CSS de componentes use tokens (<code>var(--accent)</code>, <code>var(--secondary)</code>…) — não repetir o hex.
+        Removidos aliases pouco usados: <code>--primary</code>, <code>--navy-soft</code>, <code>--chart-ant</code>.
         No tema escuro, os valores mudam via <code>html.dark</code>.
       </p>
     </section>
@@ -643,20 +653,20 @@
           <strong>Radius</strong>
           <div class="dg-radius-demo" style="margin-top:10px">
             <div class="dg-radius-box" style="width:64px;height:48px;border-radius:var(--radius)">12</div>
-            <div class="dg-radius-box" style="width:56px;height:40px;border-radius:8px">8</div>
-            <div class="dg-radius-box" style="width:48px;height:32px;border-radius:999px">pill</div>
+            <div class="dg-radius-box" style="width:56px;height:40px;border-radius:var(--radius-sm)">8</div>
+            <div class="dg-radius-box" style="width:48px;height:32px;border-radius:var(--radius-pill)">pill</div>
           </div>
-          <div class="dg-spec">--radius: 12px · controles: 8px · badges: 999px</div>
+          <div class="dg-spec">--radius: 12px · --radius-sm: 8px · --radius-pill: 999px</div>
         </div>
         <div class="dg-card">
           <strong>Shadow</strong>
-          <div style="margin-top:10px;height:56px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--border)"></div>
+          <div style="margin-top:10px;height:56px;border-radius: var(--radius);background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--border)"></div>
           <div class="dg-spec">--shadow · cards: sombra azulada leve</div>
         </div>
         <div class="dg-card">
           <strong>Alturas</strong>
           <div class="dg-row" style="margin-top:10px">
-            <input type="text" value="Input 32px" readonly style="height:32px;width:140px;border:1px solid var(--border);border-radius:8px;padding:0 10px;font:inherit;font-size:.78rem;background:var(--surface);color:var(--navy)" />
+            <input type="text" value="Input 32px" readonly style="height:32px;width:140px;border:1px solid var(--border);border-radius: var(--radius-sm);padding:0 10px;font:inherit;font-size:.78rem;background:var(--surface);color:var(--navy)" />
             <button type="button" class="btn-primary" style="height:36px">Botão 36px</button>
           </div>
           <div class="dg-spec">input/select: 32px · botão: 36px · faixa: ~30px</div>
@@ -682,6 +692,102 @@
             <button type="button" class="btn-ghost">Cancelar</button>
             <button type="button" class="btn-outline">Exportar</button>
             <button type="button" class="btn-primary" disabled>Desabilitado</button>
+          </div>
+          <p class="dg-lead" style="margin-top:12px;margin-bottom:0">
+            <strong>Footer de modal:</strong>
+            <strong>Cancelar</strong> (ghost) abandona operação/formulário;
+            <strong>Fechar</strong> (ghost) encerra só visualização/leitura.
+            CTA de ação = <code>btn-primary</code>. Nunca primary em Cancelar/Fechar.
+            Saída do modal = só pelo footer (<strong>Cancelar</strong> / <strong>Fechar</strong>).
+            O X do header <strong>não é usado</strong> (sempre oculto).
+            <br/><br/>
+            <strong>Exceções documentadas (não unificar para <code>data-close</code>):</strong>
+            passos aninhados (OFX, pmap, etc.) usam id dedicado e voltam ao passo pai
+            (<code>goBack</code> / reopen) — <code>data-close</code> fecharia o modal inteiro.
+            <br/>IDs preservados:
+            <code>finGerarCancel</code>,
+            <code>finTransfCancel</code>,
+            <code>finOfxEditCancel</code>,
+            <code>finBancoEditCancel</code>,
+            <code>finPmapAssocCancel</code>,
+            <code>finPmapNovoCancel</code>,
+            <code>finPmapLayoutClose</code>,
+            <code>finPmapBancosCancel</code>.
+            Rótulos já seguem Cancelar/Fechar; só o atributo de dismiss é especial.
+          </p>
+        </div>
+
+        <!-- Abas / segmentos -->
+        <div class="dg-card">
+          <strong>Abas e segmentos (estado ativo)</strong>
+          <p class="dg-lead" style="margin:8px 0 12px">
+            Três padrões canônicos — não misturar no mesmo tipo de controle.
+            Tokens: <code>--tab-soft-*</code>, <code>--tab-solid-*</code>, underline com <code>var(--accent)</code>.
+          </p>
+          <div class="dg-stack" style="gap:14px">
+            <div>
+              <div class="dg-type-meta" style="margin-bottom:6px">A · Soft — abas de página (muitas opções)</div>
+              <div class="cli-tabs" style="border:1px solid var(--border);border-radius:var(--radius);padding:6px;background:var(--surface)">
+                <button type="button" class="cli-tab">Obrigações</button>
+                <button type="button" class="cli-tab active">XML</button>
+                <button type="button" class="cli-tab">Financeiro</button>
+              </div>
+            </div>
+            <div>
+              <div class="dg-type-meta" style="margin-bottom:6px">B · Solid — segmented curto (2–4 itens)</div>
+              <div class="cli-xml-mod-tabs">
+                <button type="button">Importar</button>
+                <button type="button" class="active">Dashboard</button>
+                <button type="button">Produtos</button>
+                <button type="button">Configurações</button>
+              </div>
+            </div>
+            <div>
+              <div class="dg-type-meta" style="margin-bottom:6px">C · Underline — nav densa (relatório / módulo / config)</div>
+              <div class="fin-report-nav" style="margin:0">
+                <button type="button">Resumo</button>
+                <button type="button" class="active">DRE</button>
+                <button type="button">Fluxo</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Toggles densos -->
+        <div class="dg-card">
+          <strong>Toggles densos (ativo)</strong>
+          <p class="dg-lead" style="margin:8px 0 12px">
+            Ícone / filtro pressionado = <strong>soft</strong> (<code>--tab-soft-*</code>).
+            Segmented curto de texto (2 opções) = <strong>solid</strong> (<code>--tab-solid-*</code>), igual ao XML.
+          </p>
+          <div class="dg-row">
+            <div class="proc-view-toggle" aria-label="Demo toggle">
+              <button type="button" class="btn-icon active" aria-pressed="true" title="Lista">☰</button>
+              <button type="button" class="btn-icon" aria-pressed="false" title="Cards">▦</button>
+            </div>
+            <div class="fin-side-toggles">
+              <button type="button" class="active">Pagar</button>
+              <button type="button">Receber</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chips / filtros -->
+        <div class="dg-card">
+          <strong>Chips e filtros rápidos (ativo)</strong>
+          <p class="dg-lead" style="margin:8px 0 12px">
+            Chip/filtro com borda = <strong>soft</strong>. Chip selecionado estilo “pill cheio” (ex.: feed) = <strong>solid</strong>.
+          </p>
+          <div class="dg-row">
+            <div class="agenda-quick-filters">
+              <button type="button" class="active">Hoje</button>
+              <button type="button">Semana</button>
+              <button type="button">Mês</button>
+            </div>
+            <div class="cli-feed-filters">
+              <button type="button" class="cli-feed-filter active">Todos</button>
+              <button type="button" class="cli-feed-filter">Equipe</button>
+            </div>
           </div>
         </div>
 
@@ -710,6 +816,30 @@
               <input type="text" value="—" disabled />
             </label>
           </div>
+        </div>
+
+        <!-- Buscas / filtros -->
+        <div class="dg-card">
+          <strong>Buscas e filtros</strong>
+          <div class="dg-row" style="margin-top:10px;align-items:center;gap:8px;flex-wrap:wrap">
+            <div class="proc-filter search" style="flex:1 1 220px;max-width:320px">
+              <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="Buscar…" aria-label="Buscar exemplo" />
+            </div>
+            <div class="proc-filter field" style="flex:0 1 160px">
+              <select aria-label="Filtro exemplo">
+                <option>Todos</option>
+                <option>Ativos</option>
+              </select>
+            </div>
+          </div>
+          <p class="dg-lead" style="margin-top:12px;margin-bottom:0">
+            Altura canônica <strong>36px</strong>. Busca = <code>proc-filter search</code> + ícone lupa.
+            Filtro ao lado = <code>proc-filter field</code>. Mesmo gap/alinhamento da barra; sem família visual paralela.
+            Ações da toolbar (<code>proc-actions</code>, CTA, ícones expand/export) também em <strong>36px</strong>.
+            Hovers/focus de accent = <code>color-mix</code> com <code>var(--accent)</code>; superfícies = <code>var(--surface)</code> (não <code>#fff</code> solto).
+            Raios: controles/cards médios = <strong>8px</strong> (<code>--radius-sm</code>); painéis maiores = <code>--radius</code> (12px); pills/badges de status = <code>--radius-pill</code> (999px).
+          </p>
         </div>
 
         <!-- Checkboxes + badges -->
@@ -747,8 +877,13 @@
           <strong>Empty state</strong>
           <div class="dg-empty">
             <div class="empty-icon" aria-hidden="true">∅</div>
-            <div class="fin-table-empty">Nenhum acordo cadastrado.</div>
+            <div class="cli-empty-panel" style="padding:0">Nenhum acordo cadastrado.</div>
           </div>
+          <p class="dg-lead" style="margin:12px 0 0;font-size:.72rem">
+            Três tiers (classes preservadas): <strong>compact</strong> (.78rem — tabela/mini/célula),
+            <strong>panel</strong> (.84rem — lista/área), <strong>hero</strong> (<code>fin-empty-state</code> / <code>cli-xml-empty</code> p).
+            Cor = <code>var(--muted)</code>. Dashed: painéis = <code>--radius</code>; células densas = <code>--radius-sm</code>.
+          </p>
         </div>
 
         <!-- Modal mock -->

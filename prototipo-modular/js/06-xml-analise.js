@@ -343,6 +343,78 @@
       return map[status] || map.saudavel;
     }
 
+    /** Comparativo visual compra × venda (lista, resumo e detalhe). */
+    function renderCliXmlCompraVendaVisual({
+      compraCents = 0,
+      vendaCents = 0,
+      qtdCompra = null,
+      qtdVenda = null,
+      compact = false,
+      title = "Compra vs. Venda",
+      hint = "Comparativo do recorte atual",
+    } = {}) {
+      const max = Math.max(compraCents, vendaCents, 1);
+      const compraW = Math.max(4, Math.round((compraCents / max) * 100));
+      const vendaW = Math.max(vendaCents > 0 ? 4 : 0, Math.round((vendaCents / max) * 100));
+      const diff = vendaCents - compraCents;
+      const diffCls = vendaCents <= 0 ? "muted" : (diff < 0 ? "neg" : "ok");
+      const diffLabel = vendaCents <= 0
+        ? "Sem venda no período"
+        : `${diff >= 0 ? "+" : "−"}${xmlMoney(Math.abs(diff))}`;
+      const metaCompra = qtdCompra != null ? `${qtdCompra} un` : "Entrada";
+      const metaVenda = qtdVenda != null
+        ? (qtdVenda > 0 ? `${qtdVenda} un` : "Sem saída")
+        : "Saída";
+      return `
+        <article class="cli-xml-cv${compact ? " is-compact" : ""}" aria-label="${uiSelectEscape(title)}">
+          ${compact ? "" : `
+            <div class="cli-xml-cv-head">
+              <div>
+                <h4>${uiSelectEscape(title)}</h4>
+                <p class="hint">${uiSelectEscape(hint)}</p>
+              </div>
+              <div class="cli-xml-cv-diff is-${diffCls}">
+                <span class="lab">Resultado bruto</span>
+                <strong>${diffLabel}</strong>
+              </div>
+            </div>`}
+          <div class="cli-xml-cv-sides">
+            <div class="cli-xml-cv-side is-compra">
+              <span class="lab">Compra</span>
+              <strong>${xmlMoney(compraCents)}</strong>
+              <span class="meta">${uiSelectEscape(metaCompra)}</span>
+            </div>
+            <div class="cli-xml-cv-side is-venda">
+              <span class="lab">Venda</span>
+              <strong>${vendaCents > 0 ? xmlMoney(vendaCents) : "—"}</strong>
+              <span class="meta">${uiSelectEscape(metaVenda)}</span>
+            </div>
+          </div>
+          <div class="cli-xml-cv-bars" aria-hidden="true">
+            <div class="row is-compra">
+              <span>Compra</span>
+              <div class="track"><i style="width:${compraW}%"></i></div>
+            </div>
+            <div class="row is-venda">
+              <span>Venda</span>
+              <div class="track"><i style="width:${vendaW}%"></i></div>
+            </div>
+          </div>
+          ${compact ? `<p class="cli-xml-cv-compact-diff is-${diffCls}">${diffLabel}</p>` : ""}
+        </article>`;
+    }
+
+    function renderCliXmlCvMiniBars(compraCents, vendaCents) {
+      const max = Math.max(compraCents, vendaCents, 1);
+      const compraW = Math.max(3, Math.round((compraCents / max) * 100));
+      const vendaW = Math.max(vendaCents > 0 ? 3 : 0, Math.round((vendaCents / max) * 100));
+      return `
+        <div class="cli-xml-cv-mini" title="Compra ${xmlMoney(compraCents)} · Venda ${vendaCents > 0 ? xmlMoney(vendaCents) : "—"}" aria-label="Comparativo compra e venda">
+          <span class="seg is-compra" style="width:${compraW}%"></span>
+          <span class="seg is-venda" style="width:${vendaW}%"></span>
+        </div>`;
+    }
+
     function getCliXmlProdutosCalc(c) {
       const st = ensureCliXmlAnalise(c);
       const seed = st._seed;
@@ -441,24 +513,24 @@
     function renderCliXmlImportTab(c) {
       const st = ensureCliXmlAnalise(c);
       const imp = st.import;
-      const cnpjDigits = xmlOnlyDigits(st.cnpj);
+      const cnpjDigits = xmlOnlyDigits(st.cnpj || c?.cnpj || "");
       const cnpjOk = xmlValidCnpj(cnpjDigits);
-      const cnpjShow = cnpjDigits.length === 14 ? xmlFormatCnpj(cnpjDigits) : cnpjDigits;
+      const cnpjShow = cnpjDigits.length === 14 ? xmlFormatCnpj(cnpjDigits) : (cnpjDigits || "—");
 
       return `
         <section class="cli-xml-import" aria-label="Importação de XMLs">
           <div class="cli-xml-import-grid">
-            <div class="cli-xml-card cli-xml-card-cnpj">
+            <div class="cli-xml-card cli-xml-rules">
               <div class="cli-xml-card-inner">
-                <h4>1. CNPJ da empresa analisada</h4>
-                <p class="hint">Formato canônico sem pontuação na validação · exibição mascarada.</p>
-                <label class="cli-xml-field">
-                  <span>CNPJ</span>
-                  <input type="text" id="cliXmlCnpj" inputmode="numeric" maxlength="18" value="${uiSelectEscape(cnpjShow)}" placeholder="00.000.000/0000-00" aria-invalid="${cnpjDigits && !cnpjOk ? "true" : "false"}" />
-                </label>
-                <p class="cli-xml-field-msg ${cnpjOk ? "is-ok" : (cnpjDigits ? "is-bad" : "")}">
-                  ${cnpjOk ? `Válido · armazenado como ${cnpjDigits}` : (cnpjDigits ? "CNPJ inválido — confira os dígitos verificadores" : "Informe o CNPJ para classificar entradas e saídas")}
-                </p>
+                <h4>1. Regras de classificação automática</h4>
+                <p class="hint">CNPJ do cliente · ${uiSelectEscape(cnpjShow)} · usado para Entrada/Saída sem preenchimento manual.</p>
+                <ul>
+                  <li><strong>Entrada/Compra</strong> — CNPJ analisado como destinatário + CFOP de entrada</li>
+                  <li><strong>Saída/Venda</strong> — CNPJ analisado como emitente + CFOP de saída</li>
+                  <li><strong>Deduplicação</strong> — chave de acesso da NF-e + hash do arquivo</li>
+                  <li><strong>Exclusões</strong> — notas canceladas e eventos sem efeito econômico fora dos totais</li>
+                  <li><strong>Créditos</strong> — imposto destacado ≠ aumento automático de custo (créditos recuperáveis vs. não recuperáveis)</li>
+                </ul>
               </div>
             </div>
 
@@ -506,17 +578,6 @@
                   </li>`).join("") || `<li class="is-info"><span>Sem eventos ainda</span></li>`}
               </ul>
             </div>
-          </div>
-
-          <div class="cli-xml-card cli-xml-rules">
-            <h4>Regras de classificação automática</h4>
-            <ul>
-              <li><strong>Entrada/Compra</strong> — CNPJ analisado como destinatário + CFOP de entrada</li>
-              <li><strong>Saída/Venda</strong> — CNPJ analisado como emitente + CFOP de saída</li>
-              <li><strong>Deduplicação</strong> — chave de acesso da NF-e + hash do arquivo</li>
-              <li><strong>Exclusões</strong> — notas canceladas e eventos sem efeito econômico fora dos totais</li>
-              <li><strong>Créditos</strong> — imposto destacado ≠ aumento automático de custo (créditos recuperáveis vs. não recuperáveis)</li>
-            </ul>
           </div>
         </section>`;
     }
@@ -614,37 +675,49 @@
               <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               <input type="search" id="cliXmlFiltroQ" placeholder="Buscar nome ou código…" value="${uiSelectEscape(f.q)}" aria-label="Buscar produto" />
             </div>
-            <label class="cli-xml-mini-field"><span>De</span><input type="date" id="cliXmlFiltroDe" value="${uiSelectEscape(f.de)}" /></label>
-            <label class="cli-xml-mini-field"><span>Até</span><input type="date" id="cliXmlFiltroAte" value="${uiSelectEscape(f.ate)}" /></label>
-            <label class="cli-xml-mini-field"><span>NCM</span><input type="text" id="cliXmlFiltroNcm" value="${uiSelectEscape(f.ncm)}" placeholder="NCM" /></label>
-            <label class="cli-xml-mini-field"><span>CFOP</span><input type="text" id="cliXmlFiltroCfop" value="${uiSelectEscape(f.cfop)}" placeholder="CFOP" /></label>
-            <label class="cli-xml-mini-field"><span>Fornecedor</span><input type="text" id="cliXmlFiltroForn" value="${uiSelectEscape(f.fornecedor)}" placeholder="Fornecedor" /></label>
-            <label class="cli-xml-mini-field"><span>Cliente</span><input type="text" id="cliXmlFiltroCli" value="${uiSelectEscape(f.cliente)}" placeholder="Cliente" /></label>
-            <label class="cli-xml-mini-field"><span>Margem</span>
-              <select id="cliXmlFiltroMargem">
-                <option value="">Todas</option>
+            <div class="proc-filter field">
+              <input type="date" id="cliXmlFiltroDe" value="${uiSelectEscape(f.de)}" aria-label="De" title="De" />
+            </div>
+            <div class="proc-filter field">
+              <input type="date" id="cliXmlFiltroAte" value="${uiSelectEscape(f.ate)}" aria-label="Até" title="Até" />
+            </div>
+            <div class="proc-filter field">
+              <input type="text" id="cliXmlFiltroNcm" value="${uiSelectEscape(f.ncm)}" placeholder="NCM" aria-label="NCM" />
+            </div>
+            <div class="proc-filter field">
+              <input type="text" id="cliXmlFiltroCfop" value="${uiSelectEscape(f.cfop)}" placeholder="CFOP" aria-label="CFOP" />
+            </div>
+            <div class="proc-filter field">
+              <input type="text" id="cliXmlFiltroForn" value="${uiSelectEscape(f.fornecedor)}" placeholder="Fornecedor" aria-label="Fornecedor" />
+            </div>
+            <div class="proc-filter field">
+              <input type="text" id="cliXmlFiltroCli" value="${uiSelectEscape(f.cliente)}" placeholder="Cliente" aria-label="Cliente" />
+            </div>
+            <div class="proc-filter field">
+              <select id="cliXmlFiltroMargem" aria-label="Margem">
+                <option value="">Margem · todas</option>
                 <option value="sem" ${f.margem === "sem" ? "selected" : ""}>Sem venda</option>
                 <option value="neg" ${f.margem === "neg" ? "selected" : ""}>Negativa</option>
                 <option value="pos" ${f.margem === "pos" ? "selected" : ""}>Positiva</option>
               </select>
-            </label>
-            <label class="cli-xml-mini-field"><span>Regime</span>
-              <select id="cliXmlFiltroRegime">
-                <option value="">Todos</option>
+            </div>
+            <div class="proc-filter field">
+              <select id="cliXmlFiltroRegime" aria-label="Regime">
+                <option value="">Regime · todos</option>
                 <option value="Simples Nacional" ${f.regime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option>
                 <option value="Lucro Presumido" ${f.regime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option>
               </select>
-            </label>
-            <label class="cli-xml-mini-field"><span>Status</span>
-              <select id="cliXmlFiltroStatus">
-                <option value="">Todos</option>
+            </div>
+            <div class="proc-filter field">
+              <select id="cliXmlFiltroStatus" aria-label="Status">
+                <option value="">Status · todos</option>
                 <option value="sem-venda" ${f.status === "sem-venda" ? "selected" : ""}>Sem venda</option>
                 <option value="prejuizo" ${f.status === "prejuizo" ? "selected" : ""}>Prejuízo</option>
                 <option value="baixa" ${f.status === "baixa" ? "selected" : ""}>Baixa</option>
                 <option value="atencao" ${f.status === "atencao" ? "selected" : ""}>Atenção</option>
                 <option value="saudavel" ${f.status === "saudavel" ? "selected" : ""}>Saudável</option>
               </select>
-            </label>
+            </div>
           </div>
           <div class="cli-xml-table-wrap">
             <table class="cli-xml-table">
@@ -659,6 +732,7 @@
                   <th class="num">Qtd. Compra</th>
                   <th class="num">Custo Unit.</th>
                   <th class="num">Total Compra</th>
+                  <th class="num">Total Venda</th>
                   <th class="num">Tributos</th>
                   <th class="num">Carga Ent.</th>
                   <th class="num">Margem Líq.</th>
@@ -679,16 +753,17 @@
                     <td class="num">${p.qtdCompra}</td>
                     <td class="num">${xmlMoney(p.calc.cef)}</td>
                     <td class="num">${xmlMoney(p.calc.totalCompraCents)}</td>
+                    <td class="num">${p.calc.semVenda ? "—" : xmlMoney(p.calc.totalVendaCents)}</td>
                     <td class="num">${xmlMoney(p.calc.tribEntradaTotalCents)}</td>
                     <td class="num">${xmlPctLabel(p.calc.cargaEntradaPct)}</td>
                     <td class="num ${p.calc.semVenda ? "" : (p.calc.mlPct < 0 ? "neg" : "")}">${p.calc.semVenda ? "—" : xmlPctLabel(p.calc.mlPct)}</td>
                     <td><span class="cli-xml-status is-${st.cls}">${st.label}</span></td>
                   </tr>`;
-                }).join("") : `<tr><td colspan="13"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
+                }).join("") : `<tr><td colspan="14"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
               </tbody>
             </table>
           </div>
-          <p class="cli-xml-legend">Status por prioridade: Sem venda → Prejuízo → Baixa → Atenção → Saudável. Produtos sem saída nunca recebem margem zero.</p>
+          <p class="cli-xml-legend">Clique em um produto para ver o comparativo compra × venda e a memória de cálculo. Status: Sem venda → Prejuízo → Baixa → Atenção → Saudável.</p>
         </section>`;
     }
 
@@ -753,6 +828,35 @@
         wide: true,
         body: `
           <div class="cli-xml-prod-detail">
+            <div class="cli-xml-prod-cv-grid">
+              ${renderCliXmlCompraVendaVisual({
+                compraCents: calc.totalCompraCents,
+                vendaCents: calc.totalVendaCents,
+                qtdCompra: p.qtdCompra,
+                qtdVenda: p.qtdVenda,
+                title: "Compra vs. Venda",
+                hint: "Totais do produto no período · custo efetivo × preço praticado",
+              })}
+              <div class="cli-xml-cv-unit">
+                <h4>Unitário</h4>
+                <div class="cli-xml-cv-sides">
+                  <div class="cli-xml-cv-side is-compra">
+                    <span class="lab">Custo efetivo</span>
+                    <strong>${xmlMoney(calc.cef)}</strong>
+                    <span class="meta">C_ef por unidade</span>
+                  </div>
+                  <div class="cli-xml-cv-side is-venda">
+                    <span class="lab">Preço de venda</span>
+                    <strong>${calc.semVenda ? "—" : xmlMoney(calc.pv)}</strong>
+                    <span class="meta">${calc.semVenda ? "Sem saída" : "P_v praticado"}</span>
+                  </div>
+                </div>
+                <p class="cli-xml-cv-unit-ml ${calc.semVenda ? "is-muted" : (calc.mlPct < 0 ? "is-neg" : "is-ok")}">
+                  Margem líquida:
+                  <strong>${calc.semVenda ? "Sem venda" : `${xmlMoney(calc.mlCents)} · ${xmlPctLabel(calc.mlPct)}`}</strong>
+                </p>
+              </div>
+            </div>
             <div class="cli-xml-memoria">
               <h4>Memória de cálculo</h4>
               <dl>
@@ -835,7 +939,7 @@
         chart: { ...base, type: "bar", height: 220 },
         series: [{ name: "R$ vendido", data: top.map((p) => xmlFromCents(p.calc.totalVendaCents)) }],
         plotOptions: { bar: { borderRadius: 4, columnWidth: "55%" } },
-        colors: ["#284A8E"],
+        colors: ["#28519c"],
         xaxis: { categories: top.map((p) => p.codigo) },
         dataLabels: { enabled: false },
         grid: { borderColor: "#d4dce8", strokeDashArray: 4 },
@@ -864,7 +968,7 @@
         chart: { ...base, type: "donut", height: 220 },
         series: [xmlFromCents(k.totalCompra), xmlFromCents(k.totalVenda)],
         labels: ["Comprado", "Vendido"],
-        colors: ["#c47f16", "#284A8E"],
+        colors: ["#c47f16", "#28519c"],
         legend: { position: "bottom" },
         dataLabels: { enabled: false },
         plotOptions: { pie: { donut: { size: "62%" } } },
@@ -909,8 +1013,10 @@
     function startCliXmlImportPipeline(opts = {}) {
       const st = cliXmlAnalise;
       if (st.import.running) return;
+      const c = CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+      if (c?.cnpj) st.cnpj = xmlOnlyDigits(c.cnpj);
       if (!xmlValidCnpj(st.cnpj)) {
-        toast("Informe um CNPJ válido antes de importar");
+        toast("Cliente sem CNPJ válido para classificação automática");
         return;
       }
       if (st.import.timer) clearInterval(st.import.timer);
@@ -1050,26 +1156,6 @@
     }
 
     function handleCliXmlModInput(e) {
-      if (e.target.id === "cliXmlCnpj") {
-        const digits = xmlOnlyDigits(e.target.value).slice(0, 14);
-        cliXmlAnalise.cnpj = digits;
-        const pos = e.target.selectionStart;
-        const show = digits.length === 14 ? xmlFormatCnpj(digits) : digits;
-        e.target.value = show;
-        try { e.target.setSelectionRange(Math.min(pos, show.length), Math.min(pos, show.length)); } catch (_) { /* ignore */ }
-        const msg = e.target.closest(".cli-xml-card")?.querySelector(".cli-xml-field-msg");
-        if (msg) {
-          const ok = xmlValidCnpj(digits);
-          msg.className = `cli-xml-field-msg ${ok ? "is-ok" : (digits ? "is-bad" : "")}`;
-          msg.textContent = ok
-            ? `Válido · armazenado como ${digits}`
-            : (digits ? "CNPJ inválido — confira os dígitos verificadores" : "Informe o CNPJ para classificar entradas e saídas");
-        }
-        const startBtn = document.querySelector("[data-cli-xml='start-import']");
-        if (startBtn) startBtn.disabled = !xmlValidCnpj(digits) || cliXmlAnalise.import.running;
-        return true;
-      }
-
       if (e.target.id === "cliXmlFileInput") {
         const files = Array.from(e.target.files || []);
         e.target.value = "";

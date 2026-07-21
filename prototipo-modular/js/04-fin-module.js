@@ -16,7 +16,7 @@
 
       const tabsHtml = `
         <nav class="fin-report-nav" role="tablist" aria-label="Relatórios financeiros">
-          <button type="button" role="tab" data-fin-report-tab="visao" class="${isVisao ? "active" : ""}" aria-selected="${isVisao}">Visão Geral</button>
+          <button type="button" role="tab" data-fin-report-tab="visao" class="${isVisao ? "active" : ""}" aria-selected="${isVisao}">Resumo</button>
           <button type="button" role="tab" data-fin-report-tab="dre" class="${reportTab === "dre" ? "active" : ""}" aria-selected="${reportTab === "dre"}">DRE</button>
           <button type="button" role="tab" data-fin-report-tab="dfc" class="${reportTab === "dfc" ? "active" : ""}" aria-selected="${reportTab === "dfc"}">DFC</button>
           <button type="button" role="tab" data-fin-report-tab="ebitda" class="${reportTab === "ebitda" ? "active" : ""}" aria-selected="${reportTab === "ebitda"}">EBITDA</button>
@@ -1027,7 +1027,7 @@
               <div class="empty-ico" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
               </div>
-              <p>Selecione um cliente específico para operar nesta aba. A visão consolidada está disponível em <strong>Visão Geral</strong>.</p>
+              <p>Selecione um cliente específico para operar nesta aba. A visão consolidada está disponível em <strong>Painel</strong>.</p>
             </div>
           </div>`;
       }
@@ -1376,7 +1376,7 @@
         sub: "Informe a data inicial e a data final do filtro",
         body: `
           <div class="cfg-date-range-modal">
-            <p class="hint">Escolha o período no mesmo formato da Visão Geral.</p>
+            <p class="hint">Escolha o período no mesmo formato do Painel.</p>
             ${renderCfgDateRangeHtml({
               iniId: "cfgPeriodoIni",
               fimId: "cfgPeriodoFim",
@@ -1796,7 +1796,7 @@
             <div class="cfg-molde-chip"><span>${t}</span><button type="button" data-del-tag="${i}">Remover</button></div>
           `).join("") : `<div class="cfg-molde-empty">Nenhuma tag cadastrada.</div>`}</div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="cfgTagAdd">Adicionar tag</button>`,
       });
       const refresh = () => openCfgMoldeTagsModal(id);
@@ -1881,7 +1881,7 @@
             <span>${i.cliente}</span>
             <span class="proc-badge ${i.status === "Ativa" ? "sucesso" : "arquivado"}">${i.status}</span>
           </div>`).join("") || `<div class="cfg-molde-empty">Nenhuma instância</div>`,
-        foot: `<button type="button" class="btn-primary" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
       });
     }
 
@@ -2203,7 +2203,7 @@
           <label style="margin-top:12px">Novo grupo</label>
           <input id="cfgGrupoNome" placeholder="Nome do grupo" />`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="cfgGrupoAdd">Criar grupo</button>`,
       });
       document.getElementById("cfgGrupoAdd")?.addEventListener("click", () => {
@@ -2705,9 +2705,9 @@
             </div>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-ghost" id="cfgEmailTest">Testar envio</button>
-          <button type="button" class="btn-primary" id="cfgEmailSave" style="min-width:110px;border-radius:999px">Salvar</button>`,
+          <button type="button" class="btn-primary" id="cfgEmailSave" style="min-width:110px;border-radius:var(--radius-pill)">Salvar</button>`,
       });
 
       const pendente = document.getElementById("cfgEmailPendente");
@@ -2763,7 +2763,7 @@
               <div class="meta">${r.tempo}</div>
             </div>
           </div>`).join(""),
-        foot: `<button type="button" class="btn-primary" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
       });
     }
 
@@ -2975,7 +2975,7 @@
                   <h3>Classificador inteligente</h3>
                   <p>Operação, métricas e configuração do fluxo documental automático.</p>
                 </div>
-                <button type="button" class="btn-primary" id="cfgClassifRefresh" style="border-radius:999px">
+                <button type="button" class="btn-primary" id="cfgClassifRefresh" style="border-radius:var(--radius-pill)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:-2px"><path d="M21 12a9 9 0 0 0-14.3-7.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 14.3 7.2L21 16"/><path d="M16 21h5v-5"/></svg>
                   Atualizar
                 </button>
@@ -2989,11 +2989,11 @@
                     <input type="search" id="cfgClassifQ" placeholder="Empresas" value="${(query || "").replace(/"/g, "&quot;")}" />
                     <button type="button" class="clear" id="cfgClassifClearQ" aria-label="Limpar busca">×</button>
                   </div>
-                  <button type="button" class="btn-primary" id="cfgClassifBuscar" style="border-radius:999px;height:38px">
+                  <button type="button" class="btn-primary" id="cfgClassifBuscar" style="border-radius:var(--radius-pill);height:38px">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:-2px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     Buscar
                   </button>
-                  <button type="button" class="btn-ghost" id="cfgClassifLimpar" style="border-radius:999px;height:38px">
+                  <button type="button" class="btn-ghost" id="cfgClassifLimpar" style="border-radius:var(--radius-pill);height:38px">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:-2px"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                     Limpar filtros
                   </button>
@@ -3006,7 +3006,7 @@
                   </button>
                   <div id="cfgClassifTagsMenu" hidden style="display:none;flex-wrap:wrap;gap:6px;margin-top:8px">
                     ${allTags.map((t) => `
-                      <label class="cfg-obr-check" style="border:1px solid var(--border);border-radius:999px;padding:4px 10px">
+                      <label class="cfg-obr-check" style="border:1px solid var(--border);border-radius:var(--radius-pill);padding:4px 10px">
                         <input type="checkbox" data-cfg-classif-tag="${t}" ${selectedTags.includes(t) ? "checked" : ""} /> ${t}
                       </label>`).join("")}
                   </div>
@@ -3265,7 +3265,7 @@
                 <article class="cfg-sess-card">
                   <div class="cfg-sess-card-head">
                     <h3>Atividade ao longo do tempo</h3>
-                    <select aria-label="Granularidade" style="height:30px;border:1px solid var(--border);border-radius:7px;padding:0 8px;font:inherit;font-size:.72rem;background:transparent;color:var(--navy-deep)">
+                    <select aria-label="Granularidade" style="height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 8px;font:inherit;font-size:.72rem;background:transparent;color:var(--navy-deep)">
                       <option>Diário</option>
                       <option>Semanal</option>
                       <option>Mensal</option>
@@ -3335,7 +3335,7 @@
                     <button type="button" aria-label="Anterior" data-cfg-act="sess-prev">‹</button>
                     <button type="button" aria-label="Próxima" data-cfg-act="sess-next">›</button>
                     <span>Itens por página</span>
-                    <select aria-label="Itens por página" style="height:28px;border:1px solid var(--border);border-radius:6px;padding:0 6px;font:inherit;font-size:.72rem;background:transparent">
+                    <select aria-label="Itens por página" style="height:28px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 6px;font:inherit;font-size:.72rem;background:transparent">
                       <option>10</option>
                       <option selected>25</option>
                       <option>50</option>

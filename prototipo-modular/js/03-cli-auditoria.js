@@ -356,7 +356,7 @@
                 </div>
               </div>
               <div class="fin-emit-actions">
-                ${editing ? `<button type="button" class="btn-ghost" data-fin-acq="cancel-edit">Cancelar edição</button>` : ""}
+                ${editing ? `<button type="button" class="btn-ghost" data-fin-acq="cancel-edit">Descartar alterações</button>` : ""}
                 <button type="button" class="btn-primary" ${saveAttr}>${saveLabel}</button>
               </div>
             </div>
@@ -409,6 +409,7 @@
         body: renderFinAdquirentesHtml({ stacked: true, saveLabel: "Salvar regra", saveAttr: 'data-fin-cfg="save-acq"' }),
         wide: true,
         auditRules: true,
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
       });
       const tools = document.getElementById("modalHeadTools");
       const closeBtn = document.getElementById("modalClose");
@@ -526,7 +527,7 @@
       if (cancelEdit) {
         e.preventDefault();
         resetAcqForm({ refresh: true });
-        toast("Edição cancelada");
+        toast("Alterações descartadas");
         return true;
       }
       if (e.target.closest("[data-fin-cfg-del-acq]")) return false;
@@ -614,7 +615,7 @@
       }
       tools.innerHTML = "";
       tools.hidden = true;
-      if (closeBtn) closeBtn.hidden = false;
+      if (closeBtn) closeBtn.hidden = true;
     }
 
     function setCliFinAuditExpanded(on) {
@@ -676,6 +677,7 @@
       modalSub.textContent = `${c?.fantasia || c?.nome || "Cliente"} · ${cliFinAuditPeriodLabel()}${cliFinAudit.fileName ? ` · ${cliFinAudit.fileName}` : ""}`;
       modalBody.innerHTML = renderCliFinAuditModalInner();
       modalFoot.innerHTML = `<button type="button" class="btn-ghost" data-close>Fechar</button>`;
+      syncModalCloseWithFoot();
       enhanceUiSelects(modalBody);
       syncCliFinAuditHeadTools();
       applyCliFinAuditView();
@@ -1895,67 +1897,74 @@
       const q = normalizeSearchText(finDash.empresaQuery);
       return CLIENTES.filter((c) => {
         if (!q) return true;
-        return normalizeSearchText([c.fantasia, c.nome, c.razaoSocial, c.cnpj].join(" ")).includes(q);
+        return normalizeSearchText([c.fantasia, c.nome, c.razaoSocial, c.cnpj, c.code].join(" ")).includes(q);
       }).slice(0, limit);
     }
 
-    function renderFinClientAcMenuHtml() {
-      const q = normalizeSearchText(finDash.empresaQuery);
-      const showAll = !q || "todos os clientes".includes(q) || "carteira".includes(q);
-      const acMatches = getFinClientAcMatches();
-      const allBtn = showAll
-        ? `<button type="button" class="fin-ac-all${isFinAllClientsScope() ? " is-current" : ""}" data-fin-ac="all">
-            <strong>Todos os Clientes</strong>
-            <span>Visão consolidada da carteira · ${CLIENTES.length} empresas</span>
-          </button>`
-        : "";
-      const list = acMatches.length
-        ? acMatches.map((c) => `
-            <button type="button" data-fin-ac="${c.id}" class="${finDash.empresaId === c.id ? "is-current" : ""}">
-              <strong>${uiSelectEscape(c.fantasia || c.nome)}</strong>
-              <span>${uiSelectEscape(c.cnpj || "")}</span>
-            </button>`).join("")
-        : (showAll ? "" : `<div class="fin-ac-empty">Nenhum cliente encontrado</div>`);
-      return `${allBtn}${list}` || `<div class="fin-ac-empty">Nenhum cliente encontrado</div>`;
+    function filterFinEmpresaOptions(term) {
+      const q = normalizeSearchText(term || "");
+      const wrap = document.getElementById("finEmpresaOptions");
+      const empty = document.getElementById("finEmpresaEmpty");
+      if (!wrap) return;
+      let visible = 0;
+      wrap.querySelectorAll(".empresa-option").forEach((opt) => {
+        const isAll = (opt.dataset.finEmpresaOpt || opt.dataset.id) === "all";
+        const hay = normalizeSearchText([
+          opt.dataset.short,
+          opt.dataset.code,
+          opt.dataset.cnpj,
+          opt.textContent,
+          isAll ? "todos as empresas consolidada carteira" : "",
+        ].join(" "));
+        const match = !q || hay.includes(q) || (isAll && ("todos".includes(q) || "carteira".includes(q)));
+        opt.classList.toggle("hidden", !match);
+        if (match) visible += 1;
+      });
+      empty?.classList.toggle("show", visible === 0);
     }
 
     function renderFinClientPickerHtml() {
-      if (!finDash.acOpen) {
-        if (isFinAllClientsScope()) {
-          return `
-            <div class="fin-client-picker">
-              <button type="button" class="fin-client-chip is-all" data-fin-client-change aria-label="Trocar escopo de cliente">
-                <div class="info">
-                  <strong>Todos os Clientes</strong>
-                  <span>Visão consolidada · ${CLIENTES.length} empresas</span>
-                </div>
-                <span class="fin-client-change" aria-hidden="true">Trocar</span>
-              </button>
-            </div>`;
-        }
-        const selected = getFinSelectedCliente();
-        if (selected) {
-          const nome = uiSelectEscape(selected.fantasia || selected.nome || "Cliente");
-          const cnpj = uiSelectEscape(selected.cnpj || "CNPJ não informado");
-          return `
-            <div class="fin-client-picker">
-              <button type="button" class="fin-client-chip" data-fin-client-change aria-label="Trocar cliente">
-                <div class="info">
-                  <strong>${nome}</strong>
-                  <span>${cnpj}</span>
-                </div>
-                <span class="fin-client-change" aria-hidden="true">Trocar</span>
-              </button>
-            </div>`;
-        }
-      }
+      const isAll = isFinAllClientsScope();
+      const selected = getFinSelectedCliente();
+      const code = isAll ? "" : (selected?.code || "");
+      const name = isAll ? "Todas as empresas" : (selected?.fantasia || selected?.nome || "Cliente");
+      const cnpjLine = isAll
+        ? "Visão consolidada do grupo"
+        : (selected?.cnpj ? `CNPJ ${selected.cnpj}` : "");
+      const options = CLIENTES.map((c) => {
+        const active = !isAll && finDash.empresaId === c.id ? " active" : "";
+        const label = uiSelectEscape(c.nome || c.fantasia || "");
+        return `
+            <button type="button" class="empresa-option${active}" data-fin-empresa-opt="${c.id}" data-code="${uiSelectEscape(c.code || "")}" data-short="${label}" data-cnpj="${uiSelectEscape(c.cnpj || "")}">
+              <span class="opt-main"><span class="opt-code">${uiSelectEscape(c.code || "")}</span>${label}</span>
+              <small>CNPJ ${uiSelectEscape(c.cnpj || "")}${c.estado ? ` · ${uiSelectEscape(c.estado)}` : ""}${c.status ? ` · ${uiSelectEscape(c.status)}` : ""}</small>
+            </button>`;
+      }).join("");
       return `
         <div class="fin-client-picker">
-          <div class="proc-filter search">
-            <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" id="finDashEmpresa" placeholder="Buscar cliente, CNPJ ou Todos..." value="${(finDash.empresaQuery || "").replace(/"/g, "&quot;")}" autocomplete="off" aria-label="Buscar cliente" aria-expanded="${finDash.acOpen ? "true" : "false"}" aria-controls="finDashAcMenu" />
-            <div class="fin-ac-menu${finDash.acOpen ? " open" : ""}" id="finDashAcMenu" role="listbox">
-              ${renderFinClientAcMenuHtml()}
+          <div class="empresa-wrap${finDash.acOpen ? " open" : ""}" id="finEmpresaWrap">
+            <button type="button" class="empresa-trigger tip-bottom" id="finEmpresaSelectBtn" data-tip="Trocar empresa do grupo" aria-expanded="${finDash.acOpen ? "true" : "false"}" aria-haspopup="listbox">
+              <span class="trigger-text">
+                <span class="name-line">
+                  <span class="empresa-code" id="finEmpresaCode"${code ? "" : " hidden"}>${uiSelectEscape(code)}</span>
+                  <span id="finEmpresaName">${uiSelectEscape(name)}</span>
+                </span>
+                <span class="empresa-cnpj" id="finEmpresaCnpj"${cnpjLine ? "" : " hidden"}>${uiSelectEscape(cnpjLine)}</span>
+              </span>
+              <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="empresa-menu" id="finEmpresaMenu">
+              <div class="empresa-search">
+                <input type="search" id="finEmpresaSearch" placeholder="Buscar empresa..." autocomplete="off" aria-label="Buscar empresa" />
+              </div>
+              <div class="empresa-options" id="finEmpresaOptions">
+                <button type="button" class="empresa-option${isAll ? " active" : ""}" data-fin-empresa-opt="all" data-code="" data-short="Todas as empresas" data-cnpj="">
+                  <span class="opt-main">Todas as empresas</span>
+                  <small>Consolida as ${CLIENTES.length} empresas do grupo</small>
+                </button>
+                ${options}
+              </div>
+              <div class="empresa-empty" id="finEmpresaEmpty">Nenhuma empresa encontrada</div>
             </div>
           </div>
         </div>`;
@@ -1965,47 +1974,53 @@
       const host = document.querySelector("#financeiroWrap .fin-global-header");
       const current = host?.querySelector(".fin-client-picker");
       if (!host || !current) return false;
-      const keepFocus = opts.focus !== false;
-      const pos = opts.selectionStart;
+      const keepFocus = opts.focus === true;
       const tmp = document.createElement("div");
       tmp.innerHTML = renderFinClientPickerHtml().trim();
       const next = tmp.firstElementChild;
       if (!next) return false;
       current.replaceWith(next);
       if (keepFocus && finDash.acOpen) {
-        const el = document.getElementById("finDashEmpresa");
+        const el = document.getElementById("finEmpresaSearch");
         if (el) {
           el.focus();
-          if (typeof pos === "number") {
-            try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
-          }
+          el.value = "";
+          filterFinEmpresaOptions("");
         }
       }
       return true;
     }
 
     function refreshFinClientAcMenu() {
-      const menu = document.getElementById("finDashAcMenu");
-      const input = document.getElementById("finDashEmpresa");
-      if (!menu) return refreshFinClientPicker({ focus: true, selectionStart: input?.selectionStart });
-      menu.innerHTML = renderFinClientAcMenuHtml();
-      menu.classList.toggle("open", !!finDash.acOpen);
-      if (input) input.setAttribute("aria-expanded", finDash.acOpen ? "true" : "false");
-      return true;
+      return refreshFinClientPicker({ focus: !!finDash.acOpen });
     }
 
     let finClientAcTimer = null;
 
-    function scheduleFinClientAcRefresh(selectionStart) {
+    function scheduleFinClientAcRefresh() {
       if (finClientAcTimer) clearTimeout(finClientAcTimer);
       finClientAcTimer = setTimeout(() => {
         finClientAcTimer = null;
-        refreshFinClientAcMenu();
-        const el = document.getElementById("finDashEmpresa");
-        if (el && typeof selectionStart === "number") {
-          try { el.setSelectionRange(selectionStart, selectionStart); } catch (_) { /* ignore */ }
+        filterFinEmpresaOptions(document.getElementById("finEmpresaSearch")?.value || "");
+      }, 40);
+    }
+
+    function toggleFinEmpresaMenu(forceOpen) {
+      const wrap = document.getElementById("finEmpresaWrap");
+      const btn = document.getElementById("finEmpresaSelectBtn");
+      if (!wrap || !btn) return;
+      const willOpen = forceOpen ?? !wrap.classList.contains("open");
+      finDash.acOpen = willOpen;
+      wrap.classList.toggle("open", willOpen);
+      btn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+      if (willOpen) {
+        const search = document.getElementById("finEmpresaSearch");
+        if (search) {
+          search.value = "";
+          filterFinEmpresaOptions("");
+          setTimeout(() => search.focus(), 0);
         }
-      }, 60);
+      }
     }
 
     function finTabIcon(id) {
@@ -2414,7 +2429,7 @@
             </div>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finConcAddSave">Salvar lançamento</button>`,
       });
       prepareFinConcModalChrome();
@@ -3504,7 +3519,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Relatório Executivo — ${d.nome}</title>
 <style>
-  :root { --navy:#1c386e; --accent:#28519c; --muted:#6b7c93; --ok:#2f9e6b; --bad:#b33a4a; --bg:#f3f5f8; --card:#fff; --border:#dbe3ef; }
+  :root { --navy:#1c386e; --accent:#28519c; --muted:#6b7c93; --ok:#2f9e6b; --bad:#b33a4a; --bg:#e8edf4; --card:#ffffff; --surface-2:#f5f8fc; --border:#d4dce8; }
   * { box-sizing: border-box; }
   body { margin:0; font-family: "DM Sans", "Segoe UI", system-ui, sans-serif; background:#fff; color:var(--navy); }
   .wrap { max-width: 820px; margin: 0 auto; padding: 28px 24px 40px; }
@@ -3516,7 +3531,7 @@
     .client { margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
   .client h1 { margin:0 0 6px; font-size:1.35rem; }
   .client p { margin:0; color:var(--muted); font-size:.9rem; }
-  .badge { display:inline-flex; flex-direction:column; justify-content:center; gap:2px; min-width:140px; min-height:44px; padding:6px 12px; border-radius:10px; border:1px solid var(--border); background:#f7f9fc; font-weight:700; font-size:.92rem; color:var(--navy); box-sizing:border-box; }
+  .badge { display:inline-flex; flex-direction:column; justify-content:center; gap:2px; min-width:140px; min-height:44px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); font-weight:700; font-size:.92rem; color:var(--navy); box-sizing:border-box; }
   .badge .lab { font-size:.66rem; font-weight:650; color:var(--muted); }
   .badge.ok,.badge.excel { color:#1f7a52; }
   .badge.warn { color:#9a5f0c; }
@@ -3649,34 +3664,34 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Dashboard Financeiro — ${d.nome}</title>
 <style>
-  :root { --navy:#1c386e; --accent:#28519c; --muted:#6b7c93; --ok:#2f9e6b; --bad:#b33a4a; --bg:#f3f5f8; --card:#fff; --border:#dbe3ef; }
+  :root { --navy:#1c386e; --accent:#28519c; --muted:#6b7c93; --ok:#2f9e6b; --bad:#b33a4a; --bg:#e8edf4; --card:#ffffff; --surface-2:#f5f8fc; --border:#d4dce8; }
   * { box-sizing: border-box; }
-  body { margin:0; font-family: "Segoe UI", system-ui, sans-serif; background: linear-gradient(160deg,#e8eef8,#f7f9fc 40%,#eef6f2); color:var(--navy); }
+  body { margin:0; font-family: "Segoe UI", system-ui, sans-serif; background: linear-gradient(160deg,var(--bg),var(--surface-2) 40%,#eef6f2); color:var(--navy); }
   .wrap { max-width: 920px; margin: 0 auto; padding: 28px 20px 48px; }
-  .hero { background: var(--card); border:1px solid var(--border); border-radius:16px; padding:22px 24px; margin-bottom:18px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .hero { background: var(--card); border:1px solid var(--border); border-radius:12px; padding:22px 24px; margin-bottom:18px; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .hero h1 { margin:0 0 6px; font-size:1.35rem; }
   .hero p { margin:0; color:var(--muted); font-size:.9rem; }
-  .badge { align-self:flex-start; padding:6px 12px; border-radius:999px; font-weight:700; font-size:.75rem; background:rgba(59,111,212,.12); color:var(--accent); }
+  .badge { align-self:flex-start; padding:6px 12px; border-radius:var(--radius-pill); font-weight:700; font-size:.75rem; background:color-mix(in srgb, var(--accent) 12%, transparent); color:var(--accent); }
   .badge.ok,.badge.excel { background:rgba(47,158,107,.14); color:#1f7a52; }
   .badge.warn { background:rgba(196,127,22,.16); color:#9a5f0c; }
   .badge.bad { background:rgba(179,58,74,.14); color:var(--bad); }
   .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:18px; }
-  .kpi { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px; border-left:4px solid var(--accent); }
+  .kpi { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:18px; border-left:4px solid var(--accent); }
   .kpi.receber { border-left-color:var(--ok); }
   .kpi.pagar { border-left-color:var(--bad); }
   .kpi .lab { font-size:.75rem; color:var(--muted); font-weight:650; }
   .kpi .val { font-size:1.55rem; font-weight:800; margin-top:6px; letter-spacing:-.02em; }
   .kpi .sub { font-size:.72rem; color:var(--muted); margin-top:4px; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:18px 20px; }
   .card h2 { margin:0 0 4px; font-size:1.05rem; }
   .card .sub { color:var(--muted); font-size:.78rem; margin-bottom:12px; }
   table { width:100%; border-collapse:collapse; font-size:.86rem; }
   th { text-align:left; font-size:.7rem; color:var(--muted); padding:8px 6px; border-bottom:1px solid var(--border); }
-  td { padding:9px 6px; border-bottom:1px solid #eef2f7; }
-  tr.parent td { background:#f7f9fc; }
+  td { padding:9px 6px; border-bottom:1px solid var(--border); }
+  tr.parent td { background:var(--surface-2); }
   td.child { padding-left:18px; color:#3a4d6b; }
   .num { text-align:right; font-variant-numeric:tabular-nums; }
-  .delta { font-weight:700; font-size:.75rem; padding:2px 8px; border-radius:999px; }
+  .delta { font-weight:700; font-size:.75rem; padding:2px 8px; border-radius:var(--radius-pill); }
   .delta.up { background:rgba(47,158,107,.12); color:#1f7a52; }
   .delta.down { background:rgba(179,58,74,.12); color:var(--bad); }
   .foot { margin-top:18px; font-size:.72rem; color:var(--muted); text-align:center; }
@@ -4109,7 +4124,7 @@
             <button type="button" class="btn-primary" id="finOfxPickFile">Importar</button>
             <div class="hub-hint">Protótipo: ao clicar em Importar, a listagem de movimentações é aberta.</div>
           </div>`,
-        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
       });
       prepareFinConcModalChrome();
       document.getElementById("finOfxPickFile")?.addEventListener("click", () => {
@@ -4389,9 +4404,9 @@
             </div>
           </div>`,
         foot: isExport ? `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finOfxExportAll">Exportar tudo</button>` : `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finOfxImportAll">Importar tudo</button>`,
       });
 
@@ -4700,7 +4715,7 @@
         sub,
         wide: true,
         body: renderFinConcRegrasBodyHtml(),
-        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
       });
       prepareFinConcModalChrome();
       bindFinConcRegrasEvents(() => openFinConcRegrasModal());
@@ -4860,7 +4875,7 @@
             </div>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" id="finBancoEditCancel">Fechar</button>
+          <button type="button" class="btn-ghost" id="finBancoEditCancel">Cancelar</button>
           <button type="button" class="btn-primary" id="finBancoEditSave">Salvar</button>`,
       });
       prepareFinConcModalChrome();
@@ -4965,7 +4980,7 @@
             </label>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finConcBancoConfirm">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
             Confirmar

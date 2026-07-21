@@ -302,7 +302,6 @@
       const parent = sel.parentElement;
       if (!parent) return;
       const standalone = !parent.classList.contains("proc-filter")
-        && !parent.classList.contains("agenda-ops-filter")
         && !parent.classList.contains("cli-fin-period-field");
 
       const wrap = document.createElement("div");
@@ -367,10 +366,15 @@
       root.querySelectorAll("select").forEach(enhanceUiSelect);
     }
 
+    function syncModalCloseWithFoot() {
+      const closeBtn = document.getElementById("modalClose");
+      if (closeBtn) closeBtn.hidden = true;
+    }
+
     function openModal({ title, sub, body, foot, wide, molde, obr, regras, moldeDetail, emailTpl, classif, tipoDoc, aviso, cadastro, audit, auditRules, report }) {
       modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "is-expanded");
       const resetClose = document.getElementById("modalClose");
-      if (resetClose) resetClose.hidden = false;
+      if (resetClose) resetClose.hidden = true;
       const resetTools = document.getElementById("modalHeadTools");
       if (resetTools && !(finDash.conc?.ofx?.modalOpen)) {
         resetTools.innerHTML = "";
@@ -407,6 +411,7 @@
         modalBody.style.maxHeight = "min(56vh, 480px)";
       }
       modalFoot.innerHTML = foot || `<button type="button" class="btn-ghost" data-close>Fechar</button>`;
+      syncModalCloseWithFoot();
       backdrop.classList.add("open");
       enhanceUiSelects(modalBody);
     }
@@ -450,7 +455,7 @@
         headTools.hidden = true;
       }
       const closeBtn = document.getElementById("modalClose");
-      if (closeBtn) closeBtn.hidden = false;
+      if (closeBtn) closeBtn.hidden = true;
       backdrop.classList.remove("open");
       if (wasReport) {
         destroyCliFinReportCharts();
@@ -1101,7 +1106,7 @@
         wide: true,
         body,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" data-close onclick="toast('Processo atualizado')">Atualizar</button>`,
       });
     }
@@ -1149,6 +1154,54 @@
       });
     }
 
+    function getCliGestaoPendenciasCount(c) {
+      if (!c) return 0;
+      let n = 0;
+      const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
+      if (cert && cert.status !== "ok") n += 1;
+      n += agendaTasks.filter((t) =>
+        t.clienteId === c.id
+        && !t.arquivada
+        && (t.status === "atrasada" || t.status === "ent-atrasada" || t.status === "justificativa-atrasada")
+      ).length;
+      const procs = (sections.find((s) => s.id === "processos")?.items || []).filter((p) =>
+        p.clienteId === c.id && !p.arquivado && p.sucesso === false
+      );
+      n += procs.length;
+      return n;
+    }
+
+    function openClienteEmpresaConfigModal(c) {
+      if (!c) return;
+      openModal({
+        title: "Configurações da empresa",
+        sub: c.fantasia || c.nome,
+        wide: true,
+        body: `
+          <label>Razão social</label>
+          <input value="${uiSelectEscape(c.razaoSocial || c.nome)}" />
+          <label>Nome fantasia</label>
+          <input value="${uiSelectEscape(c.fantasia || c.nome)}" />
+          <label>CNPJ</label>
+          <input value="${uiSelectEscape(c.cnpj || "")}" />
+          <label>Regime</label>
+          <select>
+            ${REGIME_OPTIONS.map((r) => `<option ${c.regime === r ? "selected" : ""}>${r}</option>`).join("")}
+          </select>
+          <label>Prioridade</label>
+          <select>
+            <option ${c.prioridade === "alta" ? "selected" : ""}>Alta</option>
+            <option ${c.prioridade === "media" ? "selected" : ""}>Média</option>
+            <option ${c.prioridade === "baixa" ? "selected" : ""}>Baixa</option>
+          </select>
+          <label>Cliente desde</label>
+          <input value="${uiSelectEscape(c.clienteDesde || "—")}" />`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" data-close onclick="toast('Configurações salvas')">Salvar</button>`,
+      });
+    }
+
     function renderClientesList() {
       const wrap = document.getElementById("clientesWrap");
       if (!wrap) return;
@@ -1162,6 +1215,19 @@
       if (cliRegimeFilter) {
         list = list.filter((c) => c.regime === cliRegimeFilter);
       }
+      const rowsMeta = list.map((c) => ({
+        c,
+        colabs: (c.funcInternos || 0) + (c.funcExternos || 0),
+        pendencias: getCliGestaoPendenciasCount(c),
+        cert: typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null,
+      }));
+      const kpis = {
+        empresas: list.length,
+        ativos: list.filter((c) => c.status === "Ativo").length,
+        pendencias: rowsMeta.filter((r) => r.pendencias > 0).length,
+        colabs: rowsMeta.reduce((acc, r) => acc + r.colabs, 0),
+        certAlerta: rowsMeta.filter((r) => r.cert && r.cert.status !== "ok").length,
+      };
       wrap.innerHTML = `
         <div class="cli-list-toolbar">
           <div class="proc-filter search">
@@ -1175,29 +1241,74 @@
               ${REGIME_OPTIONS.map((r) => `<option value="${r}" ${cliRegimeFilter === r ? "selected" : ""}>${r}</option>`).join("")}
             </select>
           </div>
-          <span class="cli-count">${list.length} empresa${list.length === 1 ? "" : "s"}</span>
+          <span class="cli-count">${list.length} empresa${list.length === 1 ? "" : "s"} no filtro</span>
           <button type="button" class="btn-primary cli-add-btn" data-cli-add-empresa>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             Nova empresa
           </button>
         </div>
+        <div class="cli-list-kpis" aria-label="Indicadores da carteira filtrada">
+          <div class="cli-list-kpi">
+            <span class="lab">Empresas</span>
+            <strong>${kpis.empresas}</strong>
+          </div>
+          <div class="cli-list-kpi ok">
+            <span class="lab">Ativas</span>
+            <strong>${kpis.ativos}</strong>
+          </div>
+          <div class="cli-list-kpi${kpis.pendencias ? " warn" : ""}">
+            <span class="lab">Com pendências</span>
+            <strong>${kpis.pendencias}</strong>
+          </div>
+          <div class="cli-list-kpi">
+            <span class="lab">Colaboradores</span>
+            <strong>${kpis.colabs}</strong>
+          </div>
+          <div class="cli-list-kpi${kpis.certAlerta ? " bad" : ""}">
+            <span class="lab">Cert. em alerta</span>
+            <strong>${kpis.certAlerta}</strong>
+          </div>
+        </div>
         <div class="cli-grid" id="cliGrid">
           <div class="cli-list-head">
             <span>Identificação</span>
             <span>Unidade</span>
+            <span>Cliente desde</span>
+            <span>Colaboradores</span>
+            <span>Pendências</span>
             <span>Regime</span>
+            <span class="cli-head-actions">Config</span>
           </div>
-          ${list.length ? list.map((c) => {
+          ${rowsMeta.length ? rowsMeta.map(({ c, colabs, pendencias }) => {
             const tipo = c.tipoUnidade || "Matriz";
             const tipoCls = tipo === "Filial" ? "filial" : "matriz";
+            const pendLabel = pendencias === 0
+              ? "Em dia"
+              : `${pendencias} pendência${pendencias === 1 ? "" : "s"}`;
             return `
               <div class="cli-list-row is-${tipoCls}" data-cli-id="${c.id}" data-cli-open="${c.id}" role="button" tabindex="0" aria-label="Abrir ${c.fantasia || c.nome}">
                 <div class="cli-id-cell">
-                  <strong title="${c.razaoSocial || c.nome}">${c.razaoSocial || c.nome}</strong>
+                  <strong title="${c.razaoSocial || c.nome}">${c.fantasia || c.nome}</strong>
                   <span>${c.cnpj} · ${c.code}</span>
                 </div>
                 <div class="cell-tipo"><span class="cli-badge ${tipoCls}">${tipo}</span></div>
-                <div class="cell-regime" style="font-size:.78rem;color:var(--navy)">${c.regime}</div>
+                <div class="cli-meta-cell cli-meta-desde">
+                  <strong>${c.clienteDesde || "—"}</strong>
+                  <i>Cliente desde</i>
+                </div>
+                <div class="cli-meta-cell cli-meta-colab">
+                  <strong>${colabs}</strong>
+                  <i>${c.funcInternos || 0} int. · ${c.funcExternos || 0} ext.</i>
+                </div>
+                <div class="cli-pend-cell">
+                  <span class="cli-pend-pill${pendencias ? " has-pend" : " ok"}">${pendLabel}</span>
+                </div>
+                <div class="cell-regime">${c.regime}</div>
+                <div class="cli-actions">
+                  <button type="button" class="cli-config-btn tip-bottom" data-cli-config="${c.id}" data-tip="Configurações da empresa" aria-label="Configurações de ${c.fantasia || c.nome}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  </button>
+                </div>
               </div>`;
           }).join("") : `<div class="cli-empty-panel">${q || cliRegimeFilter ? "Nenhuma empresa correspondente aos filtros" : "Nenhum cliente cadastrado"}</div>`}
         </div>`;
@@ -1503,18 +1614,6 @@
           uteis: 1,
           utilMe: false,
         },
-        {
-          id: `${c.id}-f6`,
-          autor: "Ana Costa",
-          cargo: "Fiscal",
-          visibilidade: "mim",
-          tema: "preferencias",
-          texto: "Lembrete pessoal\n• Confirmar com o João o WhatsApp atualizado antes da próxima competência\n• Número mudou em junho",
-          at: new Date(2026, 6, 7, 18, 20),
-          pinned: false,
-          uteis: 0,
-          utilMe: false,
-        },
       ];
     }
 
@@ -1524,7 +1623,6 @@
     }
 
     function cliFeedVisLabel(vis) {
-      if (vis === "mim") return "Só para mim";
       if (vis === "privado") return "Privado";
       return "Geral";
     }
@@ -1533,7 +1631,7 @@
       const posts = ensureCliFeed(c).slice();
       const filtered = posts.filter((p) => {
         if (filter === "todos") return true;
-        if (filter === "geral" || filter === "privado" || filter === "mim") return p.visibilidade === filter;
+        if (filter === "geral" || filter === "privado") return p.visibilidade === filter;
         return p.tema === filter;
       });
       filtered.sort((a, b) => {
@@ -1545,12 +1643,12 @@
 
     function renderCliFeed(c) {
       const me = CLI_FEED_ME;
+      if (cliFeedFilter === "mim") cliFeedFilter = "todos";
       const posts = getCliFeedPosts(c);
       const filters = [
         { id: "todos", label: "Todos" },
         { id: "geral", label: "Gerais" },
         { id: "privado", label: "Privados" },
-        { id: "mim", label: "Só para mim" },
         ...CLI_FEED_TEMAS,
       ];
       const temaOpts = CLI_FEED_TEMAS.map((t) => `<option value="${t.id}">${t.label}</option>`).join("");
@@ -1600,7 +1698,6 @@
                 <select id="cliFeedVis" aria-label="Visibilidade">
                   <option value="geral">Geral — todo o time</option>
                   <option value="privado">Privado — só analistas</option>
-                  <option value="mim">Privado — só para mim</option>
                 </select>
                 <select id="cliFeedTema" aria-label="Tema">${temaOpts}</select>
                 <button type="button" class="btn-primary" data-cli-feed-publish>Publicar</button>
@@ -1980,13 +2077,13 @@
 
     const CLI_DOCS_FOLDERS = [
       { id: "recentes", title: "Recentes", badgeUnit: "items", icon: "clock", kind: "recent" },
-      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
-      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "folder-star", kind: "star" },
+      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "shield-check", kind: "dept" },
+      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "calculator", kind: "dept" },
+      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "users", kind: "dept" },
+      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "wallet", kind: "dept" },
+      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "receipt", kind: "dept" },
+      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "rocket", kind: "dept" },
+      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "scale", kind: "dept" },
       { id: "outros", title: "Outros", badgeUnit: "arquivos", icon: "folder", kind: "plain" },
     ];
 
@@ -2066,12 +2163,68 @@
             <div class="cell"><span class="lab">Tamanho</span><span class="val">${file.tamanho}</span></div>
             <div class="cell"><span class="lab">Atualizado</span><span class="val">${file.atualizado}</span></div>
           </div>`,
-        foot: `<button type="button" class="btn-primary" data-close>Fechar</button>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
       });
+    }
+
+    function formatCliDocsFileSize(bytes) {
+      const n = Number(bytes) || 0;
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${Math.max(1, Math.round(n / 1024))} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatCliDocsTodayLabel() {
+      const d = APP_TODAY;
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    }
+
+    function ingestCliDocsUpload(fileList) {
+      const files = Array.from(fileList || []).filter(Boolean);
+      if (!files.length) return false;
+      const target = cliDocsFolderId || "recentes";
+      if (!cliDocsFilesByFolder[target]) cliDocsFilesByFolder[target] = [];
+      if (!cliDocsFilesByFolder.recentes) cliDocsFilesByFolder.recentes = [];
+      const when = formatCliDocsTodayLabel();
+      files.forEach((file, idx) => {
+        const ext = ((file.name || "").split(".").pop() || "FILE").toUpperCase();
+        const entry = {
+          id: `u${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 7)}`,
+          nome: file.name || "arquivo",
+          tipo: ext,
+          atualizado: when,
+          tamanho: formatCliDocsFileSize(file.size),
+        };
+        cliDocsFilesByFolder[target].unshift(entry);
+        if (target !== "recentes") {
+          cliDocsFilesByFolder.recentes.unshift({ ...entry, id: `${entry.id}-r` });
+        }
+      });
+      toast(files.length === 1
+        ? `Arquivo enviado · ${files[0].name}`
+        : `${files.length} arquivos enviados`);
+      renderClientes();
+      return true;
+    }
+
+    function renderCliDocsDropzoneHtml(folderMeta) {
+      const dest = folderMeta ? folderMeta.title : "Recentes";
+      return `
+        <div class="cli-docs-dropzone" data-cli-docs-drop tabindex="0" role="button" aria-label="Enviar arquivos. Arraste e solte ou clique para escolher">
+          <div class="cli-docs-drop-ico" aria-hidden="true">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <h3>Arraste e solte seus arquivos aqui</h3>
+          <p>PDF, imagens, planilhas ou ZIP — um ou vários de uma vez.</p>
+          <span class="btn-primary cli-docs-drop-cta">Escolher arquivos</span>
+          <span class="cli-docs-drop-hint">ou clique em qualquer lugar desta área · destino: <strong>${dest}</strong></span>
+        </div>`;
     }
 
     function renderCliDocumentosPastas(c) {
       const folderMeta = cliDocsFolderId ? getCliDocsFolderMeta(cliDocsFolderId) : null;
+      const portal = isClientePortal();
       const generateMenu = CLI_DOCS_GENERATE_TYPES.map((label) => `
         <button type="button" role="menuitem" data-cli-doc-generate="${label.replace(/"/g, "&quot;")}">${label}</button>
       `).join("");
@@ -2088,6 +2241,7 @@
             ` : `<h3 class="cli-docs-folder-heading">Documentos</h3>`}
           </div>
           <div class="cli-docs-toolbar-actions">
+            ${portal ? "" : `
             <button type="button" class="btn-ghost" data-cli-doc-novo>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
               Novo Arquivo
@@ -2098,10 +2252,12 @@
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
               </button>
               <div class="cli-docs-generate-menu" role="menu" aria-label="Tipos de documento">${generateMenu}</div>
-            </div>
-            <input type="file" id="cliDocsUploadInput" class="cli-docs-upload-input" tabindex="-1" aria-hidden="true" />
+            </div>`}
+            <input type="file" id="cliDocsUploadInput" class="cli-docs-upload-input" multiple tabindex="-1" aria-hidden="true" />
           </div>
         </div>`;
+
+      const dropzone = portal ? renderCliDocsDropzoneHtml(folderMeta) : "";
 
       if (folderMeta) {
         const files = getCliDocsFiles(folderMeta.id);
@@ -2130,8 +2286,9 @@
           : `<div class="cli-empty-panel">Nenhum documento nesta pasta</div>`;
 
         return `
-          <div class="cli-docs-hub" data-cliente="${c.id}">
+          <div class="cli-docs-hub${portal ? " is-portal" : ""}" data-cliente="${c.id}">
             ${toolbar}
+            ${dropzone}
             <div class="cli-docs-files" role="list" aria-label="Arquivos em ${folderMeta.title}">${list}</div>
           </div>`;
       }
@@ -2148,9 +2305,13 @@
       }).join("");
 
       return `
-        <div class="cli-docs-hub" data-cliente="${c.id}">
+        <div class="cli-docs-hub${portal ? " is-portal" : ""}" data-cliente="${c.id}">
           ${toolbar}
-          <div class="cli-docs-folders" role="list" aria-label="Pastas de documentos">${grid}</div>
+          ${dropzone}
+          <div class="cli-docs-folders-block">
+            <div class="cli-docs-folders-label">Pastas do gerenciador</div>
+            <div class="cli-docs-folders" role="list" aria-label="Pastas de documentos">${grid}</div>
+          </div>
         </div>`;
     }
 
@@ -2453,7 +2614,7 @@
       if (isClientePortal()) {
         const pageId = CLIENT_PORTAL_TAB_IDS.includes(cliPerfilTab)
           ? cliPerfilTab
-          : (CLIENT_PORTAL_TAB_IDS.includes(current) ? current : "documentos");
+          : (CLIENT_PORTAL_TAB_IDS.includes(current) ? current : "entregas");
         renderPortalClientePage(pageId);
         return;
       }
@@ -3843,8 +4004,8 @@
               <span class="laudo-pill">Cliente · <strong>${uiSelectEscape(L.cliente)}</strong></span>
               <span class="laudo-pill">${uiSelectEscape(L.periodoLabel)}</span>
               <button type="button" class="laudo-export" data-cli-fin-audit="export-laudo">
-                <i data-lucide="download"></i>
-                Exportar PDF
+                <i data-lucide="file-search"></i>
+                Pré-visualizar laudo
               </button>
             </div>
           </div>
@@ -3955,23 +4116,32 @@
               <p>Evidências transacionais · busca, filtros e paginação.</p>
             </div>
             <div class="laudo-table-tools">
-              <input type="search" id="cliLaudoTableSearch" placeholder="Buscar data, adquirente, bandeira…" value="${uiSelectEscape(cliFinAudit.laudoQuery || "")}" data-cli-fin-laudo="search" />
-              <select id="cliLaudoTableBandeira" data-cli-fin-laudo="bandeira" data-no-ui="1" aria-label="Filtrar bandeira">
-                <option value="" ${!cliFinAudit.laudoBandeira ? "selected" : ""}>Bandeira · todas</option>
-                ${(L.bandeirasOpts || []).map((b) => `
-                  <option value="${uiSelectEscape(b)}" ${cliFinAudit.laudoBandeira === b ? "selected" : ""}>${uiSelectEscape(b)}</option>`).join("")}
-              </select>
-              <select id="cliLaudoTableStatus" data-cli-fin-laudo="status" data-no-ui="1" aria-label="Filtrar status">
-                <option value="" ${!cliFinAudit.laudoStatus ? "selected" : ""}>Status · todos</option>
-                <option value="Alerta" ${cliFinAudit.laudoStatus === "Alerta" ? "selected" : ""}>Alerta</option>
-                <option value="OK" ${cliFinAudit.laudoStatus === "OK" ? "selected" : ""}>OK</option>
-              </select>
-              <select id="cliLaudoTableSort" data-cli-fin-laudo="sort" data-no-ui="1" aria-label="Ordenar">
-                <option value="diff-desc" ${cliFinAudit.laudoSort === "diff-desc" ? "selected" : ""}>Maior diferença</option>
-                <option value="diff-asc" ${cliFinAudit.laudoSort === "diff-asc" ? "selected" : ""}>Menor diferença</option>
-                <option value="valor-desc" ${cliFinAudit.laudoSort === "valor-desc" ? "selected" : ""}>Maior valor</option>
-                <option value="data-asc" ${cliFinAudit.laudoSort === "data-asc" ? "selected" : ""}>Data</option>
-              </select>
+              <div class="proc-filter search">
+                <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" id="cliLaudoTableSearch" placeholder="Buscar data, adquirente, bandeira…" value="${uiSelectEscape(cliFinAudit.laudoQuery || "")}" data-cli-fin-laudo="search" aria-label="Buscar divergências" />
+              </div>
+              <div class="proc-filter field">
+                <select id="cliLaudoTableBandeira" data-cli-fin-laudo="bandeira" data-no-ui="1" aria-label="Filtrar bandeira">
+                  <option value="" ${!cliFinAudit.laudoBandeira ? "selected" : ""}>Bandeira · todas</option>
+                  ${(L.bandeirasOpts || []).map((b) => `
+                    <option value="${uiSelectEscape(b)}" ${cliFinAudit.laudoBandeira === b ? "selected" : ""}>${uiSelectEscape(b)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="proc-filter field">
+                <select id="cliLaudoTableStatus" data-cli-fin-laudo="status" data-no-ui="1" aria-label="Filtrar status">
+                  <option value="" ${!cliFinAudit.laudoStatus ? "selected" : ""}>Status · todos</option>
+                  <option value="Alerta" ${cliFinAudit.laudoStatus === "Alerta" ? "selected" : ""}>Alerta</option>
+                  <option value="OK" ${cliFinAudit.laudoStatus === "OK" ? "selected" : ""}>OK</option>
+                </select>
+              </div>
+              <div class="proc-filter field">
+                <select id="cliLaudoTableSort" data-cli-fin-laudo="sort" data-no-ui="1" aria-label="Ordenar">
+                  <option value="diff-desc" ${cliFinAudit.laudoSort === "diff-desc" ? "selected" : ""}>Maior diferença</option>
+                  <option value="diff-asc" ${cliFinAudit.laudoSort === "diff-asc" ? "selected" : ""}>Menor diferença</option>
+                  <option value="valor-desc" ${cliFinAudit.laudoSort === "valor-desc" ? "selected" : ""}>Maior valor</option>
+                  <option value="data-asc" ${cliFinAudit.laudoSort === "data-asc" ? "selected" : ""}>Data</option>
+                </select>
+              </div>
             </div>
             <div class="laudo-full-table-wrap">
               <table class="laudo-full-table">
@@ -4081,9 +4251,10 @@
     --ok: #2f9e6b;
     --bad: #b33a4a;
     --warn: #c47f16;
-    --bg: #f3f5f8;
-    --card: #fff;
-    --border: #dbe3ef;
+    --bg: #e8edf4;
+    --card: #ffffff;
+    --surface-2: #f5f8fc;
+    --border: #d4dce8;
   }
   * { box-sizing: border-box; }
   body {
@@ -4114,8 +4285,8 @@
   .client p { margin: 0; color: var(--muted); font-size: .88rem; }
   .badge {
     display: inline-flex; flex-direction: column; justify-content: center; gap: 2px;
-    min-width: 160px; padding: 8px 12px; border-radius: 10px;
-    border: 1px solid var(--border); background: #f7f9fc; font-weight: 700; font-size: .88rem;
+    min-width: 160px; padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-2); font-weight: 700; font-size: .88rem;
   }
   .badge .lab { font-size: .66rem; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
   .badge.ok { color: #1f7a52; background: rgba(47,158,107,.1); border-color: rgba(47,158,107,.28); }
@@ -4149,7 +4320,7 @@
     margin-bottom: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px;
     font-size: .82rem;
   }
-  .facts div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed #e8eef6; padding: 4px 0; }
+  .facts div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding: 4px 0; }
   .facts div:nth-last-child(-n+2) { border-bottom: 0; }
   .facts span { color: var(--muted); }
   .facts strong { color: var(--navy); font-weight: 700; text-align: right; }
@@ -4158,22 +4329,22 @@
   .insights { margin: 0; padding: 0; list-style: none; }
   .insights li {
     margin: 0 0 8px; padding: 10px 12px 10px 14px; border: 1px solid var(--border);
-    border-radius: 10px; background: #fafbfd; font-size: .84rem; line-height: 1.45;
+    border-radius: 8px; background: var(--surface-2); font-size: .84rem; line-height: 1.45;
     box-shadow: inset 3px 0 0 var(--warn);
   }
   .insights li.bad { box-shadow: inset 3px 0 0 var(--bad); }
   .insights li.alerta { box-shadow: inset 3px 0 0 var(--warn); }
-  .insights li.warn { box-shadow: inset 3px 0 0 #c9a227; }
+  .insights li.warn { box-shadow: inset 3px 0 0 var(--warn); }
   .insights li.ok { box-shadow: inset 3px 0 0 var(--ok); }
   .insights li strong { display: inline; }
   .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: .74rem; }
   th {
     text-align: left; font-size: .66rem; color: var(--muted); font-weight: 700;
-    padding: 9px 8px; border-bottom: 1px solid var(--border); background: #f7f9fc;
+    padding: 9px 8px; border-bottom: 1px solid var(--border); background: var(--surface-2);
     white-space: nowrap;
   }
-  td { padding: 8px; border-bottom: 1px solid #eef2f7; vertical-align: top; }
+  td { padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
   tr:last-child td { border-bottom: 0; }
   .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td.bad { color: var(--bad); font-weight: 700; }

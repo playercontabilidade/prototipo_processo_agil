@@ -46,7 +46,7 @@
       align-items: center;
       gap: 4px;
       padding: 6px 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       border: 1px solid var(--border);
       background: var(--surface);
       font-size: .74rem;
@@ -63,7 +63,7 @@
       align-items: center;
       gap: 6px;
       padding: 7px 12px;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: var(--navy-deep);
       color: #fff;
@@ -103,7 +103,7 @@
 
     .cli-laudo .laudo-hero-side {
       padding: 18px 20px;
-      background: #f7f9fc;
+      background: var(--surface-2);
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -132,7 +132,7 @@
       align-items: center;
       gap: 8px;
       padding: 8px 14px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .86rem;
       font-weight: 750;
       background: rgba(47, 158, 107, 0.12);
@@ -160,7 +160,7 @@
 
     .cli-laudo .hero-cert-stat {
       padding: 12px 14px;
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface-2, #f5f8fc);
       border: 1px solid var(--border);
     }
@@ -191,7 +191,7 @@
       padding: 18px 20px 18px 18px;
       border-radius: 16px;
       border: 1px solid var(--border);
-      border-left: 5px solid #28519c;
+      border-left: 5px solid var(--accent);
       background: var(--surface);
       box-shadow: 0 1px 3px rgba(19, 42, 82, 0.04);
     }
@@ -200,10 +200,10 @@
       flex-shrink: 0;
       width: 40px;
       height: 40px;
-      border-radius: 12px;
+      border-radius: var(--radius);
       display: grid;
       place-items: center;
-      background: linear-gradient(145deg, #28519c, #1c386e);
+      background: linear-gradient(145deg, var(--accent), var(--navy-deep));
       color: #fff;
       box-shadow: 0 4px 10px rgba(19, 42, 82, 0.18);
     }
@@ -225,7 +225,7 @@
       font-weight: 750;
       letter-spacing: .07em;
       text-transform: uppercase;
-      color: #28519c;
+      color: var(--accent);
     }
 
     .cli-laudo .laudo-impacto p.body {
@@ -257,7 +257,7 @@
       align-items: center;
       gap: 6px;
       padding: 5px 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       border: 1px solid var(--border);
       background: var(--surface-2, #f5f8fc);
       font-size: .72rem;
@@ -313,7 +313,7 @@
       align-items: center;
       gap: 8px;
       padding: 8px 14px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .86rem;
       font-weight: 750;
       background: rgba(47, 158, 107, 0.12);
@@ -391,9 +391,9 @@
     }
 
     .cli-laudo .laudo-exec-kpi {
-      --kpi-accent: #28519c;
+      --kpi-accent: var(--accent);
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 14px 14px 13px;
       min-width: 0;
@@ -474,7 +474,7 @@
 
     .cli-laudo .laudo-ops-card {
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 14px;
       min-width: 0;
@@ -518,8 +518,8 @@
       gap: 12px;
       align-items: flex-start;
       border: 1px solid var(--border);
-      border-left: 4px solid #28519c;
-      border-radius: 14px;
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 14px 16px;
       box-shadow: 0 1px 3px rgba(19, 42, 82, 0.04);
@@ -529,11 +529,11 @@
       flex: 0 0 auto;
       width: 34px;
       height: 34px;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       display: grid;
       place-items: center;
-      background: rgba(59, 111, 212, 0.12);
-      color: #28519c;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent);
     }
 
     .cli-laudo .laudo-diag .diag-body {
@@ -562,9 +562,9 @@
       letter-spacing: .05em;
       text-transform: uppercase;
       padding: 3px 8px;
-      border-radius: 999px;
-      background: rgba(59, 111, 212, 0.12);
-      color: #28519c;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent);
     }
 
     .cli-laudo .laudo-diag p {
@@ -594,7 +594,7 @@
       font-weight: 650;
       color: var(--navy-deep);
       border: 1px solid var(--border);
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       padding: 5px 11px;
       background: var(--surface-2, #f5f8fc);
     }
@@ -608,7 +608,7 @@
 
     .cli-laudo .laudo-diag .diag-chips i.bad { background: #b33a4a; }
     .cli-laudo .laudo-diag .diag-chips i.warn { background: #c47f16; }
-    .cli-laudo .laudo-diag .diag-chips i.brand { background: #28519c; }
+    .cli-laudo .laudo-diag .diag-chips i.brand { background: var(--accent); }
 
     .cli-laudo .laudo-sec-title {
       margin-bottom: 10px;
@@ -680,7 +680,7 @@
       gap: 5px;
       margin-bottom: 2px;
       padding: 2px 8px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .65rem;
       font-weight: 750;
     }
@@ -742,7 +742,7 @@
 
     .cli-laudo .score-side {
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--surface-2);
       padding: 10px 12px;
     }
@@ -764,7 +764,7 @@
 
     .cli-laudo .score-track {
       height: 7px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: var(--surface);
       border: 1px solid var(--border);
       overflow: hidden;
@@ -774,7 +774,7 @@
       display: block;
       height: 100%;
       border-radius: inherit;
-      background: linear-gradient(90deg, #28519c, #2f9e6b);
+      background: linear-gradient(90deg, var(--accent), #2f9e6b);
     }
 
     .cli-laudo .score-track.is-warn > i {
@@ -795,7 +795,7 @@
     .cli-laudo .score-mini > div {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       padding: 6px 8px;
     }
 
@@ -845,7 +845,7 @@
 
     .cli-laudo .laudo-kpi {
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 10px 12px;
       border-left: 3px solid var(--accent);
@@ -859,8 +859,8 @@
       box-shadow: 0 8px 20px rgba(19, 42, 82, 0.09);
     }
 
-    .cli-laudo .laudo-kpi:nth-child(1) { border-left-color: #28519c; }
-    .cli-laudo .laudo-kpi:nth-child(1):hover { border-color: color-mix(in srgb, #28519c 32%, var(--border)); }
+    .cli-laudo .laudo-kpi:nth-child(1) { border-left-color: var(--accent); }
+    .cli-laudo .laudo-kpi:nth-child(1):hover { border-color: color-mix(in srgb, var(--accent) 32%, var(--border)); }
     .cli-laudo .laudo-kpi:nth-child(2) { border-left-color: #2f9e6b; }
     .cli-laudo .laudo-kpi:nth-child(2):hover { border-color: color-mix(in srgb, #2f9e6b 32%, var(--border)); }
     .cli-laudo .laudo-kpi:nth-child(3) { border-left-color: #b33a4a; }
@@ -932,10 +932,10 @@
       gap: 12px;
       align-items: flex-start;
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 14px 16px;
-      border-left: 4px solid #28519c;
+      border-left: 4px solid var(--accent);
       box-shadow: 0 1px 3px rgba(19, 42, 82, 0.04);
     }
 
@@ -943,11 +943,11 @@
       flex: 0 0 auto;
       width: 34px;
       height: 34px;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       display: grid;
       place-items: center;
-      background: rgba(59, 111, 212, 0.12);
-      color: #28519c;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent);
     }
 
     .cli-laudo .laudo-diag .diag-ico svg {
@@ -985,9 +985,9 @@
       font-weight: 750;
       letter-spacing: .05em;
       text-transform: uppercase;
-      color: #28519c;
-      background: rgba(59, 111, 212, 0.12);
-      border-radius: 999px;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border-radius: var(--radius-pill);
       padding: 3px 8px;
     }
 
@@ -1018,7 +1018,7 @@
       font-weight: 650;
       color: var(--navy-deep);
       border: 1px solid var(--border);
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       padding: 5px 11px;
       background: var(--surface-2, #f5f8fc);
     }
@@ -1032,7 +1032,7 @@
 
     .cli-laudo .laudo-diag .diag-chips i.bad { background: #b33a4a; }
     .cli-laudo .laudo-diag .diag-chips i.warn { background: #c47f16; }
-    .cli-laudo .laudo-diag .diag-chips i.brand { background: #28519c; }
+    .cli-laudo .laudo-diag .diag-chips i.brand { background: var(--accent); }
 
     .cli-laudo .diag-chips {
       display: flex;
@@ -1049,7 +1049,7 @@
       font-weight: 600;
       color: var(--muted);
       border: 1px solid var(--border);
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       padding: 2px 8px;
       background: var(--surface-2);
     }
@@ -1062,11 +1062,11 @@
 
     .cli-laudo .diag-chips i.bad { background: #b33a4a; }
     .cli-laudo .diag-chips i.warn { background: #c47f16; }
-    .cli-laudo .diag-chips i.brand { background: #28519c; }
+    .cli-laudo .diag-chips i.brand { background: var(--accent); }
 
     .cli-laudo .laudo-chart {
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 12px 14px 4px;
     }
@@ -1115,7 +1115,7 @@
 
     .cli-laudo .laudo-legend i.mais { width: 9px; height: 9px; background: #b33a4a; }
     .cli-laudo .laudo-legend i.menos { width: 9px; height: 9px; background: #2f9e6b; }
-    .cli-laudo .laudo-legend i.vol { width: 12px; height: 2px; border-radius: 2px; background: #28519c; }
+    .cli-laudo .laudo-legend i.vol { width: 12px; height: 2px; border-radius: 2px; background: var(--accent); }
 
     .cli-laudo #cliLaudoChartEvolucao {
       min-height: 250px;
@@ -1124,7 +1124,7 @@
 
     .cli-laudo .laudo-next {
       border: 1px dashed var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface-2);
       padding: 12px 14px;
       text-align: center;
@@ -1156,7 +1156,7 @@
 
     .cli-laudo .laudo-card {
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 12px 14px;
     }
@@ -1212,7 +1212,7 @@
     .cli-laudo .laudo-pareto-row .track {
       position: relative;
       height: 10px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       background: #edf2f8;
       overflow: hidden;
     }
@@ -1221,8 +1221,8 @@
       display: block;
       height: 100%;
       min-width: 6px;
-      border-radius: 999px;
-      background: linear-gradient(90deg, #28519c, #28519c);
+      border-radius: var(--radius-pill);
+      background: linear-gradient(90deg, var(--accent), var(--accent));
     }
 
     .cli-laudo .laudo-pareto-row .meta {
@@ -1251,7 +1251,7 @@
       align-items: center;
       padding: 8px 10px;
       border: 1px solid var(--border);
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       background: var(--surface-2);
     }
 
@@ -1297,7 +1297,7 @@
     .cli-laudo .laudo-dist-bar {
       display: flex;
       height: 18px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       overflow: hidden;
       border: 1px solid var(--border);
       background: var(--surface-2);
@@ -1345,7 +1345,7 @@
       flex-direction: column;
       gap: 0;
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       background: var(--surface);
       overflow: hidden;
     }
@@ -1358,7 +1358,7 @@
       padding: 13px 16px;
       border: 0;
       border-radius: 0;
-      border-bottom: 1px solid #eef1f5;
+      border-bottom: 1px solid var(--border);
       background: transparent;
       box-shadow: none;
     }
@@ -1446,7 +1446,7 @@
     .cli-laudo .laudo-top5 .seal {
       display: inline-block;
       padding: 2px 7px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .62rem;
       font-weight: 750;
       color: #8f2d3a;
@@ -1465,7 +1465,7 @@
 
     .cli-laudo .laudo-resumo-item {
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 14px 14px 13px;
       border-left: 3px solid #6b7c93;
@@ -1535,7 +1535,7 @@
       top: 18px;
       bottom: 18px;
       width: 2px;
-      background: linear-gradient(180deg, #28519c 0%, #c5d0de 100%);
+      background: linear-gradient(180deg, var(--accent) 0%, #c5d0de 100%);
       border-radius: 2px;
     }
 
@@ -1558,7 +1558,7 @@
       place-items: center;
       font-size: 0;
       color: #fff;
-      background: #28519c;
+      background: var(--accent);
       border: 3px solid #fff;
       box-shadow: 0 0 0 1px rgba(30, 79, 143, 0.25);
     }
@@ -1583,7 +1583,7 @@
 
     .cli-laudo .laudo-tl-body {
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: var(--radius);
       background: var(--surface);
       padding: 11px 14px;
       min-width: 0;
@@ -1627,11 +1627,11 @@
       display: inline-flex;
       align-items: center;
       padding: 3px 8px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       font-size: .66rem;
       font-weight: 700;
       color: var(--navy);
-      background: #f3f5f8;
+      background: var(--surface-2);
       border: 1px solid var(--border);
     }
 
@@ -1640,7 +1640,7 @@
       flex-direction: column;
       gap: 0;
       border: 1px solid var(--border);
-      border-radius: 14px;
+      border-radius: var(--radius);
       background: var(--surface);
       overflow: hidden;
     }
@@ -1650,7 +1650,7 @@
       gap: 12px;
       align-items: flex-start;
       padding: 12px 14px;
-      border-bottom: 1px solid #eef1f5;
+      border-bottom: 1px solid var(--border);
       background: transparent;
       border-radius: 0;
       border-left: 0;
@@ -1664,7 +1664,7 @@
       flex: 0 0 auto;
       width: 22px;
       height: 22px;
-      border-radius: 999px;
+      border-radius: var(--radius-pill);
       display: grid;
       place-items: center;
       background: rgba(47, 158, 107, 0.14);
@@ -1690,7 +1690,7 @@
       width: 100%;
       height: min(70vh, 720px);
       border: 0;
-      border-radius: 12px;
-      background: #fff;
+      border-radius: var(--radius);
+      background: var(--surface);
       box-shadow: inset 0 0 0 1px var(--border);
     }
