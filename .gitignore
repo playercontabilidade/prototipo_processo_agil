@@ -7,6 +7,12 @@
 *.zip
 backup-atual/
 
+# Fora do escopo do protótipo publicado
+docs/
+handoff-auditoria-cartoes/
+analise-operacional-vs-gestao.html
+analise-operacional-vs-gestao.md
+
 # Sistema
 Thumbs.db
 Desktop.ini
