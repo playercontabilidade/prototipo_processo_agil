@@ -241,9 +241,10 @@
       openFinModuleSection("plano", "Plano de Contas · Módulo Contábil");
     }
 
-    function renderFinAdquirentesListHtml() {
+    function renderFinAdquirentesListHtml(opts = {}) {
       const acqs = ensureFinAdquirentes();
       const editingId = ensureAcqFormState().editingId;
+      const showRemove = !!opts.showRemove;
       return `
         <div class="fin-op-card fin-acq-list-card">
           <div class="fin-card-head">
@@ -263,7 +264,7 @@
                   <span>Antecipação <b>${String(a.antecipacaoPct).replace(".", ",")}%</b></span>
                 </div>
                 <div class="fin-acq-parc">${uiSelectEscape(a.parcelas || "—")}</div>
-                <button type="button" class="btn-ghost sm" data-fin-cfg-del-acq="${a.id}">Remover</button>
+                ${showRemove ? `<button type="button" class="btn-ghost sm" data-fin-cfg-del-acq="${a.id}">Remover</button>` : ""}
               </article>`).join("") || `<div class="fin-table-empty">Nenhum acordo cadastrado.</div>`}
           </div>
         </div>`;
@@ -361,7 +362,7 @@
               </div>
             </div>
           </div>
-          ${renderFinAdquirentesListHtml()}
+          ${renderFinAdquirentesListHtml({ showRemove: !!opts.showRemove })}
         </div>`;
     }
 
@@ -2275,10 +2276,15 @@
                     ${chev}
                   </button>
                   <div class="fin-nav-menu" role="menu" aria-label="${uiSelectEscape(g.label)}">
-                    ${(g.items || []).map((it) => `
-                      <button type="button" role="menuitem" class="fin-nav-item${finDash.tab === it.tab ? " is-current" : ""}" data-fin-tab="${it.tab}"${it.configSection ? ` data-fin-cfg-sec="${it.configSection}"` : ""}>
+                    ${(g.items || []).map((it) => {
+                      const sec = finDash.config?.section || "adquirentes";
+                      const isCurrent = finDash.tab === it.tab
+                        && (!it.configSection || sec === it.configSection);
+                      return `
+                      <button type="button" role="menuitem" class="fin-nav-item${isCurrent ? " is-current" : ""}" data-fin-tab="${it.tab}"${it.configSection ? ` data-fin-cfg-sec="${it.configSection}"` : ""}>
                         ${uiSelectEscape(it.label)}
-                      </button>`).join("")}
+                      </button>`;
+                    }).join("")}
                   </div>
                 </div>`;
             }).join("")}
@@ -2914,48 +2920,46 @@
 
     function renderFinConfigPanel() {
       const section = finDash.config.section || "adquirentes";
-      const plano = getFinDreTaxonomy();
-
+      if (section === "plano") {
+        const plano = getFinDreTaxonomy();
+        return `
+        <div class="fin-op-panel fin-config-panel">
+          <div class="fin-op-card fin-cfg-plano">
+            <div class="fin-card-head">
+              <h4>Gestão do Plano de Contas</h4>
+              <span class="chart-sub">Árvore da DRE do cliente: monte categorias e subcategorias sem pular níveis.</span>
+            </div>
+            <div class="fin-cfg-plano-add">
+              <input type="text" id="finCfgNewGroup" placeholder="Nova categoria (ex.: (−) Despesas Financeiras)" value="${uiSelectEscape(finDash.config.newGroupLabel || "")}" />
+              <button type="button" class="btn-primary" data-fin-cfg="add-group">Adicionar categoria</button>
+            </div>
+            <div class="fin-cfg-tree">
+              ${plano.map((g) => `
+                <div class="fin-cfg-group" data-fin-cfg-group="${g.id}">
+                  <div class="fin-cfg-group-head">
+                    <strong>${uiSelectEscape(g.label)}</strong>
+                    <span class="fin-mov-tipo">${g.tipo === "credito" ? "Receita" : "Despesa"}</span>
+                    <button type="button" class="btn-ghost sm" data-fin-cfg-del-group="${g.id}">Remover</button>
+                  </div>
+                  <ul class="fin-cfg-leaves">
+                    ${(g.children || []).map((c) => `
+                      <li>
+                        <span>${uiSelectEscape(c.label)}</span>
+                        <button type="button" data-fin-cfg-del-leaf="${g.id}:${c.id}" aria-label="Remover subcategoria">×</button>
+                      </li>`).join("")}
+                  </ul>
+                  <div class="fin-cfg-add-leaf">
+                    <input type="text" data-fin-cfg-leaf-input="${g.id}" placeholder="Nova subcategoria…" />
+                    <button type="button" class="btn-ghost" data-fin-cfg-add-leaf="${g.id}">Incluir</button>
+                  </div>
+                </div>`).join("")}
+            </div>
+          </div>
+        </div>`;
+      }
       return `
         <div class="fin-op-panel fin-config-panel">
-          <div class="fin-config-nav" role="tablist">
-            <button type="button" class="${section === "adquirentes" ? "active" : ""}" data-fin-cfg-sec="adquirentes">Regras e Adquirentes</button>
-            <button type="button" class="${section === "plano" ? "active" : ""}" data-fin-cfg-sec="plano">Plano de Contas (DRE)</button>
-          </div>
-
-          ${section === "plano" ? `
-            <div class="fin-op-card fin-cfg-plano">
-              <div class="fin-card-head">
-                <h4>Gestão do Plano de Contas</h4>
-                <span class="chart-sub">Árvore da DRE do cliente: monte categorias e subcategorias sem pular níveis.</span>
-              </div>
-              <div class="fin-cfg-plano-add">
-                <input type="text" id="finCfgNewGroup" placeholder="Nova categoria (ex.: (−) Despesas Financeiras)" value="${uiSelectEscape(finDash.config.newGroupLabel || "")}" />
-                <button type="button" class="btn-primary" data-fin-cfg="add-group">Adicionar categoria</button>
-              </div>
-              <div class="fin-cfg-tree">
-                ${plano.map((g) => `
-                  <div class="fin-cfg-group" data-fin-cfg-group="${g.id}">
-                    <div class="fin-cfg-group-head">
-                      <strong>${uiSelectEscape(g.label)}</strong>
-                      <span class="fin-mov-tipo">${g.tipo === "credito" ? "Receita" : "Despesa"}</span>
-                      <button type="button" class="btn-ghost sm" data-fin-cfg-del-group="${g.id}">Remover</button>
-                    </div>
-                    <ul class="fin-cfg-leaves">
-                      ${(g.children || []).map((c) => `
-                        <li>
-                          <span>${uiSelectEscape(c.label)}</span>
-                          <button type="button" data-fin-cfg-del-leaf="${g.id}:${c.id}" aria-label="Remover subcategoria">×</button>
-                        </li>`).join("")}
-                    </ul>
-                    <div class="fin-cfg-add-leaf">
-                      <input type="text" data-fin-cfg-leaf-input="${g.id}" placeholder="Nova subcategoria…" />
-                      <button type="button" class="btn-ghost" data-fin-cfg-add-leaf="${g.id}">Incluir</button>
-                    </div>
-                  </div>`).join("")}
-              </div>
-            </div>` : `
-            ${renderFinAdquirentesHtml({ saveLabel: "Salvar regra", saveAttr: 'data-fin-cfg="save-acq"' })}`}
+          ${renderFinAdquirentesHtml({ saveLabel: "Salvar regra", saveAttr: 'data-fin-cfg="save-acq"', showRemove: true })}
         </div>`;
     }
 

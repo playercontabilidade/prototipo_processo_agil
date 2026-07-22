@@ -1557,6 +1557,57 @@
         openClienteCadastro();
         return;
       }
+      const listKpi = e.target.closest("[data-cli-list-kpi]");
+      if (listKpi) {
+        const next = listKpi.dataset.cliListKpi || "";
+        cliListKpiFilter = cliListKpiFilter === next ? "" : next;
+        cliListMenuId = null;
+        renderClientesList();
+        return;
+      }
+      const rowMenuBtn = e.target.closest("[data-cli-row-menu]");
+      if (rowMenuBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = rowMenuBtn.dataset.cliRowMenu;
+        cliListMenuId = cliListMenuId === id ? null : id;
+        renderClientesList();
+        return;
+      }
+      const rowAct = e.target.closest("[data-cli-row-act]");
+      if (rowAct) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = rowAct.dataset.cliId;
+        const act = rowAct.dataset.cliRowAct;
+        const c = CLIENTES.find((x) => x.id === id);
+        cliListMenuId = null;
+        if (act === "abrir") openClientePerfil(id);
+        else if (act === "financeiro") openClientePerfil(id, "financeiro");
+        else if (act === "documentos") openClientePerfil(id, "documentos");
+        else if (act === "config" && c) openClienteEmpresaConfigModal(c);
+        else if (act === "excluir") toast("Exclusão disponível na versão completa");
+        else renderClientesList();
+        return;
+      }
+      const drawerAct = e.target.closest("[data-cli-drawer-act]");
+      if (drawerAct) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = drawerAct.dataset.cliId;
+        const act = drawerAct.dataset.cliDrawerAct;
+        const c = CLIENTES.find((x) => x.id === id);
+        if (act === "abrir") openClientePerfil(id);
+        else if (act === "financeiro") openClientePerfil(id, "financeiro");
+        else if (act === "documentos") openClientePerfil(id, "documentos");
+        else if (act === "config" && c) openClienteEmpresaConfigModal(c);
+        return;
+      }
+      if (e.target.closest("#cliDrawerClose") || e.target.id === "cliDrawerBackdrop") {
+        closeCliClienteDrawer();
+        if (cliView === "lista") renderClientesList();
+        return;
+      }
       const cfgBtn = e.target.closest("[data-cli-config]");
       if (cfgBtn) {
         e.preventDefault();
@@ -1565,9 +1616,14 @@
         if (c) openClienteEmpresaConfigModal(c);
         return;
       }
-      const openBtn = e.target.closest("[data-cli-open], .cli-list-row[data-cli-id]");
-      if (openBtn && !e.target.closest("[data-cli-config]")) {
-        openClientePerfil(openBtn.dataset.cliOpen || openBtn.dataset.cliId);
+      const openBtn = e.target.closest(".cli-list-row[data-cli-id]");
+      if (openBtn && !e.target.closest("[data-cli-actions]")) {
+        openClientePerfil(openBtn.dataset.cliId);
+        return;
+      }
+      if (cliListMenuId && !e.target.closest(".cli-row-menu-wrap")) {
+        cliListMenuId = null;
+        if (cliView === "lista") renderClientesList();
         return;
       }
       if (e.target.closest("[data-cli-back]")) {
@@ -1885,6 +1941,7 @@
           finDash.cartoes.dragging = false;
           cliFinAudit.fileName = cliFinAudit.fileName || "planilha-vendas.xlsx";
           cliFinAudit.modalTab = "relatorio";
+          upsertCliFinAuditHistoryOnImport();
           openCliFinAuditModal();
           toast("Planilha processada — abrindo auditoria");
           return;
@@ -1893,6 +1950,11 @@
           openFinModuleAudit("config");
           return;
         }
+        return;
+      }
+      const cliAuditHist = e.target.closest("[data-cli-fin-audit-history]");
+      if (cliAuditHist) {
+        openCliFinAuditFromHistory(cliAuditHist.dataset.cliFinAuditHistory);
         return;
       }
       const cliDelAcq = e.target.closest("[data-fin-cfg-del-acq]");
@@ -1932,11 +1994,7 @@
         return;
       }
       if (handleFinTitulosToolbarClick(e)) return;
-      const titRow = e.target.closest("[data-cli-fin-tit-row]");
-      if (titRow) {
-        toast(titRow.dataset.cliFinTitRow === "baixar" ? "Baixa do título" : "Detalhe do título");
-        return;
-      }
+      if (handleFinTitulosRowAction(e)) return;
       const planoAction = e.target.closest("[data-cli-fin-plano]");
       if (planoAction || e.target.closest("[data-fin-plano-open]") || e.target.closest("[data-fin-plano-toggle]") || e.target.closest("[data-fin-plano-conta]") || e.target.closest("[data-fin-plano-flag]")) {
         if (handleFinPlanoContasClick(e)) return;
@@ -2016,6 +2074,7 @@
     });
 
     document.getElementById("clientesWrap")?.addEventListener("input", (e) => {
+      if (liveApplyFinTitulosFiltrosFromEvent(e)) return;
       if (handleCliXmlModInput(e)) return;
       if (e.target.id === "cliEntregaSearch") {
         const pos = e.target.selectionStart;
@@ -2102,6 +2161,11 @@
           cliFinAudit.dateTo = "2026-07-14";
         }
         renderClientes();
+        return;
+      }
+      if (e.target.id === "cliFinAuditHistoryMonth") {
+        cliFinAudit.historyMonth = e.target.value || "";
+        refreshCliFinAuditHistoryView();
         return;
       }
       if (e.target.id === "cliFinAuditBaseDateFrom" || e.target.id === "cliFinAuditBaseDateTo") {
@@ -2346,6 +2410,7 @@
           finDash.cartoes.dragging = false;
           cliFinAudit.fileName = cliFinAudit.fileName || "planilha-vendas.xlsx";
           cliFinAudit.modalTab = "relatorio";
+          upsertCliFinAuditHistoryOnImport();
           openCliFinAuditModal();
           toast("Planilha processada — abrindo auditoria");
           return;
@@ -2360,6 +2425,11 @@
         }
         return;
       }
+      const finAuditHist = e.target.closest("[data-cli-fin-audit-history]");
+      if (finAuditHist) {
+        openCliFinAuditFromHistory(finAuditHist.dataset.cliFinAuditHistory);
+        return;
+      }
       const titulosTab = e.target.closest("[data-fin-titulos-tab]");
       if (titulosTab) {
         const next = titulosTab.dataset.finTitulosTab === "receber" ? "receber" : "pagar";
@@ -2367,16 +2437,11 @@
         finDash.titulosSub = next;
         clearFinTitulosFiltros();
         cliFinTituloSelectedIds = new Set();
-        cliFinTitulosFiltrosOpen = false;
         renderFinModuleDash();
         return;
       }
       if (handleFinTitulosToolbarClick(e)) return;
-      const titRow = e.target.closest("[data-cli-fin-tit-row]");
-      if (titRow) {
-        toast(titRow.dataset.cliFinTitRow === "baixar" ? "Baixa do título" : "Detalhe do título");
-        return;
-      }
+      if (handleFinTitulosRowAction(e)) return;
       const planoAction = e.target.closest("[data-cli-fin-plano]");
       if (planoAction || e.target.closest("[data-fin-plano-open]") || e.target.closest("[data-fin-plano-toggle]") || e.target.closest("[data-fin-plano-conta]") || e.target.closest("[data-fin-plano-flag]")) {
         if (handleFinPlanoContasClick(e)) return;
@@ -2620,8 +2685,20 @@
 
     document.getElementById("finDrawerClose")?.addEventListener("click", () => closeFinDrawer());
     document.getElementById("finDrawerBackdrop")?.addEventListener("click", () => closeFinDrawer());
+    document.getElementById("cliDrawerClose")?.addEventListener("click", () => {
+      closeCliClienteDrawer();
+      if (cliView === "lista") renderClientesList();
+    });
+    document.getElementById("cliDrawerBackdrop")?.addEventListener("click", () => {
+      closeCliClienteDrawer();
+      if (cliView === "lista") renderClientesList();
+    });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && finDash.drawer) closeFinDrawer();
+      if (e.key === "Escape" && cliDrawerOpen) {
+        closeCliClienteDrawer();
+        if (cliView === "lista") renderClientesList();
+      }
       if (e.key === "Escape" && finDash.conc?.catRowId) {
         finDash.conc.catRowId = null;
         renderFinModuleDash();
@@ -2629,6 +2706,7 @@
     });
 
     document.getElementById("financeiroWrap")?.addEventListener("input", (e) => {
+      if (liveApplyFinTitulosFiltrosFromEvent(e)) return;
       if (e.target.id === "cliFinPlanoSearch") {
         const pos = e.target.selectionStart;
         cliFinPlanoQuery = e.target.value || "";
@@ -2710,6 +2788,14 @@
       else if (e.target.id === "finEmitVenc") finDash.cobrancas.form.vencimento = e.target.value || "";
       else if (e.target.id === "finEmitDesc") finDash.cobrancas.form.desc = e.target.value || "";
       if (e.target.id === "finCfgNewGroup") finDash.config.newGroupLabel = e.target.value || "";
+    });
+
+    document.getElementById("financeiroWrap")?.addEventListener("change", (e) => {
+      if (liveApplyFinTitulosFiltrosFromEvent(e)) return;
+    });
+
+    document.getElementById("clientesWrap")?.addEventListener("change", (e) => {
+      if (liveApplyFinTitulosFiltrosFromEvent(e)) return;
     });
 
     document.getElementById("financeiroWrap")?.addEventListener("focusin", (e) => {
@@ -2804,6 +2890,7 @@
           if (openLaudo) {
             cliFinAudit.fileName = file?.name || "planilha-vendas.xlsx";
             cliFinAudit.modalTab = "relatorio";
+            upsertCliFinAuditHistoryOnImport();
             openCliFinAuditModal();
             toast("Planilha processada — abrindo auditoria");
             return;
@@ -2828,6 +2915,11 @@
           cliFinAudit.dateTo = "2026-07-14";
         }
         renderFinModuleDash();
+        return;
+      }
+      if (e.target.id === "cliFinAuditHistoryMonth") {
+        cliFinAudit.historyMonth = e.target.value || "";
+        refreshCliFinAuditHistoryView();
         return;
       }
       if (e.target.id === "cliFinAuditBaseDateFrom" || e.target.id === "cliFinAuditBaseDateTo") {
@@ -3530,10 +3622,6 @@
         document.getElementById("cliProcStatusBtn")?.setAttribute("aria-expanded", "false");
         document.getElementById("cliEntregaStatusWrap")?.classList.remove("open");
         document.getElementById("cliEntregaStatusBtn")?.setAttribute("aria-expanded", "false");
-      }
-      if (!e.target.closest("#cliFinTitFilterWrap") && !e.target.closest("#finTitFilterBar")) {
-        document.getElementById("cliFinTitFilterWrap")?.classList.remove("open");
-        document.querySelector("[data-cli-fin-tit-filter-toggle]")?.setAttribute("aria-expanded", "false");
       }
       if (!e.target.closest("#cliDocsGenerateWrap")) {
         document.getElementById("cliDocsGenerateWrap")?.classList.remove("open");

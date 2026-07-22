@@ -1296,8 +1296,8 @@
         label: "Configurações",
         items: [
           { tab: "plano", label: "Plano de Contas" },
-          { tab: "config", label: "Regras Financeiras", configSection: "adquirentes" },
-          { tab: "config", label: "Adquirentes", configSection: "adquirentes" },
+          { tab: "config", label: "Plano de Contas (DRE)", configSection: "plano" },
+          { tab: "config", label: "Regras e Adquirentes", configSection: "adquirentes" },
         ],
       },
     ];
@@ -1398,6 +1398,10 @@
     };
     let cliSearchQuery = "";
     let cliRegimeFilter = "";
+    let cliListKpiFilter = "";
+    let cliListSelectedId = null;
+    let cliListMenuId = null;
+    let cliDrawerOpen = false;
     const CLI_TIPO_OPTIONS = ["LTDA", "ME", "EIRELI", "SA", "Sociedade Simples", "MEI", "Outros"];
     let cliCadastro = createEmptyCliCadastro();
     let cliCadastroToastTimer = null;
@@ -1459,6 +1463,14 @@
       laudoPreviewOpen: false,
       lastLaudoUrl: "",
       view: Object.fromEntries(CLI_FIN_AUDIT_VIEW_OPTS.map((o) => [o.value, true])),
+      historyMonth: "",
+      historyId: "h1",
+      history: [
+        { id: "h1", mes: "2026-07", label: "Julho/2026", arquivo: "planilha-vendas.xlsx", status: "alerta", divergencias: 42, impacto: 1234.56 },
+        { id: "h2", mes: "2026-06", label: "Junho/2026", arquivo: "cielo-jun-2026.xlsx", status: "ok", divergencias: 3, impacto: 89.1 },
+        { id: "h3", mes: "2026-05", label: "Maio/2026", arquivo: "stone-mai-2026.xlsx", status: "alerta", divergencias: 18, impacto: 540.2 },
+        { id: "h4", mes: "2026-04", label: "Abril/2026", arquivo: "rede-abr-2026.xlsx", status: "ok", divergencias: 1, impacto: 12.4 },
+      ],
     };
     let cliFeedFilter = "todos"; // todos | geral | privado | contatos | fiscal | financeiro | operacional | preferencias
     let cliFeedByClient = {};
@@ -1472,11 +1484,14 @@
     ];
     let cliFinTituloStatusFiltro = ""; // "" | aberto | parcial | pago | vencido
     let cliFinTituloSelectedIds = new Set();
-    /** Filtros avançados da barra de Títulos (pagar/receber · compartilhado). */
-    let cliFinTitulosFiltrosOpen = false;
+    /** Filtros da barra de Títulos (pagar/receber · compartilhado · sempre visível). */
     let cliFinTitulosFiltrosDraft = { q: "", status: "", valorMin: "", valorMax: "", vencIni: "", vencFim: "" };
     let cliFinTitulosFiltros = { q: "", status: "", valorMin: "", valorMax: "", vencIni: "", vencFim: "" };
     let cliFinTitulosImportTab = "upload";
+    /** Títulos criados/editados no protótipo (além dos seeds). */
+    let cliFinTitulosExtra = { pagar: [], receber: [] };
+    /** Modal Ver título · abas dados | pagamento | historico */
+    let cliFinTitVer = null;
     let cliFinPlanoQuery = "";
     let securityCertFilterClienteId = null;
     let securityCertFilterMode = "all"; /* all | acao | vencido | a-vencer | ok */
@@ -1633,15 +1648,17 @@
       openClientePerfil(clientId);
     }
 
-    function openClientePerfil(clientId) {
+    function openClientePerfil(clientId, tab) {
       const c = CLIENTES.find((x) => x.id === clientId);
       if (!c) return;
       bumpRecentClient(c.id);
       const opt = document.querySelector(`#empresaOptions .empresa-option[data-id="${c.id}"]`);
       if (opt) selectEmpresaFromOption(opt, { silentToast: true });
+      closeCliClienteDrawer({ silent: true });
+      cliListMenuId = null;
       cliView = "perfil";
       cliPerfilId = c.id;
-      cliPerfilTab = "obrigacoes";
+      cliPerfilTab = (tab && CLI_PERFIL_TABS.some((t) => t.id === tab)) ? tab : "obrigacoes";
       renderClientes();
     }
 

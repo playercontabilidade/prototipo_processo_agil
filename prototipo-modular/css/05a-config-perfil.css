@@ -33,7 +33,7 @@
       background: transparent;
     }
 
-    .fin-cfg-plano { border-radius: 0 0 var(--radius) var(--radius); }
+    .fin-cfg-plano { border-radius: var(--radius); }
 
     .fin-cfg-plano-add {
       display: flex;

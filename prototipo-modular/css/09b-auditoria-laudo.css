@@ -15,6 +15,13 @@
       align-items: center;
     }
 
+    .cli-laudo .laudo-table-tools .proc-filter {
+      height: 36px;
+      min-height: 36px;
+      box-sizing: border-box;
+      align-items: center;
+    }
+
     .cli-laudo .laudo-table-tools .proc-filter.search {
       flex: 1.4 1 200px;
       min-width: 160px;
@@ -24,6 +31,52 @@
       flex: 1 1 120px;
       min-width: 120px;
       max-width: 200px;
+    }
+
+    /* Evita chrome duplo + força texto verticalmente centralizado */
+    .modal.cli-fin-audit-modal .laudo-table-tools .proc-filter.search input,
+    .modal.cli-fin-audit-modal .laudo-table-tools .proc-filter.field select,
+    .cli-laudo .laudo-table-tools .proc-filter.search input,
+    .cli-laudo .laudo-table-tools .proc-filter.field select {
+      margin: 0 !important;
+      margin-bottom: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+      height: 36px !important;
+      min-height: 36px !important;
+      max-height: 36px !important;
+      line-height: 36px !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      padding-left: 8px;
+      padding-right: 8px;
+      box-sizing: border-box;
+      vertical-align: middle;
+    }
+
+    .cli-laudo .laudo-table-tools .proc-filter.search input {
+      padding-left: 32px !important;
+    }
+
+    .cli-laudo .laudo-table-tools .proc-filter .ui-select,
+    .cli-laudo .laudo-table-tools .proc-filter .ui-select-btn {
+      height: 36px !important;
+      min-height: 36px !important;
+      max-height: 36px !important;
+      margin: 0;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+    }
+
+    .cli-laudo .laudo-table-tools .proc-filter .ui-select-btn .ui-select-label {
+      line-height: 1.2;
+      display: flex;
+      align-items: center;
+      height: 100%;
     }
 
     .cli-laudo .laudo-full-table-wrap {
@@ -37,7 +90,7 @@
       width: 100%;
       border-collapse: collapse;
       font-size: .78rem;
-      min-width: 980px;
+      min-width: 1040px;
     }
 
     .cli-laudo .laudo-full-table th,
@@ -76,10 +129,16 @@
     .cli-laudo .laudo-full-table .seal {
       display: inline-flex;
       align-items: center;
-      padding: 2px 8px;
+      gap: 5px;
+      padding: 3px 9px;
       border-radius: var(--radius-pill);
       font-size: .66rem;
       font-weight: 750;
+      line-height: 1;
+    }
+
+    .cli-laudo .laudo-full-table .seal svg {
+      flex-shrink: 0;
     }
 
     .cli-laudo .laudo-full-table .seal.alerta {
@@ -530,6 +589,73 @@
     .cli-fin-audit-rules-col .fin-acq-list {
       max-height: none;
       flex: 1;
+    }
+
+    .cli-fin-audit-history {
+      margin: 0;
+    }
+
+    .cli-fin-audit-history-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px 16px;
+    }
+
+    .cli-fin-audit-history-head .proc-filter.field {
+      flex: 0 0 auto;
+      min-width: 180px;
+    }
+
+    .cli-fin-audit-history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 14px 14px;
+    }
+
+    .cli-fin-audit-history-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      background: var(--surface-2);
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      transition: border-color .15s ease, background .15s ease;
+    }
+
+    .cli-fin-audit-history-item:hover {
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+      background: var(--surface);
+    }
+
+    .cli-fin-audit-history-item.is-current {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+    }
+
+    .cli-fin-audit-history-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .cli-fin-audit-history-top strong {
+      color: var(--navy-deep);
+      font-size: .86rem;
+    }
+
+    .cli-fin-audit-history-meta {
+      font-size: .72rem;
+      color: var(--muted);
+      line-height: 1.4;
     }
 
     .modal.cli-fin-audit-rules-modal {

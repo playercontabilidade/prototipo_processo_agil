@@ -45,7 +45,9 @@
     .content-panel:has(.dashboard.show) {
       flex: 0 1 auto;
       height: auto;
-      overflow: visible;
+      /* hidden = cantos do painel respeitam border-radius (toolbar não “quadra” o topo) */
+      overflow: hidden;
+      border-radius: var(--radius);
     }
 
     .panel-body:has(.dashboard.show) {
@@ -975,6 +977,15 @@
     /* ——— Receita por Departamento ——— */
     .dash-dept {
       padding: var(--dash-pad);
+    }
+
+    /* Cor distinta da Composição Fiscal (accent) — navy da paleta */
+    .dash-dept .hbar-track > i {
+      background: var(--navy-deep);
+    }
+
+    .dash-dept .hbar-row:hover .hbar-track {
+      background: color-mix(in srgb, var(--navy-deep) 12%, var(--surface-2));
     }
 
     .dash-dept .hbar-chart {

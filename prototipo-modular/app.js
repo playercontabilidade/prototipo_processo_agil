@@ -1296,8 +1296,8 @@
         label: "Configurações",
         items: [
           { tab: "plano", label: "Plano de Contas" },
-          { tab: "config", label: "Regras Financeiras", configSection: "adquirentes" },
-          { tab: "config", label: "Adquirentes", configSection: "adquirentes" },
+          { tab: "config", label: "Plano de Contas (DRE)", configSection: "plano" },
+          { tab: "config", label: "Regras e Adquirentes", configSection: "adquirentes" },
         ],
       },
     ];
@@ -1398,6 +1398,10 @@
     };
     let cliSearchQuery = "";
     let cliRegimeFilter = "";
+    let cliListKpiFilter = "";
+    let cliListSelectedId = null;
+    let cliListMenuId = null;
+    let cliDrawerOpen = false;
     const CLI_TIPO_OPTIONS = ["LTDA", "ME", "EIRELI", "SA", "Sociedade Simples", "MEI", "Outros"];
     let cliCadastro = createEmptyCliCadastro();
     let cliCadastroToastTimer = null;
@@ -1459,6 +1463,14 @@
       laudoPreviewOpen: false,
       lastLaudoUrl: "",
       view: Object.fromEntries(CLI_FIN_AUDIT_VIEW_OPTS.map((o) => [o.value, true])),
+      historyMonth: "",
+      historyId: "h1",
+      history: [
+        { id: "h1", mes: "2026-07", label: "Julho/2026", arquivo: "planilha-vendas.xlsx", status: "alerta", divergencias: 42, impacto: 1234.56 },
+        { id: "h2", mes: "2026-06", label: "Junho/2026", arquivo: "cielo-jun-2026.xlsx", status: "ok", divergencias: 3, impacto: 89.1 },
+        { id: "h3", mes: "2026-05", label: "Maio/2026", arquivo: "stone-mai-2026.xlsx", status: "alerta", divergencias: 18, impacto: 540.2 },
+        { id: "h4", mes: "2026-04", label: "Abril/2026", arquivo: "rede-abr-2026.xlsx", status: "ok", divergencias: 1, impacto: 12.4 },
+      ],
     };
     let cliFeedFilter = "todos"; // todos | geral | privado | contatos | fiscal | financeiro | operacional | preferencias
     let cliFeedByClient = {};
@@ -1472,11 +1484,14 @@
     ];
     let cliFinTituloStatusFiltro = ""; // "" | aberto | parcial | pago | vencido
     let cliFinTituloSelectedIds = new Set();
-    /** Filtros avançados da barra de Títulos (pagar/receber · compartilhado). */
-    let cliFinTitulosFiltrosOpen = false;
+    /** Filtros da barra de Títulos (pagar/receber · compartilhado · sempre visível). */
     let cliFinTitulosFiltrosDraft = { q: "", status: "", valorMin: "", valorMax: "", vencIni: "", vencFim: "" };
     let cliFinTitulosFiltros = { q: "", status: "", valorMin: "", valorMax: "", vencIni: "", vencFim: "" };
     let cliFinTitulosImportTab = "upload";
+    /** Títulos criados/editados no protótipo (além dos seeds). */
+    let cliFinTitulosExtra = { pagar: [], receber: [] };
+    /** Modal Ver título · abas dados | pagamento | historico */
+    let cliFinTitVer = null;
     let cliFinPlanoQuery = "";
     let securityCertFilterClienteId = null;
     let securityCertFilterMode = "all"; /* all | acao | vencido | a-vencer | ok */
@@ -1633,15 +1648,17 @@
       openClientePerfil(clientId);
     }
 
-    function openClientePerfil(clientId) {
+    function openClientePerfil(clientId, tab) {
       const c = CLIENTES.find((x) => x.id === clientId);
       if (!c) return;
       bumpRecentClient(c.id);
       const opt = document.querySelector(`#empresaOptions .empresa-option[data-id="${c.id}"]`);
       if (opt) selectEmpresaFromOption(opt, { silentToast: true });
+      closeCliClienteDrawer({ silent: true });
+      cliListMenuId = null;
       cliView = "perfil";
       cliPerfilId = c.id;
-      cliPerfilTab = "obrigacoes";
+      cliPerfilTab = (tab && CLI_PERFIL_TABS.some((t) => t.id === tab)) ? tab : "obrigacoes";
       renderClientes();
     }
 
@@ -4179,7 +4196,8 @@
     }
 
     function openModal({ title, sub, body, foot, wide, molde, obr, regras, moldeDetail, emailTpl, classif, tipoDoc, aviso, cadastro, audit, auditRules, report }) {
-      modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "is-expanded");
+      modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "fin-tit-ver-modal", "fin-tit-banco-modal", "is-expanded");
+      modalFoot?.classList.remove("fin-tit-ver-foot");
       const resetClose = document.getElementById("modalClose");
       if (resetClose) resetClose.hidden = true;
       const resetTools = document.getElementById("modalHeadTools");
@@ -4235,6 +4253,24 @@
       }
       if (modal.classList.contains("cli-cad-modal")) {
         cliCadastro = createEmptyCliCadastro();
+      }
+      if (modal.classList.contains("fin-tit-banco-modal")) {
+        modal.classList.remove("fin-tit-banco-modal");
+        if (cliFinTitVer?.pendingQuit) {
+          delete cliFinTitVer.pendingQuit;
+          requestAnimationFrame(() => {
+            if (cliFinTitVer) {
+              cliFinTitVer.tab = "pagamento";
+              paintFinTitulosVerModal();
+            }
+          });
+          return;
+        }
+      }
+      if (modal.classList.contains("fin-tit-ver-modal")) {
+        cliFinTitVer = null;
+        modal.classList.remove("fin-tit-ver-modal");
+        modalFoot?.classList.remove("fin-tit-ver-foot");
       }
       if (modal.classList.contains("cli-fin-audit-modal")) {
         cliFinAudit.modalOpen = false;
@@ -4978,6 +5014,271 @@
       return n;
     }
 
+    function getCliMonitorSeed(c) {
+      const idx = Math.max(0, CLIENTES.findIndex((x) => x.id === c.id));
+      return {
+        idx,
+        auditWarn: idx % 4 === 1,
+        auditBad: idx % 5 === 0 && c.status !== "Ativo",
+        docsWarn: idx % 3 === 2,
+        concPend: idx % 4 === 3,
+        titVencidos: idx % 3 === 0 ? 1 + (idx % 2) : 0,
+        diasAtiv: [0, 1, 2, 5, 0, 3, 8, 1, 4, 2][idx] ?? (idx % 6),
+      };
+    }
+
+    function getCliAtividadeRelativaLabel(c) {
+      const d = getCliMonitorSeed(c).diasAtiv;
+      if (d === 0) return { short: "Hoje", detail: "Última movimentação hoje" };
+      if (d === 1) return { short: "Ontem", detail: "Última movimentação ontem" };
+      return { short: `${d} dias`, detail: `Última movimentação há ${d} dias` };
+    }
+
+    function getCliMonitorMeta(c) {
+      const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
+      const pendencias = getCliGestaoPendenciasCount(c);
+      const seed = getCliMonitorSeed(c);
+      const fat = Number(c.faturamento) || 0;
+      const saldo = Math.round(fat * (0.055 + (seed.idx % 5) * 0.008));
+      const aReceber = Math.round(fat * (0.09 + (seed.idx % 4) * 0.01));
+      const aPagar = Math.round(fat * (0.05 + (seed.idx % 3) * 0.012));
+
+      const inds = {
+        financeiro: seed.titVencidos >= 2 || aPagar > aReceber * 0.95 ? "bad" : (seed.titVencidos || seed.concPend ? "warn" : "ok"),
+        fiscal: pendencias >= 3 ? "bad" : (pendencias > 0 ? "warn" : "ok"),
+        documentos: seed.docsWarn ? "warn" : "ok",
+        auditoria: seed.auditBad ? "bad" : (seed.auditWarn ? "warn" : "ok"),
+        certificados: !cert || cert.status === "ok" ? "ok" : (cert.status === "a-vencer" ? "warn" : "bad"),
+      };
+
+      let score = 92 - seed.idx * 3;
+      if (c.status !== "Ativo") score -= 22;
+      score -= Math.min(36, pendencias * 10);
+      if (inds.certificados === "bad") score -= 28;
+      else if (inds.certificados === "warn") score -= 12;
+      if (inds.financeiro === "bad") score -= 14;
+      else if (inds.financeiro === "warn") score -= 7;
+      if (inds.auditoria === "bad") score -= 12;
+      else if (inds.auditoria === "warn") score -= 6;
+      if (inds.documentos === "warn") score -= 4;
+      score = Math.max(12, Math.min(98, Math.round(score)));
+
+      let healthLabel = "Excelente";
+      let healthCls = "is-ok";
+      if (score < 60) {
+        healthLabel = "Crítico";
+        healthCls = "is-bad";
+      } else if (score < 85) {
+        healthLabel = "Atenção";
+        healthCls = "is-warn";
+      }
+
+      const alerts = [];
+      if (cert?.status === "vencido") alerts.push("Certificado vencido");
+      else if (cert?.status === "a-vencer") {
+        const dias = Number(cert.dias);
+        alerts.push(Number.isFinite(dias) && dias >= 0
+          ? `Certificado vence em ${dias} dia${dias === 1 ? "" : "s"}`
+          : "Certificado a vencer");
+      }
+      if (pendencias > 0) {
+        alerts.push(pendencias === 1 ? "1 pendência fiscal" : `${pendencias} pendências fiscais`);
+      }
+      if (seed.titVencidos) {
+        alerts.push(seed.titVencidos === 1 ? "Título vencido" : `${seed.titVencidos} títulos vencidos`);
+      }
+      if (seed.concPend) alerts.push("Conciliação pendente");
+      if (seed.auditWarn || seed.auditBad) alerts.push("Divergência na auditoria");
+      if (c.status !== "Ativo") alerts.push("Cliente inativo");
+
+      const alertaPrincipal = alerts[0] || "Em dia";
+      const alertaCls = alerts.length ? (healthCls === "is-ok" ? "is-warn" : healthCls) : "is-ok";
+
+      return {
+        cert,
+        pendencias,
+        score,
+        healthLabel,
+        healthCls,
+        inds,
+        alertaPrincipal,
+        alertaCls,
+        alertsCount: alerts.length,
+        saldo,
+        aReceber,
+        aPagar,
+        atividade: getCliAtividadeRelativaLabel(c),
+      };
+    }
+
+    function renderCliMonIndsHtml(inds) {
+      const items = [
+        { key: "financeiro", lab: "Fin", tip: "Financeiro" },
+        { key: "fiscal", lab: "Fis", tip: "Fiscal" },
+        { key: "documentos", lab: "Doc", tip: "Documentos" },
+        { key: "auditoria", lab: "Aud", tip: "Auditoria" },
+        { key: "certificados", lab: "Cer", tip: "Certificados" },
+      ];
+      return `
+        <div class="cli-mon-inds" aria-label="Indicadores rápidos">
+          ${items.map((it) => {
+            const ton = inds[it.key] || "ok";
+            return `<span class="cli-mon-ind is-${ton}" title="${it.tip}"><i aria-hidden="true"></i><b>${it.lab}</b></span>`;
+          }).join("")}
+        </div>`;
+    }
+
+    function getCliUltimaMovimentacaoLabel(c) {
+      const tasks = agendaTasks
+        .filter((t) => t.clienteId === c.id && !t.arquivada)
+        .slice()
+        .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+      if (tasks[0]?.date) {
+        const [y, m, d] = String(tasks[0].date).split("-");
+        if (y && m && d) return `${d}/${m}/${y} · ${tasks[0].nome || "Entrega"}`;
+      }
+      return getCliAtividadeRelativaLabel(c).detail;
+    }
+
+    function getCliListSituacaoMeta(c, pendencias, cert) {
+      if (cert && cert.status !== "ok") {
+        return { key: "alerta", label: "Alerta", cls: "is-alerta" };
+      }
+      if (pendencias > 0) {
+        return { key: "pendencias", label: pendencias === 1 ? "1 pendência" : `${pendencias} pendências`, cls: "is-pend" };
+      }
+      return { key: "em-dia", label: "Em dia", cls: "is-ok" };
+    }
+
+    function cliListSituacaoIcon(key) {
+      if (key === "alerta") {
+        return `<svg class="cli-sit-ico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>`;
+      }
+      if (key === "pendencias") {
+        return `<svg class="cli-sit-ico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>`;
+      }
+      return `<svg class="cli-sit-ico" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>`;
+    }
+
+    function collectCliListRowsMeta() {
+      const q = cliSearchQuery.trim();
+      let list = [...CLIENTES];
+      if (q) {
+        const matched = findClientesByOmniQuery(q);
+        const ids = new Set((matched || []).map((c) => c.id));
+        list = matched ? CLIENTES.filter((c) => ids.has(c.id)) : [];
+      }
+      if (cliRegimeFilter) list = list.filter((c) => c.regime === cliRegimeFilter);
+
+      let rowsMeta = list.map((c) => {
+        const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
+        const pendencias = getCliGestaoPendenciasCount(c);
+        const monitor = getCliMonitorMeta(c);
+        return {
+          c,
+          colabs: (c.funcInternos || 0) + (c.funcExternos || 0),
+          pendencias,
+          cert,
+          situacao: getCliListSituacaoMeta(c, pendencias, cert),
+          monitor,
+        };
+      });
+
+      const kpi = cliListKpiFilter || "";
+      if (kpi === "ativas") rowsMeta = rowsMeta.filter((r) => r.c.status === "Ativo");
+      else if (kpi === "pendencias") rowsMeta = rowsMeta.filter((r) => r.pendencias > 0);
+      else if (kpi === "colaboradores") rowsMeta = rowsMeta.slice().sort((a, b) => b.colabs - a.colabs);
+      else if (kpi === "cert") rowsMeta = rowsMeta.filter((r) => r.cert && r.cert.status !== "ok");
+      else rowsMeta = rowsMeta.slice().sort((a, b) => a.monitor.score - b.monitor.score);
+
+      return rowsMeta;
+    }
+
+    function closeCliClienteDrawer(opts = {}) {
+      cliDrawerOpen = false;
+      if (!opts.keepSelection) cliListSelectedId = null;
+      const backdrop = document.getElementById("cliDrawerBackdrop");
+      const drawer = document.getElementById("cliDrawer");
+      backdrop?.classList.remove("open");
+      drawer?.classList.remove("open");
+      backdrop?.setAttribute("aria-hidden", "true");
+      drawer?.setAttribute("aria-hidden", "true");
+      if (!opts.silent && cliView === "lista") {
+        document.querySelectorAll(".cli-list-row.is-selected").forEach((el) => el.classList.remove("is-selected"));
+      }
+    }
+
+    function paintCliClienteDrawer(c) {
+      const backdrop = document.getElementById("cliDrawerBackdrop");
+      const drawer = document.getElementById("cliDrawer");
+      const title = document.getElementById("cliDrawerTitle");
+      const sub = document.getElementById("cliDrawerSub");
+      const body = document.getElementById("cliDrawerBody");
+      const foot = document.getElementById("cliDrawerFoot");
+      if (!backdrop || !drawer || !body || !c) return;
+
+      const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
+      const pendencias = getCliGestaoPendenciasCount(c);
+      const situacao = getCliListSituacaoMeta(c, pendencias, cert);
+      const monitor = getCliMonitorMeta(c);
+      const colabs = (c.funcInternos || 0) + (c.funcExternos || 0);
+      const tipo = c.tipoUnidade || "Matriz";
+
+      if (title) title.textContent = c.fantasia || c.nome;
+      if (sub) sub.textContent = `${c.cnpj || "—"} · Saúde ${monitor.score}% · ${monitor.healthLabel}`;
+      if (foot) foot.textContent = "Centro de monitoramento · lista permanece ao fundo";
+
+      body.innerHTML = `
+        <div class="cli-drawer-summary">
+          <div class="cli-drawer-status">
+            <span class="cli-sit-pill ${situacao.cls}">${cliListSituacaoIcon(situacao.key)} ${uiSelectEscape(situacao.label)}</span>
+            <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${uiSelectEscape(c.status || "—")}</span>
+          </div>
+          <div class="cli-mon-health ${monitor.healthCls}" style="margin-bottom:10px">
+            <div class="cli-mon-health-top">
+              <strong>${monitor.score}%</strong>
+              <span>${uiSelectEscape(monitor.healthLabel)}</span>
+            </div>
+            <div class="cli-mon-health-bar" aria-hidden="true"><i style="width:${monitor.score}%"></i></div>
+          </div>
+          ${renderCliMonIndsHtml(monitor.inds)}
+          <div class="fin-drawer-meta cli-drawer-meta">
+            <div><span>Alerta</span><strong>${uiSelectEscape(monitor.alertaPrincipal)}</strong></div>
+            <div><span>Saldo</span><strong>${money(monitor.saldo)}</strong></div>
+            <div><span>A receber</span><strong>${money(monitor.aReceber)}</strong></div>
+            <div><span>A pagar</span><strong>${money(monitor.aPagar)}</strong></div>
+            <div><span>Regime</span><strong>${uiSelectEscape(c.regime || "—")}</strong></div>
+            <div><span>Unidade</span><strong>${uiSelectEscape(tipo)}</strong></div>
+            <div><span>Colaboradores</span><strong>${colabs}</strong></div>
+            <div><span>Cliente desde</span><strong>${uiSelectEscape(c.clienteDesde || "—")}</strong></div>
+            <div><span>Atividade</span><strong>${uiSelectEscape(monitor.atividade.detail)}</strong></div>
+          </div>
+          <div class="cli-drawer-actions">
+            <button type="button" class="btn-primary" data-cli-drawer-act="abrir" data-cli-id="${c.id}">Abrir Cliente</button>
+            <button type="button" class="btn-ghost" data-cli-drawer-act="financeiro" data-cli-id="${c.id}">Financeiro</button>
+            <button type="button" class="btn-ghost" data-cli-drawer-act="documentos" data-cli-id="${c.id}">Documentos</button>
+            <button type="button" class="btn-ghost" data-cli-drawer-act="config" data-cli-id="${c.id}">Configurações</button>
+          </div>
+        </div>`;
+
+      backdrop.classList.add("open");
+      drawer.classList.add("open");
+      backdrop.setAttribute("aria-hidden", "false");
+      drawer.setAttribute("aria-hidden", "false");
+      cliDrawerOpen = true;
+    }
+
+    function openCliClienteDrawer(clientId) {
+      const c = CLIENTES.find((x) => x.id === clientId);
+      if (!c) return;
+      cliListSelectedId = c.id;
+      cliListMenuId = null;
+      paintCliClienteDrawer(c);
+      document.querySelectorAll(".cli-list-row.is-selected").forEach((el) => {
+        el.classList.toggle("is-selected", el.dataset.cliId === c.id);
+      });
+    }
+
     function openClienteEmpresaConfigModal(c) {
       if (!c) return;
       openModal({
@@ -5012,31 +5313,36 @@
     function renderClientesList() {
       const wrap = document.getElementById("clientesWrap");
       if (!wrap) return;
-      const q = cliSearchQuery.trim();
-      let list = [...CLIENTES];
-      if (q) {
-        const matched = findClientesByOmniQuery(q);
-        const ids = new Set((matched || []).map((c) => c.id));
-        list = matched ? CLIENTES.filter((c) => ids.has(c.id)) : [];
-      }
-      if (cliRegimeFilter) {
-        list = list.filter((c) => c.regime === cliRegimeFilter);
-      }
-      const rowsMeta = list.map((c) => ({
-        c,
-        colabs: (c.funcInternos || 0) + (c.funcExternos || 0),
-        pendencias: getCliGestaoPendenciasCount(c),
-        cert: typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null,
-      }));
+      const rowsMeta = collectCliListRowsMeta();
+      const baseForKpi = (() => {
+        const q = cliSearchQuery.trim();
+        let list = [...CLIENTES];
+        if (q) {
+          const matched = findClientesByOmniQuery(q);
+          const ids = new Set((matched || []).map((c) => c.id));
+          list = matched ? CLIENTES.filter((c) => ids.has(c.id)) : [];
+        }
+        if (cliRegimeFilter) list = list.filter((c) => c.regime === cliRegimeFilter);
+        return list.map((c) => {
+          const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
+          return {
+            c,
+            colabs: (c.funcInternos || 0) + (c.funcExternos || 0),
+            pendencias: getCliGestaoPendenciasCount(c),
+            cert,
+          };
+        });
+      })();
       const kpis = {
-        empresas: list.length,
-        ativos: list.filter((c) => c.status === "Ativo").length,
-        pendencias: rowsMeta.filter((r) => r.pendencias > 0).length,
-        colabs: rowsMeta.reduce((acc, r) => acc + r.colabs, 0),
-        certAlerta: rowsMeta.filter((r) => r.cert && r.cert.status !== "ok").length,
+        empresas: baseForKpi.length,
+        ativos: baseForKpi.filter((r) => r.c.status === "Ativo").length,
+        pendencias: baseForKpi.filter((r) => r.pendencias > 0).length,
+        colabs: baseForKpi.reduce((acc, r) => acc + r.colabs, 0),
+        certAlerta: baseForKpi.filter((r) => r.cert && r.cert.status !== "ok").length,
       };
+      const kpiActive = cliListKpiFilter || "";
       wrap.innerHTML = `
-        <div class="cli-list-toolbar">
+        <div class="cli-list-toolbar" role="toolbar" aria-label="Ferramentas da carteira">
           <div class="proc-filter search">
             <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input type="search" id="cliSearch" placeholder="Nome, razão social ou CNPJ" value="${cliSearchQuery.replace(/"/g, "&quot;")}" aria-label="Buscar clientes" />
@@ -5048,78 +5354,101 @@
               ${REGIME_OPTIONS.map((r) => `<option value="${r}" ${cliRegimeFilter === r ? "selected" : ""}>${r}</option>`).join("")}
             </select>
           </div>
-          <span class="cli-count">${list.length} empresa${list.length === 1 ? "" : "s"} no filtro</span>
+          <span class="cli-count">${rowsMeta.length} empresa${rowsMeta.length === 1 ? "" : "s"} no filtro</span>
           <button type="button" class="btn-primary cli-add-btn" data-cli-add-empresa>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             Nova empresa
           </button>
         </div>
         <div class="cli-list-kpis" aria-label="Indicadores da carteira filtrada">
-          <div class="cli-list-kpi">
-            <span class="lab">Empresas</span>
+          <button type="button" class="cli-list-kpi${!kpiActive ? " is-active" : ""}" data-cli-list-kpi="" aria-pressed="${!kpiActive}">
+            <span class="cli-list-kpi-top">
+              <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+              <span class="lab">Empresas</span>
+            </span>
             <strong>${kpis.empresas}</strong>
-          </div>
-          <div class="cli-list-kpi ok">
-            <span class="lab">Ativas</span>
+            <span class="cli-list-kpi-hint">Carteira no filtro</span>
+            <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:100%"></i></span>
+          </button>
+          <button type="button" class="cli-list-kpi ok${kpiActive === "ativas" ? " is-active" : ""}" data-cli-list-kpi="ativas" aria-pressed="${kpiActive === "ativas"}">
+            <span class="cli-list-kpi-top">
+              <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></span>
+              <span class="lab">Ativas</span>
+            </span>
             <strong>${kpis.ativos}</strong>
-          </div>
-          <div class="cli-list-kpi${kpis.pendencias ? " warn" : ""}">
-            <span class="lab">Com pendências</span>
+            <span class="cli-list-kpi-hint">${kpis.empresas ? Math.round((kpis.ativos / kpis.empresas) * 100) : 0}% da carteira</span>
+            <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${kpis.empresas ? Math.round((kpis.ativos / kpis.empresas) * 100) : 0}%"></i></span>
+          </button>
+          <button type="button" class="cli-list-kpi${kpis.pendencias ? " warn" : ""}${kpiActive === "pendencias" ? " is-active" : ""}" data-cli-list-kpi="pendencias" aria-pressed="${kpiActive === "pendencias"}">
+            <span class="cli-list-kpi-top">
+              <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+              <span class="lab">Com pendências</span>
+            </span>
             <strong>${kpis.pendencias}</strong>
-          </div>
-          <div class="cli-list-kpi">
-            <span class="lab">Colaboradores</span>
+            <span class="cli-list-kpi-hint">${kpis.pendencias ? "Requer atenção" : "Nenhuma crítica"}</span>
+            <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${kpis.empresas ? Math.min(100, Math.round((kpis.pendencias / kpis.empresas) * 100)) : 0}%"></i></span>
+          </button>
+          <button type="button" class="cli-list-kpi${kpiActive === "colaboradores" ? " is-active" : ""}" data-cli-list-kpi="colaboradores" aria-pressed="${kpiActive === "colaboradores"}">
+            <span class="cli-list-kpi-top">
+              <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+              <span class="lab">Colaboradores</span>
+            </span>
             <strong>${kpis.colabs}</strong>
-          </div>
-          <div class="cli-list-kpi${kpis.certAlerta ? " bad" : ""}">
-            <span class="lab">Cert. em alerta</span>
+            <span class="cli-list-kpi-hint">${kpis.empresas ? Math.round(kpis.colabs / kpis.empresas) : 0} méd. por empresa</span>
+            <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${Math.min(100, Math.round(kpis.colabs / 2))}%"></i></span>
+          </button>
+          <button type="button" class="cli-list-kpi${kpis.certAlerta ? " bad" : ""}${kpiActive === "cert" ? " is-active" : ""}" data-cli-list-kpi="cert" aria-pressed="${kpiActive === "cert"}">
+            <span class="cli-list-kpi-top">
+              <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+              <span class="lab">Cert. em alerta</span>
+            </span>
             <strong>${kpis.certAlerta}</strong>
-          </div>
+            <span class="cli-list-kpi-hint">${kpis.certAlerta ? "Vencido ou a vencer" : "Certificados ok"}</span>
+            <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${kpis.empresas ? Math.min(100, Math.round((kpis.certAlerta / kpis.empresas) * 100)) : 0}%"></i></span>
+          </button>
         </div>
-        <div class="cli-grid" id="cliGrid">
+        <div class="cli-grid cli-mon-grid" id="cliGrid">
           <div class="cli-list-head">
-            <span>Identificação</span>
-            <span>Unidade</span>
-            <span>Cliente desde</span>
-            <span>Colaboradores</span>
-            <span>Pendências</span>
-            <span>Regime</span>
-            <span class="cli-head-actions">Config</span>
+            <span>Empresa</span>
+            <span>Saúde do Cliente</span>
+            <span>Alertas</span>
+            <span>Atividade</span>
           </div>
-          ${rowsMeta.length ? rowsMeta.map(({ c, colabs, pendencias }) => {
+          ${rowsMeta.length ? rowsMeta.map(({ c, monitor }) => {
             const tipo = c.tipoUnidade || "Matriz";
             const tipoCls = tipo === "Filial" ? "filial" : "matriz";
-            const pendLabel = pendencias === 0
-              ? "Em dia"
-              : `${pendencias} pendência${pendencias === 1 ? "" : "s"}`;
+            const selected = cliListSelectedId === c.id;
+            const m = monitor || getCliMonitorMeta(c);
             return `
-              <div class="cli-list-row is-${tipoCls}" data-cli-id="${c.id}" data-cli-open="${c.id}" role="button" tabindex="0" aria-label="Abrir ${c.fantasia || c.nome}">
+              <div class="cli-list-row cli-mon-row is-${tipoCls}${selected ? " is-selected" : ""}" data-cli-id="${c.id}" role="button" tabindex="0" aria-label="Abrir ${c.fantasia || c.nome}" aria-selected="${selected}">
                 <div class="cli-id-cell">
-                  <strong title="${c.razaoSocial || c.nome}">${c.fantasia || c.nome}</strong>
-                  <span>${c.cnpj} · ${c.code}</span>
+                  <strong title="${uiSelectEscape(c.razaoSocial || c.nome)}">${uiSelectEscape(c.fantasia || c.nome)}</strong>
+                  <span class="cli-id-sub">${uiSelectEscape(c.cnpj)}</span>
                 </div>
-                <div class="cell-tipo"><span class="cli-badge ${tipoCls}">${tipo}</span></div>
-                <div class="cli-meta-cell cli-meta-desde">
-                  <strong>${c.clienteDesde || "—"}</strong>
-                  <i>Cliente desde</i>
+                <div class="cli-mon-health ${m.healthCls}" aria-label="Saúde ${m.score}% · ${m.healthLabel}">
+                  <div class="cli-mon-health-top">
+                    <strong>${m.score}%</strong>
+                    <span>${uiSelectEscape(m.healthLabel)}</span>
+                  </div>
+                  <div class="cli-mon-health-bar" aria-hidden="true"><i style="width:${m.score}%"></i></div>
                 </div>
-                <div class="cli-meta-cell cli-meta-colab">
-                  <strong>${colabs}</strong>
-                  <i>${c.funcInternos || 0} int. · ${c.funcExternos || 0} ext.</i>
+                <div class="cli-mon-alert ${m.alertaCls}">
+                  <strong title="${uiSelectEscape(m.alertaPrincipal)}">${uiSelectEscape(m.alertaPrincipal)}</strong>
+                  ${m.alertsCount > 1 ? `<span>+${m.alertsCount - 1}</span>` : ""}
                 </div>
-                <div class="cli-pend-cell">
-                  <span class="cli-pend-pill${pendencias ? " has-pend" : " ok"}">${pendLabel}</span>
-                </div>
-                <div class="cell-regime">${c.regime}</div>
-                <div class="cli-actions">
-                  <button type="button" class="cli-config-btn tip-bottom" data-cli-config="${c.id}" data-tip="Configurações da empresa" aria-label="Configurações de ${c.fantasia || c.nome}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                  </button>
+                <div class="cli-mon-ativ">
+                  <strong>${uiSelectEscape(m.atividade.short)}</strong>
+                  <span>${uiSelectEscape(m.atividade.detail)}</span>
                 </div>
               </div>`;
-          }).join("") : `<div class="cli-empty-panel">${q || cliRegimeFilter ? "Nenhuma empresa correspondente aos filtros" : "Nenhum cliente cadastrado"}</div>`}
+          }).join("") : `<div class="cli-empty-panel">${cliSearchQuery || cliRegimeFilter || kpiActive ? "Nenhuma empresa correspondente aos filtros" : "Nenhum cliente cadastrado"}</div>`}
         </div>`;
       enhanceUiSelects(wrap);
+      if (cliDrawerOpen && cliListSelectedId) {
+        const still = CLIENTES.find((x) => x.id === cliListSelectedId);
+        if (still) paintCliClienteDrawer(still);
+        else closeCliClienteDrawer({ silent: true });
+      }
     }
 
     function getCliProcessos(c, applyFilters) {
@@ -6436,20 +6765,25 @@
 
     function getCliTitulos(c, tipo) {
       const base = Math.round((c.faturamento || 50000) / 100);
-      if (tipo === "receber") {
-        return [
-          { id: "r1", nome: c.fantasia || c.nome, descricao: "Mensalidade contábil — Jul/2026", vencimento: "10/07/2026", valor: base, restante: base, status: "aberto" },
-          { id: "r2", nome: c.fantasia || c.nome, descricao: "Honorários avulsos — SPED", vencimento: "05/07/2026", valor: 1200, restante: 400, status: "parcial" },
-          { id: "r3", nome: "Farmácia Centro Filial", descricao: "Assessoria societária", vencimento: "28/06/2026", valor: 890, restante: 0, status: "pago" },
-          { id: "r4", nome: c.fantasia || c.nome, descricao: "Consultoria tributária", vencimento: "01/07/2026", valor: 650, restante: 650, status: "vencido" },
+      const lado = tipo === "receber" ? "receber" : "pagar";
+      const seed = tipo === "receber"
+        ? [
+          { id: "r1", numero: "r1", nome: c.fantasia || c.nome, descricao: "Mensalidade contábil — Jul/2026", vencimento: "10/07/2026", valor: base, restante: base, status: "aberto", forma: "Boleto", plano: "Receitas de serviços", centro: "Comercial", nossoNumero: "20260710001" },
+          { id: "r2", numero: "r2", nome: c.fantasia || c.nome, descricao: "Honorários avulsos — SPED", vencimento: "05/07/2026", valor: 1200, restante: 400, status: "parcial", forma: "PIX", plano: "Receitas de serviços", centro: "Operacional", nossoNumero: "20260705002", dataPagamento: "06/07/2026" },
+          { id: "r3", numero: "r3", nome: "Farmácia Centro Filial", descricao: "Assessoria societária", vencimento: "28/06/2026", valor: 890, restante: 0, status: "pago", forma: "Transferência", plano: "Receitas de serviços", centro: "Administrativo", nossoNumero: "20260628003", dataPagamento: "28/06/2026" },
+          { id: "r4", numero: "r4", nome: c.fantasia || c.nome, descricao: "Consultoria tributária", vencimento: "01/07/2026", valor: 650, restante: 650, status: "vencido", forma: "Boleto", plano: "Receitas de serviços", centro: "Comercial", nossoNumero: "20260701004" },
+        ]
+        : [
+          { id: "p1", numero: "p1", nome: "Tech Docs Ltda", descricao: "Licença sistema fiscal", vencimento: "12/07/2026", valor: 480, restante: 480, status: "aberto", forma: "Boleto", plano: "Despesas operacionais", centro: "Administrativo", nossoNumero: "92018001" },
+          { id: "p2", numero: "p2", nome: "Energia Norte", descricao: "Conta de energia — Jun", vencimento: "08/07/2026", valor: 312.4, restante: 0, status: "pago", forma: "Débito automático", plano: "Despesas operacionais", centro: "Operacional", nossoNumero: "92018002", dataPagamento: "08/07/2026" },
+          { id: "p3", numero: "p3", nome: "Cloud Host BR", descricao: "Hospedagem mensal", vencimento: "15/07/2026", valor: 199, restante: 99.5, status: "parcial", forma: "Cartão", plano: "Despesas operacionais", centro: "Operacional", nossoNumero: "92018003", dataPagamento: "10/07/2026" },
+          { id: "p4", numero: "p4", nome: "Cartório Centro", descricao: "Taxas cartorárias", vencimento: "30/06/2026", valor: 245, restante: 245, status: "vencido", forma: "Boleto", plano: "Despesas operacionais", centro: "Administrativo", nossoNumero: "92018004" },
         ];
-      }
-      return [
-        { id: "p1", nome: "Tech Docs Ltda", descricao: "Licença sistema fiscal", vencimento: "12/07/2026", valor: 480, restante: 480, status: "aberto" },
-        { id: "p2", nome: "Energia Norte", descricao: "Conta de energia — Jun", vencimento: "08/07/2026", valor: 312.4, restante: 0, status: "pago" },
-        { id: "p3", nome: "Cloud Host BR", descricao: "Hospedagem mensal", vencimento: "15/07/2026", valor: 199, restante: 99.5, status: "parcial" },
-        { id: "p4", nome: "Cartório Centro", descricao: "Taxas cartorárias", vencimento: "30/06/2026", valor: 245, restante: 245, status: "vencido" },
-      ];
+      const extras = (cliFinTitulosExtra[lado] || []).filter((t) => !t.clienteId || t.clienteId === c.id);
+      const byId = new Map();
+      seed.forEach((t) => byId.set(String(t.id), t));
+      extras.forEach((t) => byId.set(String(t.id), t));
+      return Array.from(byId.values());
     }
 
     function getCliTitulosFiltrados(c, tipo) {
@@ -6644,13 +6978,21 @@
       });
     }
 
-    function openFinTitulosNovoModal(lado) {
+    function openFinTitulosNovoModal(lado, existing) {
       const isPagar = lado === "pagar";
+      const isEdit = !!(existing && existing.id);
       const partyLabel = isPagar ? "Fornecedor" : "Cliente";
       const payLabel = isPagar ? "Forma de Pagamento" : "Forma de Recebimento";
+      const ex = existing || {};
+      const valorFmt = ex.valor != null
+        ? `R$ ${Number(ex.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : "";
+      const vencIso = brDateToIso(ex.vencimento) || ex.vencimentoIso || "";
       openModal({
-        title: isPagar ? "Novo Título a Pagar" : "Novo Título a Receber",
-        sub: "Preencha os dados do título",
+        title: isEdit
+          ? (isPagar ? "Editar Título a Pagar" : "Editar Título a Receber")
+          : (isPagar ? "Novo Título a Pagar" : "Novo Título a Receber"),
+        sub: isEdit ? "Altere os dados do título" : "Preencha os dados do título",
         wide: true,
         body: `
           <div class="fin-tit-novo">
@@ -6665,56 +7007,54 @@
             <div class="fin-tit-form-grid">
               <div>
                 <label for="finTitParty">${partyLabel}</label>
-                <input type="text" id="finTitParty" placeholder="Nome do ${partyLabel.toLowerCase()}" autocomplete="off" />
+                <input type="text" id="finTitParty" placeholder="Nome do ${partyLabel.toLowerCase()}" autocomplete="off" value="${(ex.nome || "").replace(/"/g, "&quot;")}" />
               </div>
               <div>
                 <label for="finTitPayForm">${payLabel}</label>
                 <select id="finTitPayForm">
                   <option value="">Selecione</option>
-                  <option>Boleto</option>
-                  <option>PIX</option>
-                  <option>Transferência</option>
-                  <option>Cartão</option>
-                  <option>Dinheiro</option>
+                  ${["Boleto", "PIX", "Transferência", "Cartão", "Dinheiro"].map((o) =>
+                    `<option${(ex.forma || "") === o ? " selected" : ""}>${o}</option>`
+                  ).join("")}
                 </select>
               </div>
               <div class="full">
                 <label for="finTitDesc">Descrição</label>
-                <input type="text" id="finTitDesc" placeholder="Descrição do título" />
+                <input type="text" id="finTitDesc" placeholder="Descrição do título" value="${(ex.descricao || "").replace(/"/g, "&quot;")}" />
               </div>
               <div>
                 <label for="finTitSubplano">Subplano de Contas</label>
                 <select id="finTitSubplano">
                   <option value="">Selecione</option>
-                  <option>${isPagar ? "Despesas operacionais" : "Receitas de serviços"}</option>
-                  <option>${isPagar ? "Fornecedores" : "Mensalidades"}</option>
-                  <option>Outros</option>
+                  <option${(ex.subplano || "") === (isPagar ? "Despesas operacionais" : "Receitas de serviços") ? " selected" : ""}>${isPagar ? "Despesas operacionais" : "Receitas de serviços"}</option>
+                  <option${(ex.subplano || "") === (isPagar ? "Fornecedores" : "Mensalidades") ? " selected" : ""}>${isPagar ? "Fornecedores" : "Mensalidades"}</option>
+                  <option${(ex.subplano || "") === "Outros" ? " selected" : ""}>Outros</option>
                 </select>
               </div>
               <div>
                 <label for="finTitValor">Valor</label>
-                <input type="text" id="finTitValor" inputmode="decimal" placeholder="R$ 0,00" />
+                <input type="text" id="finTitValor" inputmode="decimal" placeholder="R$ 0,00" value="${valorFmt.replace(/"/g, "&quot;")}" />
               </div>
               <div>
                 <label for="finTitVenc">Vencimento</label>
-                <input type="date" id="finTitVenc" />
+                <input type="date" id="finTitVenc" value="${vencIso}" />
               </div>
               <div>
                 <label for="finTitPlano">Plano de Contas</label>
                 <select id="finTitPlano">
                   <option value="">Selecione</option>
-                  <option>Contábil</option>
-                  <option>Fiscal</option>
-                  <option>Financeiro</option>
+                  ${["Contábil", "Fiscal", "Financeiro"].map((o) =>
+                    `<option${(ex.plano || "") === o ? " selected" : ""}>${o}</option>`
+                  ).join("")}
                 </select>
               </div>
               <div>
                 <label for="finTitCentro">Centro de Custo</label>
                 <select id="finTitCentro">
                   <option value="">Selecione</option>
-                  <option>Administrativo</option>
-                  <option>Operacional</option>
-                  <option>Comercial</option>
+                  ${["Administrativo", "Operacional", "Comercial"].map((o) =>
+                    `<option${(ex.centro || "") === o ? " selected" : ""}>${o}</option>`
+                  ).join("")}
                 </select>
               </div>
             </div>
@@ -6723,16 +7063,16 @@
               <div class="fin-tit-form-grid">
                 <div>
                   <label for="finTitNum">Número</label>
-                  <input type="text" id="finTitNum" placeholder="Nº do documento" />
+                  <input type="text" id="finTitNum" placeholder="Nº do documento" value="${(ex.numero || "").replace(/"/g, "&quot;")}" />
                 </div>
                 <div>
                   <label for="finTitNosso">Nosso Número</label>
-                  <input type="text" id="finTitNosso" placeholder="Nosso número" />
+                  <input type="text" id="finTitNosso" placeholder="Nosso número" value="${(ex.nossoNumero || "").replace(/"/g, "&quot;")}" />
                 </div>
                 <div class="full fin-tit-barcode-field">
                   <label for="finTitCodBarras">Código de Barras</label>
                   <div class="fin-tit-barcode-row">
-                    <input type="text" id="finTitCodBarras" placeholder="Linha digitável / código de barras" />
+                    <input type="text" id="finTitCodBarras" placeholder="Linha digitável / código de barras" value="${(ex.codBarras || "").replace(/"/g, "&quot;")}" />
                     <button type="button" class="btn-ghost fin-tit-scan-btn" id="finTitScanBtn" aria-label="Escanear código">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
                     </button>
@@ -6742,16 +7082,16 @@
             </div>
             <div>
               <label for="finTitObs">Observações</label>
-              <textarea id="finTitObs" rows="3" placeholder="Observações internas"></textarea>
+              <textarea id="finTitObs" rows="3" placeholder="Observações internas">${(ex.obs || "").replace(/</g, "&lt;")}</textarea>
             </div>
             <label class="fin-tit-check">
-              <input type="checkbox" id="finTitRepetir" />
+              <input type="checkbox" id="finTitRepetir" ${ex.repetir ? "checked" : ""} />
               <span>Repetir título · Criar parcelas</span>
             </label>
           </div>`,
         foot: `
           <button type="button" class="btn-ghost" data-close>Cancelar</button>
-          <button type="button" class="btn-primary" id="finTitNovoSave">Salvar título</button>`,
+          <button type="button" class="btn-primary" id="finTitNovoSave">${isEdit ? "Salvar alterações" : "Salvar título"}</button>`,
       });
 
       modalBody.querySelectorAll("[data-fin-tit-quick]").forEach((btn) => {
@@ -6770,18 +7110,640 @@
       });
       document.getElementById("finTitNovoSave")?.addEventListener("click", () => {
         const party = document.getElementById("finTitParty")?.value?.trim();
-        const valor = document.getElementById("finTitValor")?.value?.trim();
+        const valorRaw = document.getElementById("finTitValor")?.value?.trim();
+        const valorNum = parseFinTitMoney(valorRaw);
         if (!party) {
           toast(`Informe o ${partyLabel.toLowerCase()}`);
           return;
         }
-        if (!valor) {
+        if (valorNum == null || valorNum <= 0) {
           toast("Informe o valor");
           return;
         }
+        const vencIsoVal = document.getElementById("finTitVenc")?.value || "";
+        const vencBr = vencIsoVal ? isoDateToBr(vencIsoVal) : (ex.vencimento || "—");
+        const c = resolveFinAuditCliente() || CLIENTES.find((x) => x.id === cliPerfilId);
+        const row = {
+          id: isEdit ? String(ex.id) : `t${Date.now().toString(36)}`,
+          clienteId: c?.id || ex.clienteId || null,
+          nome: party,
+          descricao: document.getElementById("finTitDesc")?.value?.trim() || "Título sem descrição",
+          vencimento: vencBr,
+          valor: valorNum,
+          restante: isEdit && ex.restante != null && ex.status === "pago" ? 0
+            : (isEdit && ex.restante != null && Number(ex.restante) < valorNum ? Number(ex.restante) : valorNum),
+          status: isEdit ? (ex.status || "aberto") : "aberto",
+          forma: document.getElementById("finTitPayForm")?.value || "",
+          subplano: document.getElementById("finTitSubplano")?.value || "",
+          plano: document.getElementById("finTitPlano")?.value || "",
+          centro: document.getElementById("finTitCentro")?.value || "",
+          numero: document.getElementById("finTitNum")?.value?.trim() || "",
+          nossoNumero: document.getElementById("finTitNosso")?.value?.trim() || "",
+          codBarras: document.getElementById("finTitCodBarras")?.value?.trim() || "",
+          obs: document.getElementById("finTitObs")?.value?.trim() || "",
+          repetir: !!document.getElementById("finTitRepetir")?.checked,
+        };
+        const list = cliFinTitulosExtra[isPagar ? "pagar" : "receber"];
+        const idx = list.findIndex((t) => String(t.id) === String(row.id));
+        if (idx >= 0) list[idx] = { ...list[idx], ...row };
+        else list.unshift(row);
         closeModal();
-        toast(`Título ${finTitulosLadoLabel(lado)} salvo`);
+        toast(isEdit ? `Título ${finTitulosLadoLabel(lado)} atualizado` : `Título ${finTitulosLadoLabel(lado)} lançado`);
         refreshCliFinTitulosUi();
+      });
+    }
+
+    function isoDateToBr(iso) {
+      const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : "";
+    }
+
+    function findCliTituloById(lado, id) {
+      const c = resolveFinAuditCliente() || CLIENTES.find((x) => x.id === cliPerfilId);
+      if (!c) return null;
+      return getCliTitulos(c, lado).find((t) => String(t.id) === String(id)) || null;
+    }
+
+    function openFinTitulosVerModal(lado, titulo, tab) {
+      if (!titulo) return;
+      const prev = cliFinTitVer && String(cliFinTitVer.id) === String(titulo.id) ? cliFinTitVer : null;
+      cliFinTitVer = {
+        lado: lado === "receber" ? "receber" : "pagar",
+        id: titulo.id,
+        tab: ["dados", "pagamento", "historico"].includes(tab) ? tab : (prev?.tab || "dados"),
+        payMode: prev?.payMode || "total",
+        juros: prev?.juros ?? "",
+        multa: prev?.multa ?? "",
+        desconto: prev?.desconto ?? "",
+        forma: prev?.forma || "Boleto",
+        obs: prev?.obs || "",
+        dataPag: prev?.dataPag || "2026-07-22",
+        bancoPickId: prev?.bancoPickId || null,
+        pendingQuit: null,
+      };
+      paintFinTitulosVerModal();
+    }
+
+    function getFinTitulosBancosEmpresa() {
+      if (typeof ensureFinConcBancos === "function") return ensureFinConcBancos();
+      return [
+        { id: "b1", nome: "SICREDI", codigo: "756", agencia: "0903", conta: "90850", digito: "7" },
+        { id: "b2", nome: "Itaú", codigo: "341", agencia: "1234", conta: "12345", digito: "6" },
+        { id: "b3", nome: "Bradesco", codigo: "237", agencia: "0456", conta: "77889", digito: "0" },
+      ];
+    }
+
+    function finTitulosBancoContaLabel(b) {
+      if (typeof finConcBancoContaLabel === "function") return finConcBancoContaLabel(b);
+      if (!b) return "—";
+      return b.digito ? `${b.conta}-${b.digito}` : String(b.conta || "—");
+    }
+
+    function applyFinTitulosQuitWithBanco(banco) {
+      if (!cliFinTitVer?.pendingQuit || !banco) return;
+      const { lado, id } = cliFinTitVer;
+      const p = cliFinTitVer.pendingQuit;
+      const patch = {
+        forma: p.forma,
+        obs: p.obs,
+        bancoId: banco.id,
+        bancoNome: banco.nome,
+        dataPagamento: p.dataPagBr || "22/07/2026",
+      };
+      if (p.partial) {
+        upsertFinTituloStatus(lado, id, {
+          ...patch,
+          status: "parcial",
+          restante: p.restante,
+        });
+        toast(`${lado === "pagar" ? "Pagamento" : "Recebimento"} parcial · ${money(p.pago)} · ${banco.nome}`);
+      } else {
+        upsertFinTituloStatus(lado, id, {
+          ...patch,
+          status: "pago",
+          restante: 0,
+          valorPago: p.total,
+        });
+        toast(`${lado === "pagar" ? "Pagamento" : "Recebimento"} confirmado · ${money(p.total)} · ${banco.nome}`);
+      }
+      cliFinTitVer.pendingQuit = null;
+      cliFinTitVer.bancoPickId = banco.id;
+      cliFinTitVer.tab = "dados";
+      refreshCliFinTitulosUi();
+      paintFinTitulosVerModal();
+    }
+
+    function openFinTitulosBancoPickModal() {
+      if (!cliFinTitVer?.pendingQuit) return;
+      const lado = cliFinTitVer.lado;
+      const bancos = getFinTitulosBancosEmpresa();
+      if (!bancos.length) {
+        toast("Nenhum banco cadastrado nesta empresa");
+        return;
+      }
+      if (!cliFinTitVer.bancoPickId || !bancos.some((b) => b.id === cliFinTitVer.bancoPickId)) {
+        cliFinTitVer.bancoPickId = (typeof finDash !== "undefined" && finDash.conc?.bancoId)
+          || bancos[0].id;
+      }
+      const pickId = cliFinTitVer.bancoPickId;
+      const c = (typeof resolveFinAuditCliente === "function" ? resolveFinAuditCliente() : null)
+        || (typeof getFinSelectedCliente === "function" ? getFinSelectedCliente() : null)
+        || CLIENTES.find((x) => x.id === cliPerfilId)
+        || CLIENTES[0];
+      const empresa = c?.fantasia || c?.nome || "Empresa selecionada";
+      const fluxoLab = lado === "pagar" ? "saída" : "entrada";
+      const title = lado === "pagar" ? "Selecionar banco de saída" : "Selecionar banco de entrada";
+
+      openModal({
+        title,
+        sub: `${empresa} · Conta de ${fluxoLab} do valor`,
+        wide: true,
+        body: `
+          <div class="fin-conc-pick-banco">
+            <div class="fin-conc-pick-cliente">Empresa: <strong>${uiSelectEscape(empresa)}</strong></div>
+            <p class="fin-tit-hint" style="margin:0 0 10px">
+              Escolha o banco em que o valor está ${lado === "pagar" ? "saindo" : "entrando"} ·
+              Total: <strong>${money(cliFinTitVer.pendingQuit.partial ? cliFinTitVer.pendingQuit.pago : cliFinTitVer.pendingQuit.total)}</strong>
+            </p>
+            <div class="fin-conc-pick-list">
+              ${bancos.map((b) => {
+                const selected = b.id === pickId;
+                return `
+                  <button type="button" class="fin-conc-pick-row${selected ? " is-selected" : ""}" data-fin-tit-banco-pick="${b.id}">
+                    <span class="fin-conc-pick-ico" aria-hidden="true">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M12 2 2 8h20L12 2z"/></svg>
+                    </span>
+                    <span class="fin-conc-pick-info">
+                      <strong>${uiSelectEscape(b.nome)}</strong>
+                      <span>${uiSelectEscape(b.codigo || "—")} · Ag: ${uiSelectEscape(b.agencia || "—")} · Cc: ${uiSelectEscape(finTitulosBancoContaLabel(b))}</span>
+                    </span>
+                    <span class="fin-conc-pick-actions">
+                      ${selected ? `<span class="fin-conc-pick-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>` : ""}
+                    </span>
+                  </button>`;
+              }).join("")}
+            </div>
+          </div>`,
+        foot: `
+          <button type="button" class="btn-ghost" id="finTitBancoCancel">Cancelar</button>
+          <button type="button" class="btn-primary" id="finTitBancoConfirm">Confirmar</button>`,
+      });
+
+      modal.classList.add("fin-tit-banco-modal");
+
+      modalBody.querySelectorAll("[data-fin-tit-banco-pick]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          cliFinTitVer.bancoPickId = btn.dataset.finTitBancoPick;
+          openFinTitulosBancoPickModal();
+        });
+      });
+
+      document.getElementById("finTitBancoCancel")?.addEventListener("click", () => {
+        if (cliFinTitVer) {
+          delete cliFinTitVer.pendingQuit;
+          cliFinTitVer.tab = "pagamento";
+        }
+        paintFinTitulosVerModal();
+      });
+
+      document.getElementById("finTitBancoConfirm")?.addEventListener("click", () => {
+        const b = getFinTitulosBancosEmpresa().find((x) => x.id === cliFinTitVer.bancoPickId);
+        if (!b) {
+          toast("Selecione um banco");
+          return;
+        }
+        applyFinTitulosQuitWithBanco(b);
+      });
+    }
+
+    function finTitVerStatusMeta(status) {
+      const map = {
+        pago: { label: "Pago", cls: "pago" },
+        parcial: { label: "Parcial", cls: "parcial" },
+        vencido: { label: "Vencido", cls: "vencido" },
+        aberto: { label: "Em aberto", cls: "aberto" },
+      };
+      return map[status] || map.aberto;
+    }
+
+    function finTitVerDiasAtraso(vencimento) {
+      const dt = typeof parseBrDate === "function" ? parseBrDate(vencimento) : null;
+      if (!dt) return 0;
+      const hoje = typeof APP_TODAY !== "undefined" ? APP_TODAY : new Date(2026, 6, 22);
+      const start = typeof startOfDay === "function" ? startOfDay(hoje) : new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+      const venc = typeof startOfDay === "function" ? startOfDay(dt) : new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      const diff = Math.round((start - venc) / 86400000);
+      return diff > 0 ? diff : 0;
+    }
+
+    function finTitVerBarcode(t) {
+      if (t.codigoBarras || t.codBarras) return String(t.codigoBarras || t.codBarras);
+      const seed = String(t.id || "0").replace(/\D/g, "") || "141582";
+      return `33333${seed.padStart(5, "0")}000000500002207202633333${seed.slice(-4).padStart(4, "0")}00000050000`;
+    }
+
+    function getFinTitVerHistory(t, lado) {
+      const events = [
+        {
+          id: "h-create",
+          titulo: "Criação",
+          quando: "21/07/2026 09:43",
+          desc: `Título criado: ${t.descricao || t.nome}`,
+          meta: "Sistema",
+        },
+      ];
+      if (t.status === "pago" || t.status === "parcial") {
+        events.unshift({
+          id: "h-pay",
+          titulo: t.status === "pago"
+            ? (lado === "pagar" ? "Pagamento total" : "Recebimento total")
+            : (lado === "pagar" ? "Pagamento parcial" : "Recebimento parcial"),
+          quando: `${t.dataPagamento || t.vencimento || "19/06/2026"} 00:00`,
+          desc: t.bancoNome
+            ? `${lado === "pagar" ? "Pagamento" : "Recebimento"} via ${t.bancoNome}`
+            : (lado === "pagar" ? "Pagamento registrado" : "Recebimento registrado"),
+          valor: t.status === "pago" ? Number(t.valor) : (Number(t.valor) - Number(t.restante || 0)),
+          meta: t.bancoNome || "Sistema",
+        });
+      }
+      return events;
+    }
+
+    function renderFinTitulosVerStatusCardHtml(t, lado, opts = {}) {
+      const showCalc = !!opts.showCalc;
+      const dias = finTitVerDiasAtraso(t.vencimento);
+      const atrasado = dias > 0 || t.status === "vencido";
+      const stMeta = finTitVerStatusMeta(t.status);
+      let statusTone = "is-open";
+      let statusTitle = "Título em aberto";
+      let statusDetail = `Vencimento ${t.vencimento || "—"} · Restante ${money(t.restante)}`;
+      if (t.status === "pago") {
+        statusTone = "is-ok";
+        statusTitle = lado === "pagar" ? "Este título foi pago" : "Este título foi recebido";
+        statusDetail = `Data de pagamento: ${t.dataPagamento || t.vencimento || "N/A"}`;
+      } else if (t.status === "parcial") {
+        statusTone = "is-parcial";
+        statusTitle = lado === "pagar" ? "Pagamento parcial" : "Recebimento parcial";
+        statusDetail = `Restante ${money(t.restante)} · Vencimento ${t.vencimento || "—"}`;
+      } else if (atrasado) {
+        statusTone = "is-atraso";
+        statusTitle = "Conta em atraso";
+        statusDetail = `Vencimento ${t.vencimento || "—"} · ${dias} dia${dias === 1 ? "" : "s"} em atraso`;
+      }
+      return `
+        <div class="fin-tit-ver-status ${statusTone}" role="status">
+          <div class="fin-tit-ver-status-copy">
+            <span class="cli-fin-tit-status ${stMeta.cls}">${stMeta.label}</span>
+            <strong>${statusTitle}</strong>
+            <span>${uiSelectEscape(statusDetail)}</span>
+          </div>
+          ${showCalc && atrasado && t.status !== "pago" ? `
+          <button type="button" class="btn-ghost fin-tit-ver-status-act" data-fin-tit-ver-act="calc-juros">Calcular juros e multa</button>` : ""}
+        </div>`;
+    }
+
+    function renderFinTitulosVerDadosHtml(t, lado) {
+      const parte = lado === "pagar" ? "Fornecedor" : "Cliente";
+      const formaLab = lado === "pagar" ? "Forma de pagamento" : "Forma de recebimento";
+      const dias = finTitVerDiasAtraso(t.vencimento);
+      const pago = Math.max(0, (Number(t.valor) || 0) - (Number(t.restante != null ? t.restante : t.valor) || 0));
+      return `
+        ${renderFinTitulosVerStatusCardHtml(t, lado)}
+        <div class="fin-tit-ver-sum">
+          <div>
+            <span class="lab">Valor original</span>
+            <strong>${money(t.valor)}</strong>
+          </div>
+          <div class="is-pago">
+            <span class="lab">Valor pago</span>
+            <strong>${money(pago)}</strong>
+          </div>
+        </div>
+        <section class="fin-tit-docs-block">
+          <h5>Informações da conta</h5>
+          <div class="fin-tit-ver-grid">
+            <div class="full">
+              <span class="lab">${parte}</span>
+              <strong>${uiSelectEscape(t.nome || "—")}</strong>
+            </div>
+            <div class="full">
+              <span class="lab">Descrição</span>
+              <strong>${uiSelectEscape(t.descricao || "—")}</strong>
+            </div>
+            <div>
+              <span class="lab">Vencimento</span>
+              <strong>${uiSelectEscape(t.vencimento || "—")}</strong>
+            </div>
+            <div>
+              <span class="lab">Dias em atraso</span>
+              <strong>${dias}</strong>
+            </div>
+            <div>
+              <span class="lab">Valor</span>
+              <strong>${money(t.valor)}</strong>
+            </div>
+            <div>
+              <span class="lab">Valor pago</span>
+              <strong>${money(pago)}</strong>
+            </div>
+            <div>
+              <span class="lab">Restante</span>
+              <strong>${money(t.restante)}</strong>
+            </div>
+            <div>
+              <span class="lab">${formaLab}</span>
+              <strong>${uiSelectEscape(t.forma || "Boleto")}</strong>
+            </div>
+            ${t.bancoNome ? `
+            <div class="full">
+              <span class="lab">Conta bancária</span>
+              <strong>${uiSelectEscape(t.bancoNome)}</strong>
+            </div>` : ""}
+          </div>
+        </section>
+        <section class="fin-tit-docs-block">
+          <h5>Documentos</h5>
+          <div class="fin-tit-ver-grid">
+            <div>
+              <span class="lab">Nº documento</span>
+              <strong>${uiSelectEscape(String(t.numero || t.id || "—"))}</strong>
+            </div>
+            <div>
+              <span class="lab">Nosso número</span>
+              <strong>${uiSelectEscape(t.nossoNumero || "—")}</strong>
+            </div>
+            <div class="full">
+              <span class="lab">Código de barras</span>
+              <strong class="fin-tit-ver-barcode">${uiSelectEscape(finTitVerBarcode(t))}</strong>
+            </div>
+          </div>
+        </section>
+        <section class="fin-tit-docs-block">
+          <h5>Classificação</h5>
+          <div class="fin-tit-ver-grid">
+            <div>
+              <span class="lab">Plano de contas</span>
+              <strong>${uiSelectEscape(t.plano || "—")}</strong>
+            </div>
+            <div>
+              <span class="lab">Centro de custo</span>
+              <strong>${uiSelectEscape(t.centro || "—")}</strong>
+            </div>
+          </div>
+        </section>`;
+    }
+
+    function renderFinTitulosVerPagamentoHtml(t, lado) {
+      const st = cliFinTitVer;
+      const base = Number(t.restante != null ? t.restante : t.valor) || 0;
+      const juros = parseFinTitMoney(st.juros) || 0;
+      const multa = parseFinTitMoney(st.multa) || 0;
+      const desconto = parseFinTitMoney(st.desconto) || 0;
+      const total = Math.max(0, base + juros + multa - desconto);
+      const payLab = lado === "pagar" ? "Pagamento" : "Recebimento";
+      const disabled = t.status === "pago";
+      return `
+        <div class="fin-tit-ver-pay${disabled ? " is-disabled" : ""}">
+          ${renderFinTitulosVerStatusCardHtml(t, lado, { showCalc: true })}
+          <div class="fin-tit-form-grid">
+            <div class="full fin-tit-ver-pay-modes" role="radiogroup" aria-label="Tipo de ${payLab.toLowerCase()}">
+              <label class="fin-tit-ver-radio">
+                <input type="radio" name="finTitPayMode" value="total" ${st.payMode !== "parcial" ? "checked" : ""} ${disabled ? "disabled" : ""} data-fin-tit-ver-pay="mode" />
+                <span>${payLab} total</span>
+              </label>
+              <label class="fin-tit-ver-radio">
+                <input type="radio" name="finTitPayMode" value="parcial" ${st.payMode === "parcial" ? "checked" : ""} ${disabled ? "disabled" : ""} data-fin-tit-ver-pay="mode" />
+                <span>${payLab} parcial</span>
+              </label>
+            </div>
+            <div>
+              <label for="finTitVerDataPag">Data do ${payLab.toLowerCase()}</label>
+              <input type="date" id="finTitVerDataPag" value="${uiSelectEscape(st.dataPag || "")}" ${disabled ? "disabled" : ""} />
+            </div>
+            <div>
+              <label for="finTitVerForma">Forma</label>
+              <select id="finTitVerForma" ${disabled ? "disabled" : ""}>
+                ${["Dinheiro", "Boleto", "PIX", "Transferência", "Cartão"].map((f) => `
+                  <option value="${f}" ${(st.forma || "Dinheiro") === f ? "selected" : ""}>${f}</option>`).join("")}
+              </select>
+            </div>
+            <div>
+              <label>Valor base</label>
+              <input type="text" value="${money(base)}" readonly tabindex="-1" />
+            </div>
+            <div>
+              <label for="finTitVerJuros">Juros</label>
+              <input type="text" id="finTitVerJuros" inputmode="decimal" placeholder="0,00" value="${uiSelectEscape(st.juros || "0,00")}" ${disabled ? "disabled" : ""} />
+            </div>
+            <div>
+              <label for="finTitVerMulta">Multa</label>
+              <input type="text" id="finTitVerMulta" inputmode="decimal" placeholder="0,00" value="${uiSelectEscape(st.multa || "0,00")}" ${disabled ? "disabled" : ""} />
+            </div>
+            <div>
+              <label for="finTitVerDesconto">Desconto</label>
+              <input type="text" id="finTitVerDesconto" inputmode="decimal" placeholder="0,00" value="${uiSelectEscape(st.desconto || "0,00")}" ${disabled ? "disabled" : ""} />
+            </div>
+            <div class="full">
+              <label for="finTitVerObs">Observação</label>
+              <textarea id="finTitVerObs" rows="3" placeholder="Observações do lançamento…" ${disabled ? "disabled" : ""}>${uiSelectEscape(st.obs)}</textarea>
+            </div>
+          </div>
+          <p class="fin-tit-hint">Total a ${lado === "pagar" ? "pagar" : "receber"}: <strong>${money(total)}</strong></p>
+          ${disabled ? `<p class="fin-tit-hint">Título liquidado. Use <strong>Reabrir título</strong> na aba Dados da Conta para alterar.</p>` : ""}
+        </div>`;
+    }
+
+    function renderFinTitulosVerHistoricoHtml(t, lado) {
+      const events = getFinTitVerHistory(t, lado);
+      return `
+        <div class="fin-tit-ver-history">
+          ${events.map((ev) => `
+            <article class="fin-tit-ver-hist-item">
+              <div class="fin-tit-ver-hist-body">
+                <div class="fin-tit-ver-hist-top">
+                  <strong>${uiSelectEscape(ev.titulo)}</strong>
+                  <span class="when">${uiSelectEscape(ev.quando)}</span>
+                </div>
+                <p>${uiSelectEscape(ev.desc)}</p>
+              </div>
+              <div class="fin-tit-ver-hist-side">
+                ${ev.valor != null ? `<strong>${money(ev.valor)}</strong>` : ""}
+                <span>${uiSelectEscape(ev.meta || "Sistema")}</span>
+              </div>
+            </article>`).join("")}
+        </div>`;
+    }
+
+    function syncFinTitVerFormFromDom() {
+      if (!cliFinTitVer) return;
+      const mode = document.querySelector('input[name="finTitPayMode"]:checked')?.value;
+      if (mode) cliFinTitVer.payMode = mode;
+      cliFinTitVer.dataPag = document.getElementById("finTitVerDataPag")?.value || cliFinTitVer.dataPag;
+      cliFinTitVer.juros = document.getElementById("finTitVerJuros")?.value ?? cliFinTitVer.juros;
+      cliFinTitVer.multa = document.getElementById("finTitVerMulta")?.value ?? cliFinTitVer.multa;
+      cliFinTitVer.desconto = document.getElementById("finTitVerDesconto")?.value ?? cliFinTitVer.desconto;
+      cliFinTitVer.forma = document.getElementById("finTitVerForma")?.value || cliFinTitVer.forma;
+      cliFinTitVer.obs = document.getElementById("finTitVerObs")?.value ?? cliFinTitVer.obs;
+    }
+
+    function upsertFinTituloStatus(lado, id, patch) {
+      const list = cliFinTitulosExtra[lado] || (cliFinTitulosExtra[lado] = []);
+      const c = (typeof resolveFinAuditCliente === "function" ? resolveFinAuditCliente() : null)
+        || CLIENTES.find((x) => x.id === cliPerfilId)
+        || CLIENTES[0];
+      let row = list.find((t) => String(t.id) === String(id));
+      const base = findCliTituloById(lado, id);
+      if (!row) {
+        row = { ...(base || {}), id, clienteId: c?.id };
+        list.push(row);
+      }
+      Object.assign(row, patch);
+      return row;
+    }
+
+    function paintFinTitulosVerModal() {
+      if (!cliFinTitVer) return;
+      const lado = cliFinTitVer.lado;
+      const t = findCliTituloById(lado, cliFinTitVer.id);
+      if (!t) {
+        toast("Título não encontrado");
+        cliFinTitVer = null;
+        return;
+      }
+      const stMeta = finTitVerStatusMeta(t.status);
+      const tab = cliFinTitVer.tab || "dados";
+      const payTabLabel = lado === "pagar" ? "Efetuar Pagamento" : "Efetuar Recebimento";
+      const confirmLab = lado === "pagar" ? "Confirmar pagamento" : "Confirmar recebimento";
+      const contaId = t.numero || t.id;
+
+      let bodyPane = "";
+      if (tab === "pagamento") bodyPane = renderFinTitulosVerPagamentoHtml(t, lado);
+      else if (tab === "historico") bodyPane = renderFinTitulosVerHistoricoHtml(t, lado);
+      else bodyPane = renderFinTitulosVerDadosHtml(t, lado);
+
+      let foot = `<button type="button" class="btn-ghost" data-close>Fechar</button>`;
+      if (tab === "dados" && t.status === "pago") {
+        foot += `<button type="button" class="btn-primary" data-fin-tit-ver-act="reabrir">Reabrir título</button>`;
+      } else if (tab === "dados" && t.status !== "pago") {
+        foot += `<button type="button" class="btn-primary" data-fin-tit-ver-act="ir-pagar">${payTabLabel}</button>`;
+      } else if (tab === "pagamento" && t.status !== "pago") {
+        foot += `<button type="button" class="btn-primary" data-fin-tit-ver-act="confirmar">${confirmLab}</button>`;
+      }
+
+      openModal({
+        title: `Conta #${contaId} — ${t.descricao || t.nome}`,
+        sub: `${t.nome || ""} · ${stMeta.label}`,
+        wide: true,
+        body: `
+          <div class="fin-tit-ver">
+            <div class="fin-tit-modal-tabs" role="tablist" aria-label="Detalhe do título">
+              <button type="button" class="fin-tit-modal-tab${tab === "dados" ? " active" : ""}" role="tab" aria-selected="${tab === "dados"}" data-fin-tit-ver-tab="dados">Dados da Conta</button>
+              <button type="button" class="fin-tit-modal-tab${tab === "pagamento" ? " active" : ""}" role="tab" aria-selected="${tab === "pagamento"}" data-fin-tit-ver-tab="pagamento">${payTabLabel}</button>
+              <button type="button" class="fin-tit-modal-tab${tab === "historico" ? " active" : ""}" role="tab" aria-selected="${tab === "historico"}" data-fin-tit-ver-tab="historico">Histórico</button>
+            </div>
+            <div class="fin-tit-ver-pane">${bodyPane}</div>
+          </div>`,
+        foot,
+      });
+
+      modal.classList.add("fin-tit-ver-modal");
+
+      const confirmPagamento = () => {
+        syncFinTitVerFormFromDom();
+        const base = Number(t.restante != null ? t.restante : t.valor) || 0;
+        const juros = parseFinTitMoney(cliFinTitVer.juros) || 0;
+        const multa = parseFinTitMoney(cliFinTitVer.multa) || 0;
+        const desconto = parseFinTitMoney(cliFinTitVer.desconto) || 0;
+        const total = Math.max(0, base + juros + multa - desconto);
+        const partial = cliFinTitVer.payMode === "parcial";
+        const pago = partial ? Math.min(base, Math.max(0.01, base * 0.5)) : total;
+        const dataIso = cliFinTitVer.dataPag || "";
+        const dataPagBr = dataIso && dataIso.includes("-")
+          ? dataIso.split("-").reverse().join("/")
+          : (dataIso || "22/07/2026");
+        cliFinTitVer.pendingQuit = {
+          total,
+          partial,
+          pago,
+          restante: partial ? Math.max(0, +(base - pago).toFixed(2)) : 0,
+          forma: cliFinTitVer.forma,
+          obs: cliFinTitVer.obs,
+          dataPagBr,
+        };
+        openFinTitulosBancoPickModal();
+      };
+
+      modalBody.querySelectorAll("[data-fin-tit-ver-tab]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          syncFinTitVerFormFromDom();
+          cliFinTitVer.tab = btn.dataset.finTitVerTab || "dados";
+          paintFinTitulosVerModal();
+        });
+      });
+
+      modalBody.querySelectorAll("[data-fin-tit-ver-pay='mode']").forEach((el) => {
+        el.addEventListener("change", () => {
+          syncFinTitVerFormFromDom();
+          paintFinTitulosVerModal();
+        });
+      });
+
+      ["finTitVerJuros", "finTitVerMulta", "finTitVerDesconto"].forEach((id) => {
+        document.getElementById(id)?.addEventListener("input", () => {
+          syncFinTitVerFormFromDom();
+          paintFinTitulosVerModal();
+          const el = document.getElementById(id);
+          el?.focus();
+          try {
+            const len = el.value.length;
+            el.setSelectionRange(len, len);
+          } catch (_) { /* ignore */ }
+        });
+      });
+
+      modalBody.querySelector("[data-fin-tit-ver-act='calc-juros']")?.addEventListener("click", () => {
+        const dias = finTitVerDiasAtraso(t.vencimento) || 1;
+        const base = Number(t.restante != null ? t.restante : t.valor) || 0;
+        cliFinTitVer.juros = (base * 0.01 * Math.min(dias, 30) / 30).toFixed(2).replace(".", ",");
+        cliFinTitVer.multa = (base * 0.02).toFixed(2).replace(".", ",");
+        toast("Juros e multa calculados (protótipo)");
+        paintFinTitulosVerModal();
+      });
+
+      modalFoot.querySelector("[data-fin-tit-ver-act='ir-pagar']")?.addEventListener("click", () => {
+        cliFinTitVer.tab = "pagamento";
+        paintFinTitulosVerModal();
+      });
+
+      modalFoot.querySelector("[data-fin-tit-ver-act='reabrir']")?.addEventListener("click", () => {
+        upsertFinTituloStatus(lado, t.id, { status: "aberto", restante: Number(t.valor) || 0 });
+        toast("Título reaberto");
+        refreshCliFinTitulosUi();
+        paintFinTitulosVerModal();
+      });
+
+      modalFoot.querySelector("[data-fin-tit-ver-act='confirmar']")?.addEventListener("click", confirmPagamento);
+    }
+
+    function openFinTitulosBaixarModal(lado, titulo) {
+      const t = titulo;
+      if (!t) return;
+      openModal({
+        title: "Baixar título",
+        sub: `${t.nome} · ${finTitulosLadoLabel(lado)}`,
+        body: `
+          <p class="fin-tit-hint" style="margin:0">Será gerado um PDF com os dados do título (protótipo).</p>
+          <ul style="margin:12px 0 0;padding-left:18px;font-size:.84rem;line-height:1.6;color:var(--navy-deep)">
+            <li>${t.descricao || "Sem descrição"}</li>
+            <li>Vencimento ${t.vencimento} · ${money(t.valor)}</li>
+          </ul>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" id="finTitBaixarConfirm">Baixar PDF</button>`,
+      });
+      document.getElementById("finTitBaixarConfirm")?.addEventListener("click", () => {
+        closeModal();
+        toast(`Download iniciado · ${t.nome}`);
       });
     }
 
@@ -6803,7 +7765,7 @@
           <p class="fin-tit-hint">A planilha incluirá os títulos ${finTitulosLadoLabel(lado)} no intervalo informado.</p>`,
         foot: `
           <button type="button" class="btn-ghost" data-close>Cancelar</button>
-          <button type="button" class="btn-fin-export" id="finTitExportConfirm">Exportar</button>`,
+          <button type="button" class="btn-primary" id="finTitExportConfirm">Exportar</button>`,
       });
       document.getElementById("finTitExportConfirm")?.addEventListener("click", () => {
         const ini = document.getElementById("finTitExpIni")?.value || "";
@@ -6816,8 +7778,7 @@
     }
 
     function renderCliFinTitulosFilterBar() {
-      const d = cliFinTitulosFiltrosDraft;
-      if (!cliFinTitulosFiltrosOpen) return "";
+      const d = cliFinTitulosFiltros;
       return `
         <div class="fin-tit-filter-bar" id="finTitFilterBar">
           <div class="fin-tit-filter-fields">
@@ -6846,7 +7807,6 @@
             <div class="proc-filter field">
               <input type="date" id="finTitFiltroVencFim" value="${d.vencFim || ""}" aria-label="Vencimento fim" title="Venc. fim" />
             </div>
-            <button type="button" class="btn-ghost" data-fin-tit-filtro="aplicar">Aplicar</button>
             <button type="button" class="fin-tit-filter-clear" data-fin-tit-filtro="limpar">Limpar</button>
           </div>
         </div>`;
@@ -6857,10 +7817,6 @@
         <div class="cli-fin-tit-toolbar">
           <button type="button" class="btn-ghost" data-cli-fin-tit-action="importar" data-cli-fin-tit-tipo="${tipo}">Importar</button>
           <button type="button" class="btn-primary" data-cli-fin-tit-action="novo" data-cli-fin-tit-tipo="${tipo}">Novo</button>
-          <button type="button" class="btn-ghost${cliFinTitulosFiltrosOpen ? " is-active" : ""}" data-cli-fin-tit-filter-toggle aria-expanded="${cliFinTitulosFiltrosOpen ? "true" : "false"}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-            Filtros
-          </button>
           <button type="button" class="btn-ghost" data-cli-fin-tit-action="exportar" data-cli-fin-tit-tipo="${tipo}">Exportar</button>
         </div>
         ${renderCliFinTitulosFilterBar()}`;
@@ -6888,24 +7844,25 @@
       cliFinTituloStatusFiltro = "";
     }
 
-    function handleFinTitulosToolbarClick(e) {
-      const filterToggle = e.target.closest("[data-cli-fin-tit-filter-toggle]");
-      if (filterToggle) {
-        syncFinTitulosFiltrosDraftFromDom();
-        cliFinTitulosFiltrosOpen = !cliFinTitulosFiltrosOpen;
-        if (cliFinTitulosFiltrosOpen) cliFinTitulosFiltrosDraft = { ...cliFinTitulosFiltros };
-        refreshCliFinTitulosUi();
-        return true;
+    function liveApplyFinTitulosFiltrosFromEvent(e) {
+      const id = e.target?.id || "";
+      if (!/^finTitFiltro(Q|Status|VMin|VMax|VencIni|VencFim)$/.test(id)) return false;
+      const pos = e.target.selectionStart;
+      syncFinTitulosFiltrosDraftFromDom();
+      applyFinTitulosFiltrosFromDraft();
+      refreshCliFinTitulosUi();
+      const el = document.getElementById(id);
+      if (el) {
+        el.focus();
+        try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
       }
+      return true;
+    }
+
+    function handleFinTitulosToolbarClick(e) {
       const filtroAct = e.target.closest("[data-fin-tit-filtro]");
       if (filtroAct) {
-        const act = filtroAct.dataset.finTitFiltro;
-        if (act === "aplicar") {
-          syncFinTitulosFiltrosDraftFromDom();
-          applyFinTitulosFiltrosFromDraft();
-          refreshCliFinTitulosUi();
-          toast("Filtros aplicados");
-        } else if (act === "limpar") {
+        if (filtroAct.dataset.finTitFiltro === "limpar") {
           clearFinTitulosFiltros();
           refreshCliFinTitulosUi();
           toast("Filtros limpos");
@@ -6922,6 +7879,27 @@
         return true;
       }
       return false;
+    }
+
+    function handleFinTitulosRowAction(e) {
+      const titRow = e.target.closest("[data-cli-fin-tit-row]");
+      if (!titRow) return false;
+      const act = titRow.dataset.cliFinTitRow;
+      const id = titRow.dataset.id;
+      let lado = finDash.titulosSub === "receber" ? "receber" : "pagar";
+      const panel = titRow.closest(".fin-titulos-panel");
+      const tabBtn = panel?.querySelector(".cli-fin-audit-tab.active[data-fin-titulos-tab]");
+      if (tabBtn) lado = tabBtn.dataset.finTitulosTab === "receber" ? "receber" : "pagar";
+      if (cliFinSubTab === "receber" || cliFinSubTab === "pagar") lado = cliFinSubTab;
+      const titulo = findCliTituloById(lado, id);
+      if (!titulo) {
+        toast("Título não encontrado");
+        return true;
+      }
+      if (act === "ver") openFinTitulosVerModal(lado, titulo);
+      else if (act === "baixar") openFinTitulosBaixarModal(lado, titulo);
+      else if (act === "editar") openFinTitulosNovoModal(lado, titulo);
+      return true;
     }
 
     function renderCliFinTitulosTable(c, tipo) {
@@ -6964,6 +7942,7 @@
                   <td>
                     <div class="cli-fin-tit-actions">
                       <button type="button" data-cli-fin-tit-row="ver" data-id="${t.id}">Ver</button>
+                      <button type="button" data-cli-fin-tit-row="editar" data-id="${t.id}">Editar</button>
                       <button type="button" data-cli-fin-tit-row="baixar" data-id="${t.id}">Baixar</button>
                     </div>
                   </td>
@@ -7101,6 +8080,111 @@
       return "Julho/2026";
     }
 
+    function ensureCliFinAuditHistory() {
+      if (!Array.isArray(cliFinAudit.history)) cliFinAudit.history = [];
+      if (cliFinAudit.historyMonth == null) cliFinAudit.historyMonth = "";
+      if (cliFinAudit.historyId == null) cliFinAudit.historyId = cliFinAudit.history[0]?.id || "";
+      return cliFinAudit;
+    }
+
+    function getCliFinAuditHistoryMonthOptions() {
+      ensureCliFinAuditHistory();
+      const map = new Map();
+      cliFinAudit.history.forEach((h) => {
+        if (h?.mes && !map.has(h.mes)) map.set(h.mes, h.label || h.mes);
+      });
+      return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
+    }
+
+    function getCliFinAuditHistoryFiltered() {
+      ensureCliFinAuditHistory();
+      const mes = cliFinAudit.historyMonth || "";
+      return mes
+        ? cliFinAudit.history.filter((h) => h.mes === mes)
+        : cliFinAudit.history.slice();
+    }
+
+    function refreshCliFinAuditHistoryView() {
+      const inFin = !!document.getElementById("financeiroWrap")?.classList.contains("show")
+        && finDash.tab === "cartoes";
+      if (inFin) renderFinModuleDash();
+      else renderClientes();
+    }
+
+    function openCliFinAuditFromHistory(id) {
+      ensureCliFinAuditHistory();
+      const item = cliFinAudit.history.find((h) => h.id === id);
+      if (!item) return;
+      cliFinAudit.historyId = id;
+      if (item.arquivo) cliFinAudit.fileName = item.arquivo;
+      cliFinAudit.modalTab = "relatorio";
+      openCliFinAuditModal();
+      toast(`Laudo · ${item.label}`);
+    }
+
+    function upsertCliFinAuditHistoryOnImport() {
+      ensureCliFinAuditHistory();
+      const mes = String(cliFinAudit.dateFrom || "2026-07-01").slice(0, 7);
+      const monthNames = {
+        "01": "Janeiro", "02": "Fevereiro", "03": "Março", "04": "Abril",
+        "05": "Maio", "06": "Junho", "07": "Julho", "08": "Agosto",
+        "09": "Setembro", "10": "Outubro", "11": "Novembro", "12": "Dezembro",
+      };
+      const [y, m] = mes.split("-");
+      const label = `${monthNames[m] || m}/${y}`;
+      const arquivo = cliFinAudit.fileName || "planilha-vendas.xlsx";
+      let row = cliFinAudit.history.find((h) => h.mes === mes);
+      if (row) {
+        row.arquivo = arquivo;
+        row.label = label;
+      } else {
+        row = {
+          id: `h${Date.now().toString(36)}`,
+          mes,
+          label,
+          arquivo,
+          status: "alerta",
+          divergencias: 12,
+          impacto: 320.4,
+        };
+        cliFinAudit.history.unshift(row);
+      }
+      cliFinAudit.historyId = row.id;
+    }
+
+    function renderCliFinAuditHistoryHtml() {
+      ensureCliFinAuditHistory();
+      const months = getCliFinAuditHistoryMonthOptions();
+      const items = getCliFinAuditHistoryFiltered();
+      const curMonth = cliFinAudit.historyMonth || "";
+      return `
+        <div class="fin-op-card cli-fin-audit-history">
+          <div class="fin-card-head cli-fin-audit-history-head">
+            <div>
+              <h4>Histórico de auditorias</h4>
+              <span class="chart-sub">Auditorias já processadas — filtre por mês e abra o laudo.</span>
+            </div>
+            <div class="proc-filter field">
+              <select id="cliFinAuditHistoryMonth" data-no-ui="1" aria-label="Filtrar histórico por mês">
+                <option value="" ${!curMonth ? "selected" : ""}>Todos os meses</option>
+                ${months.map(([v, lab]) => `
+                  <option value="${uiSelectEscape(v)}" ${curMonth === v ? "selected" : ""}>${uiSelectEscape(lab)}</option>`).join("")}
+              </select>
+            </div>
+          </div>
+          <div class="cli-fin-audit-history-list">
+            ${items.length ? items.map((h) => `
+              <button type="button" class="cli-fin-audit-history-item${cliFinAudit.historyId === h.id ? " is-current" : ""}" data-cli-fin-audit-history="${uiSelectEscape(h.id)}">
+                <div class="cli-fin-audit-history-top">
+                  <strong>${uiSelectEscape(h.label)}</strong>
+                  <span class="fin-status-pill ${h.status === "ok" ? "conciliado" : "pendente"}">${h.status === "ok" ? "OK" : "Alerta"}</span>
+                </div>
+                <div class="cli-fin-audit-history-meta">${uiSelectEscape(h.arquivo || "—")} · ${h.divergencias} divergência${h.divergencias === 1 ? "" : "s"} · impacto ${money(h.impacto || 0)}</div>
+              </button>`).join("") : `<div class="fin-table-empty">Nenhuma auditoria neste mês.</div>`}
+          </div>
+        </div>`;
+    }
+
     function renderCliFinAuditoriaTab(c) {
       const nome = c.fantasia || c.nome;
       const custom = cliFinAudit.period === "custom";
@@ -7146,6 +8230,7 @@
               ${renderFinAdquirentesListHtml()}
             </div>
           </div>
+          ${renderCliFinAuditHistoryHtml()}
         </div>`;
     }
 
@@ -7928,21 +9013,21 @@
                 <input type="search" id="cliLaudoTableSearch" placeholder="Buscar data, adquirente, bandeira…" value="${uiSelectEscape(cliFinAudit.laudoQuery || "")}" data-cli-fin-laudo="search" aria-label="Buscar divergências" />
               </div>
               <div class="proc-filter field">
-                <select id="cliLaudoTableBandeira" data-cli-fin-laudo="bandeira" data-no-ui="1" aria-label="Filtrar bandeira">
+                <select id="cliLaudoTableBandeira" data-cli-fin-laudo="bandeira" aria-label="Filtrar bandeira">
                   <option value="" ${!cliFinAudit.laudoBandeira ? "selected" : ""}>Bandeira · todas</option>
                   ${(L.bandeirasOpts || []).map((b) => `
                     <option value="${uiSelectEscape(b)}" ${cliFinAudit.laudoBandeira === b ? "selected" : ""}>${uiSelectEscape(b)}</option>`).join("")}
                 </select>
               </div>
               <div class="proc-filter field">
-                <select id="cliLaudoTableStatus" data-cli-fin-laudo="status" data-no-ui="1" aria-label="Filtrar status">
+                <select id="cliLaudoTableStatus" data-cli-fin-laudo="status" aria-label="Filtrar status">
                   <option value="" ${!cliFinAudit.laudoStatus ? "selected" : ""}>Status · todos</option>
                   <option value="Alerta" ${cliFinAudit.laudoStatus === "Alerta" ? "selected" : ""}>Alerta</option>
                   <option value="OK" ${cliFinAudit.laudoStatus === "OK" ? "selected" : ""}>OK</option>
                 </select>
               </div>
               <div class="proc-filter field">
-                <select id="cliLaudoTableSort" data-cli-fin-laudo="sort" data-no-ui="1" aria-label="Ordenar">
+                <select id="cliLaudoTableSort" data-cli-fin-laudo="sort" aria-label="Ordenar">
                   <option value="diff-desc" ${cliFinAudit.laudoSort === "diff-desc" ? "selected" : ""}>Maior diferença</option>
                   <option value="diff-asc" ${cliFinAudit.laudoSort === "diff-asc" ? "selected" : ""}>Menor diferença</option>
                   <option value="valor-desc" ${cliFinAudit.laudoSort === "valor-desc" ? "selected" : ""}>Maior valor</option>
@@ -7954,6 +9039,7 @@
               <table class="laudo-full-table">
                 <thead>
                   <tr>
+                    <th>Status</th>
                     <th>Data</th>
                     <th>Adquirente</th>
                     <th>Bandeira</th>
@@ -7966,8 +9052,16 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${showRows.length ? showRows.map((r) => `
+                  ${showRows.length ? showRows.map((r) => {
+                    const isOk = r.status === "OK" || Math.abs(Number(r.diff) || 0) < 0.01;
+                    const sealCls = isOk ? "ok" : "alerta";
+                    const sealLabel = isOk ? "OK" : "Alerta";
+                    const sealIco = isOk
+                      ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`
+                      : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>`;
+                    return `
                     <tr>
+                      <td><span class="seal ${sealCls}">${sealIco}${sealLabel}</span></td>
                       <td>${uiSelectEscape(r.data)}</td>
                       <td>${uiSelectEscape(r.adquirente || "—")}</td>
                       <td><strong>${uiSelectEscape(r.bandeira)}</strong></td>
@@ -7977,7 +9071,8 @@
                       <td class="num">${String(r.realPct).replace(".", ",")}%</td>
                       <td class="num ${r.diff > 0.01 ? "diff-bad" : (r.diff < -0.01 ? "diff-ok" : "")}">${r.diff >= 0 ? "+" : "−"}${money(Math.abs(r.diff))}</td>
                       <td>${uiSelectEscape(r.justificativa || "—")}</td>
-                    </tr>`).join("") : `<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:22px">Nenhuma divergência com os filtros atuais.</td></tr>`}
+                    </tr>`;
+                  }).join("") : `<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:22px">Nenhuma divergência com os filtros atuais.</td></tr>`}
                 </tbody>
               </table>
             </div>
@@ -8572,9 +9667,10 @@
       openFinModuleSection("plano", "Plano de Contas · Módulo Contábil");
     }
 
-    function renderFinAdquirentesListHtml() {
+    function renderFinAdquirentesListHtml(opts = {}) {
       const acqs = ensureFinAdquirentes();
       const editingId = ensureAcqFormState().editingId;
+      const showRemove = !!opts.showRemove;
       return `
         <div class="fin-op-card fin-acq-list-card">
           <div class="fin-card-head">
@@ -8594,7 +9690,7 @@
                   <span>Antecipação <b>${String(a.antecipacaoPct).replace(".", ",")}%</b></span>
                 </div>
                 <div class="fin-acq-parc">${uiSelectEscape(a.parcelas || "—")}</div>
-                <button type="button" class="btn-ghost sm" data-fin-cfg-del-acq="${a.id}">Remover</button>
+                ${showRemove ? `<button type="button" class="btn-ghost sm" data-fin-cfg-del-acq="${a.id}">Remover</button>` : ""}
               </article>`).join("") || `<div class="fin-table-empty">Nenhum acordo cadastrado.</div>`}
           </div>
         </div>`;
@@ -8692,7 +9788,7 @@
               </div>
             </div>
           </div>
-          ${renderFinAdquirentesListHtml()}
+          ${renderFinAdquirentesListHtml({ showRemove: !!opts.showRemove })}
         </div>`;
     }
 
@@ -10606,10 +11702,15 @@
                     ${chev}
                   </button>
                   <div class="fin-nav-menu" role="menu" aria-label="${uiSelectEscape(g.label)}">
-                    ${(g.items || []).map((it) => `
-                      <button type="button" role="menuitem" class="fin-nav-item${finDash.tab === it.tab ? " is-current" : ""}" data-fin-tab="${it.tab}"${it.configSection ? ` data-fin-cfg-sec="${it.configSection}"` : ""}>
+                    ${(g.items || []).map((it) => {
+                      const sec = finDash.config?.section || "adquirentes";
+                      const isCurrent = finDash.tab === it.tab
+                        && (!it.configSection || sec === it.configSection);
+                      return `
+                      <button type="button" role="menuitem" class="fin-nav-item${isCurrent ? " is-current" : ""}" data-fin-tab="${it.tab}"${it.configSection ? ` data-fin-cfg-sec="${it.configSection}"` : ""}>
                         ${uiSelectEscape(it.label)}
-                      </button>`).join("")}
+                      </button>`;
+                    }).join("")}
                   </div>
                 </div>`;
             }).join("")}
@@ -11245,48 +12346,46 @@
 
     function renderFinConfigPanel() {
       const section = finDash.config.section || "adquirentes";
-      const plano = getFinDreTaxonomy();
-
+      if (section === "plano") {
+        const plano = getFinDreTaxonomy();
+        return `
+        <div class="fin-op-panel fin-config-panel">
+          <div class="fin-op-card fin-cfg-plano">
+            <div class="fin-card-head">
+              <h4>Gestão do Plano de Contas</h4>
+              <span class="chart-sub">Árvore da DRE do cliente: monte categorias e subcategorias sem pular níveis.</span>
+            </div>
+            <div class="fin-cfg-plano-add">
+              <input type="text" id="finCfgNewGroup" placeholder="Nova categoria (ex.: (−) Despesas Financeiras)" value="${uiSelectEscape(finDash.config.newGroupLabel || "")}" />
+              <button type="button" class="btn-primary" data-fin-cfg="add-group">Adicionar categoria</button>
+            </div>
+            <div class="fin-cfg-tree">
+              ${plano.map((g) => `
+                <div class="fin-cfg-group" data-fin-cfg-group="${g.id}">
+                  <div class="fin-cfg-group-head">
+                    <strong>${uiSelectEscape(g.label)}</strong>
+                    <span class="fin-mov-tipo">${g.tipo === "credito" ? "Receita" : "Despesa"}</span>
+                    <button type="button" class="btn-ghost sm" data-fin-cfg-del-group="${g.id}">Remover</button>
+                  </div>
+                  <ul class="fin-cfg-leaves">
+                    ${(g.children || []).map((c) => `
+                      <li>
+                        <span>${uiSelectEscape(c.label)}</span>
+                        <button type="button" data-fin-cfg-del-leaf="${g.id}:${c.id}" aria-label="Remover subcategoria">×</button>
+                      </li>`).join("")}
+                  </ul>
+                  <div class="fin-cfg-add-leaf">
+                    <input type="text" data-fin-cfg-leaf-input="${g.id}" placeholder="Nova subcategoria…" />
+                    <button type="button" class="btn-ghost" data-fin-cfg-add-leaf="${g.id}">Incluir</button>
+                  </div>
+                </div>`).join("")}
+            </div>
+          </div>
+        </div>`;
+      }
       return `
         <div class="fin-op-panel fin-config-panel">
-          <div class="fin-config-nav" role="tablist">
-            <button type="button" class="${section === "adquirentes" ? "active" : ""}" data-fin-cfg-sec="adquirentes">Regras e Adquirentes</button>
-            <button type="button" class="${section === "plano" ? "active" : ""}" data-fin-cfg-sec="plano">Plano de Contas (DRE)</button>
-          </div>
-
-          ${section === "plano" ? `
-            <div class="fin-op-card fin-cfg-plano">
-              <div class="fin-card-head">
-                <h4>Gestão do Plano de Contas</h4>
-                <span class="chart-sub">Árvore da DRE do cliente: monte categorias e subcategorias sem pular níveis.</span>
-              </div>
-              <div class="fin-cfg-plano-add">
-                <input type="text" id="finCfgNewGroup" placeholder="Nova categoria (ex.: (−) Despesas Financeiras)" value="${uiSelectEscape(finDash.config.newGroupLabel || "")}" />
-                <button type="button" class="btn-primary" data-fin-cfg="add-group">Adicionar categoria</button>
-              </div>
-              <div class="fin-cfg-tree">
-                ${plano.map((g) => `
-                  <div class="fin-cfg-group" data-fin-cfg-group="${g.id}">
-                    <div class="fin-cfg-group-head">
-                      <strong>${uiSelectEscape(g.label)}</strong>
-                      <span class="fin-mov-tipo">${g.tipo === "credito" ? "Receita" : "Despesa"}</span>
-                      <button type="button" class="btn-ghost sm" data-fin-cfg-del-group="${g.id}">Remover</button>
-                    </div>
-                    <ul class="fin-cfg-leaves">
-                      ${(g.children || []).map((c) => `
-                        <li>
-                          <span>${uiSelectEscape(c.label)}</span>
-                          <button type="button" data-fin-cfg-del-leaf="${g.id}:${c.id}" aria-label="Remover subcategoria">×</button>
-                        </li>`).join("")}
-                    </ul>
-                    <div class="fin-cfg-add-leaf">
-                      <input type="text" data-fin-cfg-leaf-input="${g.id}" placeholder="Nova subcategoria…" />
-                      <button type="button" class="btn-ghost" data-fin-cfg-add-leaf="${g.id}">Incluir</button>
-                    </div>
-                  </div>`).join("")}
-              </div>
-            </div>` : `
-            ${renderFinAdquirentesHtml({ saveLabel: "Salvar regra", saveAttr: 'data-fin-cfg="save-acq"' })}`}
+          ${renderFinAdquirentesHtml({ saveLabel: "Salvar regra", saveAttr: 'data-fin-cfg="save-acq"', showRemove: true })}
         </div>`;
     }
 
@@ -19820,6 +20919,57 @@
         openClienteCadastro();
         return;
       }
+      const listKpi = e.target.closest("[data-cli-list-kpi]");
+      if (listKpi) {
+        const next = listKpi.dataset.cliListKpi || "";
+        cliListKpiFilter = cliListKpiFilter === next ? "" : next;
+        cliListMenuId = null;
+        renderClientesList();
+        return;
+      }
+      const rowMenuBtn = e.target.closest("[data-cli-row-menu]");
+      if (rowMenuBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = rowMenuBtn.dataset.cliRowMenu;
+        cliListMenuId = cliListMenuId === id ? null : id;
+        renderClientesList();
+        return;
+      }
+      const rowAct = e.target.closest("[data-cli-row-act]");
+      if (rowAct) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = rowAct.dataset.cliId;
+        const act = rowAct.dataset.cliRowAct;
+        const c = CLIENTES.find((x) => x.id === id);
+        cliListMenuId = null;
+        if (act === "abrir") openClientePerfil(id);
+        else if (act === "financeiro") openClientePerfil(id, "financeiro");
+        else if (act === "documentos") openClientePerfil(id, "documentos");
+        else if (act === "config" && c) openClienteEmpresaConfigModal(c);
+        else if (act === "excluir") toast("Exclusão disponível na versão completa");
+        else renderClientesList();
+        return;
+      }
+      const drawerAct = e.target.closest("[data-cli-drawer-act]");
+      if (drawerAct) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = drawerAct.dataset.cliId;
+        const act = drawerAct.dataset.cliDrawerAct;
+        const c = CLIENTES.find((x) => x.id === id);
+        if (act === "abrir") openClientePerfil(id);
+        else if (act === "financeiro") openClientePerfil(id, "financeiro");
+        else if (act === "documentos") openClientePerfil(id, "documentos");
+        else if (act === "config" && c) openClienteEmpresaConfigModal(c);
+        return;
+      }
+      if (e.target.closest("#cliDrawerClose") || e.target.id === "cliDrawerBackdrop") {
+        closeCliClienteDrawer();
+        if (cliView === "lista") renderClientesList();
+        return;
+      }
       const cfgBtn = e.target.closest("[data-cli-config]");
       if (cfgBtn) {
         e.preventDefault();
@@ -19828,9 +20978,14 @@
         if (c) openClienteEmpresaConfigModal(c);
         return;
       }
-      const openBtn = e.target.closest("[data-cli-open], .cli-list-row[data-cli-id]");
-      if (openBtn && !e.target.closest("[data-cli-config]")) {
-        openClientePerfil(openBtn.dataset.cliOpen || openBtn.dataset.cliId);
+      const openBtn = e.target.closest(".cli-list-row[data-cli-id]");
+      if (openBtn && !e.target.closest("[data-cli-actions]")) {
+        openClientePerfil(openBtn.dataset.cliId);
+        return;
+      }
+      if (cliListMenuId && !e.target.closest(".cli-row-menu-wrap")) {
+        cliListMenuId = null;
+        if (cliView === "lista") renderClientesList();
         return;
       }
       if (e.target.closest("[data-cli-back]")) {
@@ -20148,6 +21303,7 @@
           finDash.cartoes.dragging = false;
           cliFinAudit.fileName = cliFinAudit.fileName || "planilha-vendas.xlsx";
           cliFinAudit.modalTab = "relatorio";
+          upsertCliFinAuditHistoryOnImport();
           openCliFinAuditModal();
           toast("Planilha processada — abrindo auditoria");
           return;
@@ -20156,6 +21312,11 @@
           openFinModuleAudit("config");
           return;
         }
+        return;
+      }
+      const cliAuditHist = e.target.closest("[data-cli-fin-audit-history]");
+      if (cliAuditHist) {
+        openCliFinAuditFromHistory(cliAuditHist.dataset.cliFinAuditHistory);
         return;
       }
       const cliDelAcq = e.target.closest("[data-fin-cfg-del-acq]");
@@ -20195,11 +21356,7 @@
         return;
       }
       if (handleFinTitulosToolbarClick(e)) return;
-      const titRow = e.target.closest("[data-cli-fin-tit-row]");
-      if (titRow) {
-        toast(titRow.dataset.cliFinTitRow === "baixar" ? "Baixa do título" : "Detalhe do título");
-        return;
-      }
+      if (handleFinTitulosRowAction(e)) return;
       const planoAction = e.target.closest("[data-cli-fin-plano]");
       if (planoAction || e.target.closest("[data-fin-plano-open]") || e.target.closest("[data-fin-plano-toggle]") || e.target.closest("[data-fin-plano-conta]") || e.target.closest("[data-fin-plano-flag]")) {
         if (handleFinPlanoContasClick(e)) return;
@@ -20279,6 +21436,7 @@
     });
 
     document.getElementById("clientesWrap")?.addEventListener("input", (e) => {
+      if (liveApplyFinTitulosFiltrosFromEvent(e)) return;
       if (handleCliXmlModInput(e)) return;
       if (e.target.id === "cliEntregaSearch") {
         const pos = e.target.selectionStart;
@@ -20365,6 +21523,11 @@
           cliFinAudit.dateTo = "2026-07-14";
         }
         renderClientes();
+        return;
+      }
+      if (e.target.id === "cliFinAuditHistoryMonth") {
+        cliFinAudit.historyMonth = e.target.value || "";
+        refreshCliFinAuditHistoryView();
         return;
       }
       if (e.target.id === "cliFinAuditBaseDateFrom" || e.target.id === "cliFinAuditBaseDateTo") {
@@ -20609,6 +21772,7 @@
           finDash.cartoes.dragging = false;
           cliFinAudit.fileName = cliFinAudit.fileName || "planilha-vendas.xlsx";
           cliFinAudit.modalTab = "relatorio";
+          upsertCliFinAuditHistoryOnImport();
           openCliFinAuditModal();
           toast("Planilha processada — abrindo auditoria");
           return;
@@ -20623,6 +21787,11 @@
         }
         return;
       }
+      const finAuditHist = e.target.closest("[data-cli-fin-audit-history]");
+      if (finAuditHist) {
+        openCliFinAuditFromHistory(finAuditHist.dataset.cliFinAuditHistory);
+        return;
+      }
       const titulosTab = e.target.closest("[data-fin-titulos-tab]");
       if (titulosTab) {
         const next = titulosTab.dataset.finTitulosTab === "receber" ? "receber" : "pagar";
@@ -20630,16 +21799,11 @@
         finDash.titulosSub = next;
         clearFinTitulosFiltros();
         cliFinTituloSelectedIds = new Set();
-        cliFinTitulosFiltrosOpen = false;
         renderFinModuleDash();
         return;
       }
       if (handleFinTitulosToolbarClick(e)) return;
-      const titRow = e.target.closest("[data-cli-fin-tit-row]");
-      if (titRow) {
-        toast(titRow.dataset.cliFinTitRow === "baixar" ? "Baixa do título" : "Detalhe do título");
-        return;
-      }
+      if (handleFinTitulosRowAction(e)) return;
       const planoAction = e.target.closest("[data-cli-fin-plano]");
       if (planoAction || e.target.closest("[data-fin-plano-open]") || e.target.closest("[data-fin-plano-toggle]") || e.target.closest("[data-fin-plano-conta]") || e.target.closest("[data-fin-plano-flag]")) {
         if (handleFinPlanoContasClick(e)) return;
@@ -20883,8 +22047,20 @@
 
     document.getElementById("finDrawerClose")?.addEventListener("click", () => closeFinDrawer());
     document.getElementById("finDrawerBackdrop")?.addEventListener("click", () => closeFinDrawer());
+    document.getElementById("cliDrawerClose")?.addEventListener("click", () => {
+      closeCliClienteDrawer();
+      if (cliView === "lista") renderClientesList();
+    });
+    document.getElementById("cliDrawerBackdrop")?.addEventListener("click", () => {
+      closeCliClienteDrawer();
+      if (cliView === "lista") renderClientesList();
+    });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && finDash.drawer) closeFinDrawer();
+      if (e.key === "Escape" && cliDrawerOpen) {
+        closeCliClienteDrawer();
+        if (cliView === "lista") renderClientesList();
+      }
       if (e.key === "Escape" && finDash.conc?.catRowId) {
         finDash.conc.catRowId = null;
         renderFinModuleDash();
@@ -20892,6 +22068,7 @@
     });
 
     document.getElementById("financeiroWrap")?.addEventListener("input", (e) => {
+      if (liveApplyFinTitulosFiltrosFromEvent(e)) return;
       if (e.target.id === "cliFinPlanoSearch") {
         const pos = e.target.selectionStart;
         cliFinPlanoQuery = e.target.value || "";
@@ -20973,6 +22150,14 @@
       else if (e.target.id === "finEmitVenc") finDash.cobrancas.form.vencimento = e.target.value || "";
       else if (e.target.id === "finEmitDesc") finDash.cobrancas.form.desc = e.target.value || "";
       if (e.target.id === "finCfgNewGroup") finDash.config.newGroupLabel = e.target.value || "";
+    });
+
+    document.getElementById("financeiroWrap")?.addEventListener("change", (e) => {
+      if (liveApplyFinTitulosFiltrosFromEvent(e)) return;
+    });
+
+    document.getElementById("clientesWrap")?.addEventListener("change", (e) => {
+      if (liveApplyFinTitulosFiltrosFromEvent(e)) return;
     });
 
     document.getElementById("financeiroWrap")?.addEventListener("focusin", (e) => {
@@ -21067,6 +22252,7 @@
           if (openLaudo) {
             cliFinAudit.fileName = file?.name || "planilha-vendas.xlsx";
             cliFinAudit.modalTab = "relatorio";
+            upsertCliFinAuditHistoryOnImport();
             openCliFinAuditModal();
             toast("Planilha processada — abrindo auditoria");
             return;
@@ -21091,6 +22277,11 @@
           cliFinAudit.dateTo = "2026-07-14";
         }
         renderFinModuleDash();
+        return;
+      }
+      if (e.target.id === "cliFinAuditHistoryMonth") {
+        cliFinAudit.historyMonth = e.target.value || "";
+        refreshCliFinAuditHistoryView();
         return;
       }
       if (e.target.id === "cliFinAuditBaseDateFrom" || e.target.id === "cliFinAuditBaseDateTo") {
@@ -21793,10 +22984,6 @@
         document.getElementById("cliProcStatusBtn")?.setAttribute("aria-expanded", "false");
         document.getElementById("cliEntregaStatusWrap")?.classList.remove("open");
         document.getElementById("cliEntregaStatusBtn")?.setAttribute("aria-expanded", "false");
-      }
-      if (!e.target.closest("#cliFinTitFilterWrap") && !e.target.closest("#finTitFilterBar")) {
-        document.getElementById("cliFinTitFilterWrap")?.classList.remove("open");
-        document.querySelector("[data-cli-fin-tit-filter-toggle]")?.setAttribute("aria-expanded", "false");
       }
       if (!e.target.closest("#cliDocsGenerateWrap")) {
         document.getElementById("cliDocsGenerateWrap")?.classList.remove("open");

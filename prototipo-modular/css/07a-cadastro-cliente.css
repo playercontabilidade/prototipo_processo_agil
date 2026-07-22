@@ -324,23 +324,20 @@
     @media (max-width: 900px) {
       .cli-list-head { display: none; }
       .cli-list-row {
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr;
         grid-template-areas:
-          "id action"
-          "tipo desde"
-          "colab pend"
-          "regime regime";
+          "id"
+          "health"
+          "alert"
+          "ativ";
         gap: 8px 10px;
         padding: 12px;
         align-items: start;
       }
       .cli-id-cell { grid-area: id; }
-      .cli-list-row .cell-tipo { grid-area: tipo; align-self: center; }
-      .cli-list-row .cli-meta-desde { grid-area: desde; }
-      .cli-list-row .cli-meta-colab { grid-area: colab; }
-      .cli-list-row .cli-pend-cell { grid-area: pend; align-self: center; }
-      .cli-list-row .cell-regime { grid-area: regime; white-space: normal; }
-      .cli-list-row .cli-actions { grid-area: action; align-self: start; }
+      .cli-mon-health { grid-area: health; }
+      .cli-mon-alert { grid-area: alert; }
+      .cli-mon-ativ { grid-area: ativ; display: flex !important; }
       .cli-cad-grid { grid-template-columns: 1fr; }
       .cli-cad-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .cli-cad-form .span-2 { grid-column: span 2; }
@@ -349,24 +346,17 @@
 
     @media (max-width: 640px) {
       .cli-list-row {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr;
         grid-template-areas:
-          "id action"
-          "tipo tipo"
-          "desde colab"
-          "pend regime";
+          "id"
+          "health"
+          "alert"
+          "ativ";
         gap: 8px;
         padding: 12px 10px;
       }
-      .cli-list-row .cli-actions {
-        justify-self: end;
-      }
       .cli-id-cell strong {
         white-space: normal;
-      }
-      .cli-pend-pill {
-        white-space: normal;
-        max-width: 100%;
       }
       .cli-cad-form { grid-template-columns: 1fr; }
       .cli-cad-form .span-2,
