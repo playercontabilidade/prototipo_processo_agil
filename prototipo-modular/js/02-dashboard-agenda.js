@@ -3901,28 +3901,6 @@
       modalFoot.querySelector("[data-fin-tit-ver-act='confirmar']")?.addEventListener("click", confirmPagamento);
     }
 
-    function openFinTitulosBaixarModal(lado, titulo) {
-      const t = titulo;
-      if (!t) return;
-      openModal({
-        title: "Baixar título",
-        sub: `${t.nome} · ${finTitulosLadoLabel(lado)}`,
-        body: `
-          <p class="fin-tit-hint" style="margin:0">Será gerado um PDF com os dados do título (protótipo).</p>
-          <ul style="margin:12px 0 0;padding-left:18px;font-size:.84rem;line-height:1.6;color:var(--navy-deep)">
-            <li>${t.descricao || "Sem descrição"}</li>
-            <li>Vencimento ${t.vencimento} · ${money(t.valor)}</li>
-          </ul>`,
-        foot: `
-          <button type="button" class="btn-ghost" data-close>Cancelar</button>
-          <button type="button" class="btn-primary" id="finTitBaixarConfirm">Baixar PDF</button>`,
-      });
-      document.getElementById("finTitBaixarConfirm")?.addEventListener("click", () => {
-        closeModal();
-        toast(`Download iniciado · ${t.nome}`);
-      });
-    }
-
     function openFinTitulosExportModal(lado) {
       openModal({
         title: "Exportar para Excel",
@@ -4073,7 +4051,6 @@
         return true;
       }
       if (act === "ver") openFinTitulosVerModal(lado, titulo);
-      else if (act === "baixar") openFinTitulosBaixarModal(lado, titulo);
       else if (act === "editar") openFinTitulosNovoModal(lado, titulo);
       return true;
     }
@@ -4119,7 +4096,6 @@
                     <div class="cli-fin-tit-actions">
                       <button type="button" data-cli-fin-tit-row="ver" data-id="${t.id}">Ver</button>
                       <button type="button" data-cli-fin-tit-row="editar" data-id="${t.id}">Editar</button>
-                      <button type="button" data-cli-fin-tit-row="baixar" data-id="${t.id}">Baixar</button>
                     </div>
                   </td>
                 </tr>`).join("") : `<tr><td colspan="8"><div class="cli-empty-panel">Nenhum título correspondente</div></td></tr>`}
