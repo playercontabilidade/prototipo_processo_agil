@@ -409,6 +409,14 @@
       if (!isClientePortal()) return agendaTasks;
       return agendaTasks.filter((t) => t.clienteId === portalClienteId);
     }
+
+    function agendaTasksForModule() {
+      let tasks = agendaTasksScoped();
+      if (agendaEmpresaFilter && agendaEmpresaFilter !== "all") {
+        tasks = tasks.filter((t) => t.clienteId === agendaEmpresaFilter);
+      }
+      return tasks;
+    }
     let agendaMonth = new Date(2026, 6, 1);
     let agendaSelected = "2026-07-14";
 
@@ -544,7 +552,7 @@
     }
 
     function tasksForDay(iso) {
-      return agendaTasksScoped().filter((t) => t.date === iso && !t.arquivada);
+      return agendaTasksForModule().filter((t) => t.date === iso && !t.arquivada);
     }
 
     const entregaActivityById = {};
@@ -1398,6 +1406,10 @@
     };
     let cliSearchQuery = "";
     let cliRegimeFilter = "";
+    let cliEmpresaFilter = "all";
+    let procEmpresaFilter = "all";
+    let secEmpresaFilter = "all";
+    let agendaEmpresaFilter = "all";
     let cliListKpiFilter = "";
     let cliListSelectedId = null;
     let cliListMenuId = null;
@@ -2277,6 +2289,7 @@
 
     function openCertMonitor({ clienteId = null, mode = "all", toastMsg } = {}) {
       securityCertFilterClienteId = clienteId || null;
+      secEmpresaFilter = clienteId || "all";
       securityCertFilterMode = mode || "all";
       if (!openTabIds.includes("seguranca")) openTabIds.push("seguranca");
       skipToast = true;
@@ -2404,7 +2417,7 @@
       const y = agendaMonth.getFullYear();
       const m = String(agendaMonth.getMonth() + 1).padStart(2, "0");
       const prefix = `${y}-${m}`;
-      return agendaTasksScoped().filter((t) => !t.arquivada && String(t.date || "").startsWith(prefix));
+      return agendaTasksForModule().filter((t) => !t.arquivada && String(t.date || "").startsWith(prefix));
     }
 
     function renderAgendaMain() {
@@ -2508,7 +2521,8 @@
 
     function getAgendaOpsFilteredData() {
       const procs = (sections.find((s) => s.id === "processos")?.items || [])
-        .filter((p) => !p.arquivado && (!isClientePortal() || p.clienteId === portalClienteId));
+        .filter((p) => !p.arquivado && (!isClientePortal() || p.clienteId === portalClienteId))
+        .filter((p) => !agendaEmpresaFilter || agendaEmpresaFilter === "all" || p.clienteId === agendaEmpresaFilter);
       return { procs, entregas: [] };
     }
 
@@ -2576,6 +2590,8 @@
 
     function populateAgendaEntregaFilters() {
       initAgendaEntregaStatusMenu();
+      const pickerSlot = document.getElementById("agendaEmpresaPickerSlot");
+      if (pickerSlot) pickerSlot.innerHTML = renderModuleEmpresaPickerHtml("agenda");
       const viewSel = document.getElementById("agendaEntregaView");
       const funSel = document.getElementById("agendaEntregaFuncionario");
       const respSel = document.getElementById("agendaEntregaResp");
@@ -2597,12 +2613,8 @@
     }
 
     function filterAgendaEntregaTasks(tasks) {
-      const q = normalizeSearchText(agendaEntregaQuery);
       return tasks.filter((t) => {
-        if (q) {
-          const hay = normalizeSearchText([t.nome, t.razaoSocial, t.responsavel, t.cnpj].filter(Boolean).join(" "));
-          if (!hay.includes(q)) return false;
-        }
+        if (agendaEmpresaFilter && agendaEmpresaFilter !== "all" && t.clienteId !== agendaEmpresaFilter) return false;
         if (agendaEntregaFuncionario && t.responsavel !== agendaEntregaFuncionario) return false;
         if (agendaEntregaStatus && t.status !== agendaEntregaStatus) return false;
         if (agendaEntregaResp && t.responsavel !== agendaEntregaResp) return false;
@@ -3026,9 +3038,139 @@
       toast(`${titles[field]}: ${labels[field]} · ${short}`);
     }
 
+    function getModuleEmpresaFilter(scope) {
+      if (scope === "clientes") return cliEmpresaFilter || "all";
+      if (scope === "processos") return procEmpresaFilter || "all";
+      if (scope === "seguranca") return secEmpresaFilter || "all";
+      if (scope === "agenda") return agendaEmpresaFilter || "all";
+      if (scope === "perfil") return cliPerfilId || "all";
+      return "all";
+    }
+
+    function getModuleEmpresaDisplay(scope) {
+      const id = getModuleEmpresaFilter(scope);
+      if (!id || id === "all") {
+        return { id: "all", code: "", name: "Todas as empresas", cnpjLine: "Filtrar por empresa" };
+      }
+      const c = CLIENTES.find((x) => x.id === id);
+      if (!c) {
+        if (scope === "perfil") return { id: "all", code: "", name: "Selecionar empresa", cnpjLine: "Trocar empresa" };
+        return { id: "all", code: "", name: "Todas as empresas", cnpjLine: "Filtrar por empresa" };
+      }
+      return {
+        id: c.id,
+        code: c.code || "",
+        name: c.fantasia || c.nome || c.short || "",
+        cnpjLine: c.cnpj ? `CNPJ ${c.cnpj}` : "",
+      };
+    }
+
+    function escModEmpresa(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderModuleEmpresaPickerHtml(scope) {
+      const sc = scope || "clientes";
+      const hideAll = sc === "perfil";
+      const tip = hideAll ? "Trocar empresa" : "Filtrar por empresa";
+      const selected = getModuleEmpresaFilter(sc);
+      const d = getModuleEmpresaDisplay(sc);
+      const options = CLIENTES.map((c) => {
+        const active = c.id === selected ? " active" : "";
+        const label = escModEmpresa(c.fantasia || c.nome || "");
+        return `
+          <button type="button" class="empresa-option${active}" data-mod-empresa-opt="${c.id}" data-mod-empresa-scope="${sc}" data-code="${escModEmpresa(c.code || "")}" data-short="${label}" data-cnpj="${escModEmpresa(c.cnpj || "")}">
+            <span class="opt-main"><span class="opt-code">${escModEmpresa(c.code || "")}</span>${label}</span>
+            <small>CNPJ ${escModEmpresa(c.cnpj || "")}${c.estado ? ` · ${escModEmpresa(c.estado)}` : ""}${c.status ? ` · ${escModEmpresa(c.status)}` : ""}</small>
+          </button>`;
+      }).join("");
+      return `
+        <div class="module-empresa-picker${hideAll ? " is-perfil" : ""}" data-mod-empresa-scope="${sc}">
+          <div class="empresa-wrap" id="modEmpresaWrap-${sc}">
+            <button type="button" class="empresa-trigger tip-bottom" id="modEmpresaSelectBtn-${sc}" data-mod-empresa-toggle="${sc}" data-tip="${tip}" aria-expanded="false" aria-haspopup="listbox" aria-label="${tip}">
+              <span class="trigger-text">
+                <span class="name-line">
+                  <span class="empresa-code"${d.code ? "" : " hidden"}>${escModEmpresa(d.code)}</span>
+                  <span class="empresa-name">${escModEmpresa(d.name)}</span>
+                </span>
+                <span class="empresa-cnpj"${d.cnpjLine ? "" : " hidden"}>${escModEmpresa(d.cnpjLine)}</span>
+              </span>
+              <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="empresa-menu" id="modEmpresaMenu-${sc}">
+              <div class="empresa-search">
+                <input type="search" id="modEmpresaSearch-${sc}" data-mod-empresa-search="${sc}" placeholder="Buscar empresa..." autocomplete="off" aria-label="Buscar empresa" />
+              </div>
+              <div class="empresa-options" id="modEmpresaOptions-${sc}">
+                ${hideAll ? "" : `
+                <button type="button" class="empresa-option${selected === "all" ? " active" : ""}" data-mod-empresa-opt="all" data-mod-empresa-scope="${sc}" data-code="" data-short="Todas as empresas" data-cnpj="">
+                  <span class="opt-main">Todas as empresas</span>
+                  <small>Mostra todas as empresas deste menu</small>
+                </button>`}
+                ${options}
+              </div>
+              <div class="empresa-empty" id="modEmpresaEmpty-${sc}" hidden>Nenhuma empresa encontrada</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function filterModEmpresaOptions(scope, query) {
+      const sc = scope || "clientes";
+      const q = normalizeSearchText(query || "");
+      let visible = 0;
+      document.querySelectorAll(`#modEmpresaOptions-${sc} .empresa-option`).forEach((opt) => {
+        const blob = normalizeSearchText([
+          opt.dataset.short || "",
+          opt.dataset.code || "",
+          opt.dataset.cnpj || "",
+          opt.textContent || "",
+        ].join(" "));
+        const show = !q || blob.includes(q) || opt.dataset.modEmpresaOpt === "all";
+        opt.classList.toggle("hidden", !show);
+        if (show) visible += 1;
+      });
+      const empty = document.getElementById(`modEmpresaEmpty-${sc}`);
+      if (empty) empty.hidden = visible > 0;
+    }
+
+    function setModuleEmpresaFilter(scope, id, { silentToast } = {}) {
+      const next = id || "all";
+      const c = next !== "all" ? CLIENTES.find((x) => x.id === next) : null;
+      const label = c ? (c.fantasia || c.nome || c.short) : "Todas as empresas";
+      if (scope === "perfil") {
+        if (!c) return;
+        document.getElementById(`modEmpresaWrap-${scope}`)?.classList.remove("open");
+        if (cliPerfilId === next) {
+          if (!silentToast) toast(`Empresa: ${label}`);
+          return;
+        }
+        bumpRecentClient(c.id);
+        cliPerfilId = c.id;
+        if (typeof renderClientes === "function") renderClientes();
+        if (!silentToast) toast(`Empresa: ${label}`);
+        return;
+      }
+      if (scope === "clientes") cliEmpresaFilter = next;
+      else if (scope === "processos") procEmpresaFilter = next;
+      else if (scope === "seguranca") {
+        secEmpresaFilter = next;
+        securityCertFilterClienteId = next !== "all" ? next : null;
+      } else if (scope === "agenda") agendaEmpresaFilter = next;
+      document.getElementById(`modEmpresaWrap-${scope}`)?.classList.remove("open");
+      if (scope === "clientes" && typeof renderClientesList === "function") renderClientesList();
+      else if (scope === "processos" && typeof renderProcessos === "function") renderProcessos();
+      else if (scope === "seguranca" && typeof renderSegurancaCertificados === "function") renderSegurancaCertificados();
+      else if (scope === "agenda" && typeof renderAgenda === "function") renderAgenda();
+      if (!silentToast) toast(next === "all" ? "Filtro: todas as empresas" : `Filtro: ${label}`);
+    }
+
     function selectEmpresaFromOption(opt, { silentToast, keepFilter } = {}) {
       if (!keepFilter) chipListFilter = null;
-      document.querySelectorAll(".empresa-option").forEach((o) => o.classList.remove("active"));
+      document.querySelectorAll("#empresaOptions .empresa-option").forEach((o) => o.classList.remove("active"));
       opt.classList.add("active");
       selectedEmpresaId = opt.dataset.id || "farmelhor";
       const code = opt.dataset.code || "";
@@ -3055,7 +3197,7 @@
       const searchEl = document.getElementById("empresaSearch");
       if (searchEl) searchEl.value = "";
       filterEmpresas("");
-      empresaWrap.classList.remove("open");
+      document.getElementById("empresaWrap")?.classList.remove("open");
       updateInfoChips();
       if (current === "visao") renderDashboard();
       if (!silentToast) {
@@ -4500,14 +4642,8 @@
 
     function getEntregasFiltradasProcessos() {
       let tasks = agendaTasksScoped().filter((t) => !t.arquivada);
-      if (procFiltros.search) {
-        const matched = findClientesByOmniQuery(procFiltros.search);
-        const ids = new Set((matched || []).map((c) => c.id));
-        const names = new Set((matched || []).map((c) => normalizeSearchText(c.nome)));
-        tasks = tasks.filter((t) =>
-          (t.clienteId && ids.has(t.clienteId))
-          || names.has(normalizeSearchText(t.razaoSocial || ""))
-        );
+      if (procEmpresaFilter && procEmpresaFilter !== "all") {
+        tasks = tasks.filter((t) => t.clienteId === procEmpresaFilter);
       }
       if (procFiltros.status) {
         tasks = tasks.filter((t) => matchesProcFilterStatus(procStatusMeta(t.status).sucesso, procFiltros.status));
@@ -4526,14 +4662,7 @@
       return items.filter((p) => {
         if (isClientePortal() && p.clienteId !== portalClienteId) return false;
         if (procFiltros.arquivados ? !p.arquivado : p.arquivado) return false;
-        if (procFiltros.search) {
-          const matched = findClientesByOmniQuery(procFiltros.search);
-          const ids = new Set((matched || []).map((c) => c.id));
-          const names = new Set((matched || []).map((c) => normalizeSearchText(c.nome)));
-          const hit = (p.clienteId && ids.has(p.clienteId))
-            || names.has(normalizeSearchText(p.cliente || ""));
-          if (!hit) return false;
-        }
+        if (procEmpresaFilter && procEmpresaFilter !== "all" && p.clienteId !== procEmpresaFilter) return false;
         if (procFiltros.status && !matchesProcFilterStatus(p.sucesso, procFiltros.status)) return false;
         if (procFiltros.dept && p.dept !== procFiltros.dept) return false;
         if (procFiltros.responsavel && p.responsavel !== procFiltros.responsavel) return false;
@@ -4604,10 +4733,7 @@
         ? procFilterStatusMeta(procFiltros.status)
         : { label: "Todas", color: "#94a3b8" };
       procFilters.innerHTML = `
-        <div class="proc-filter search">
-          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="search" id="procSearch" placeholder="Nome, razão social ou CNPJ" value="${procFiltros.search}" aria-label="Buscar processos por empresa" />
-        </div>
+        ${renderModuleEmpresaPickerHtml("processos")}
         <div class="proc-filter field agenda-ops-status" id="procStatusWrap">
           <button type="button" class="agenda-ops-status-btn" id="procStatusBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Filtrar status">
             <i class="status-dot" id="procStatusDot" style="background:${statusMeta.color}" aria-hidden="true"></i>
@@ -4776,7 +4902,7 @@
 
       const ordered = buildEmpresaGroups(procs, entregas);
       if (!ordered.length) {
-        procGrid.innerHTML = `<div class="empresa-group-list"><div class="empresa-board-empty">${procFiltros.search ? "Nenhuma empresa correspondente à busca" : "Nenhum item com esses filtros"}</div></div>`;
+        procGrid.innerHTML = `<div class="empresa-group-list"><div class="empresa-board-empty">${procEmpresaFilter !== "all" || procFiltros.status || procFiltros.dept || procFiltros.responsavel ? "Nenhuma empresa correspondente aos filtros" : "Nenhum item com esses filtros"}</div></div>`;
         return;
       }
       procGrid.innerHTML = `<div class="empresa-group-list">${ordered.map((g) => renderEmpresaAccordionItem(g, procFiltros.expandedClients, "data-proc-acc")).join("")}</div>`;
@@ -5161,12 +5287,9 @@
     }
 
     function collectCliListRowsMeta() {
-      const q = cliSearchQuery.trim();
       let list = [...CLIENTES];
-      if (q) {
-        const matched = findClientesByOmniQuery(q);
-        const ids = new Set((matched || []).map((c) => c.id));
-        list = matched ? CLIENTES.filter((c) => ids.has(c.id)) : [];
+      if (cliEmpresaFilter && cliEmpresaFilter !== "all") {
+        list = list.filter((c) => c.id === cliEmpresaFilter);
       }
       if (cliRegimeFilter) list = list.filter((c) => c.regime === cliRegimeFilter);
 
@@ -5310,17 +5433,339 @@
       });
     }
 
+    function getCliMiniDossieAlerts(c, monitor) {
+      const seed = getCliMonitorSeed(c);
+      const items = [];
+      const cert = monitor?.cert;
+      if (cert?.status === "vencido") {
+        items.push({
+          id: "cert-vencido",
+          tone: "bad",
+          text: `Certificado digital vencido${cert.validadeLabel ? ` · ${cert.validadeLabel}` : ""}`,
+          action: "cert",
+          actionLabel: "Abrir monitoramento",
+        });
+      } else if (cert?.status === "a-vencer") {
+        items.push({
+          id: "cert-avencer",
+          tone: "warn",
+          text: monitor.alertaPrincipal || "Certificado a vencer",
+          action: "cert",
+          actionLabel: "Ver certificado",
+        });
+      }
+      agendaTasks
+        .filter((t) => t.clienteId === c.id && !t.arquivada && (t.status === "atrasada" || t.status === "ent-atrasada" || t.status === "justificativa-atrasada"))
+        .slice(0, 2)
+        .forEach((t) => {
+          items.push({
+            id: `ent-${t.id}`,
+            tone: "bad",
+            text: `Entrega atrasada: ${t.nome}`,
+            action: "entrega",
+            actionLabel: "Abrir entrega",
+            taskId: t.id,
+          });
+        });
+      if (seed.docsWarn) {
+        items.push({
+          id: "xml",
+          tone: "warn",
+          text: "Falta XML de competência recente",
+          action: "solicitar-doc",
+          actionLabel: "Solicitar ao cliente",
+        });
+      }
+      if (seed.titVencidos) {
+        items.push({
+          id: "tit",
+          tone: "bad",
+          text: seed.titVencidos === 1 ? "Título financeiro vencido" : `${seed.titVencidos} títulos financeiros vencidos`,
+          action: "cobranca",
+          actionLabel: "Nova cobrança",
+        });
+      }
+      if (seed.concPend) {
+        items.push({
+          id: "conc",
+          tone: "warn",
+          text: "Conciliação bancária pendente",
+          action: "financeiro",
+          actionLabel: "Ir ao financeiro",
+        });
+      }
+      if (seed.auditWarn || seed.auditBad) {
+        items.push({
+          id: "audit",
+          tone: seed.auditBad ? "bad" : "warn",
+          text: "Divergência na auditoria de cartões",
+          action: "auditoria",
+          actionLabel: "Revisar",
+        });
+      }
+      if (c.status !== "Ativo") {
+        items.push({
+          id: "inativo",
+          tone: "warn",
+          text: "Cliente marcado como inativo",
+          action: "perfil",
+          actionLabel: "Ver perfil",
+        });
+      }
+      if (!items.length) {
+        items.push({
+          id: "ok",
+          tone: "ok",
+          text: "Nenhum alerta crítico no momento",
+          action: "",
+          actionLabel: "",
+        });
+      }
+      return items.slice(0, 5);
+    }
+
+    function getCliMiniDossieFinanceiro(c, monitor) {
+      const aReceber7 = Math.round((monitor.aReceber || 0) * 0.38);
+      const aPagar7 = Math.round((monitor.aPagar || 0) * 0.42);
+      const risco = aPagar7 > aReceber7 * 1.05;
+      return {
+        aReceber7,
+        aPagar7,
+        saldo: monitor.saldo || 0,
+        caixaLabel: risco ? "Risco de furo" : "Saudável",
+        caixaCls: risco ? "is-bad" : "is-ok",
+      };
+    }
+
+    function getCliMiniDossieObrigacoes(c) {
+      const today = "2026-07-14";
+      const tasks = agendaTasks
+        .filter((t) => t.clienteId === c.id && !t.arquivada && String(t.date || "") >= today)
+        .slice()
+        .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+        .slice(0, 4);
+      const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
+      const items = tasks.map((t) => {
+        const diff = Math.round((new Date(t.date) - new Date(today)) / 86400000);
+        let when = t.date;
+        if (diff === 0) when = "Hoje";
+        else if (diff === 1) when = "Amanhã";
+        else if (diff > 1) when = `${diff} dias`;
+        return { when, label: t.nome, tip: t.prazoLegal || t.competencia || "" };
+      });
+      if (cert && cert.status !== "ok") {
+        items.splice(Math.min(1, items.length), 0, {
+          when: cert.status === "vencido" ? "Atrasado" : "Em breve",
+          label: "Venc. Certificado",
+          tip: cert.validadeLabel || "",
+        });
+      }
+      if (!items.length) {
+        items.push({ when: "—", label: "Sem entregas próximas", tip: "" });
+      }
+      return items.slice(0, 4);
+    }
+
+    function getCliMiniDossieInteracoes(c) {
+      const posts = (typeof getCliFeedPosts === "function" ? getCliFeedPosts(c, "todos") : []).slice(0, 4);
+      if (posts.length) {
+        return posts.map((p) => {
+          const raw = String(p.texto || p.tema || "atualizou o dossiê");
+          const first = raw.split(/\n/)[0].replace(/^•\s*/, "").trim();
+          return {
+            when: typeof cliFeedWhenLabel === "function" ? cliFeedWhenLabel(p.at) : "Recente",
+            text: `${p.autor} · ${first}`,
+          };
+        });
+      }
+      const seed = getCliMonitorSeed(c);
+      const catalog = [
+        { when: "Há 2h", text: "Marina importou OFX" },
+        { when: "Ontem", text: "Carlos enviou e-mail de cobrança" },
+        { when: "Há 3 dias", text: "Juliana anexou balancete" },
+        { when: "Há 5 dias", text: "Ana revisou obrigações fiscais" },
+      ];
+      const start = seed.idx % catalog.length;
+      return [0, 1, 2].map((i) => catalog[(start + i) % catalog.length]);
+    }
+
+    function renderCliMiniDossieHtml(c) {
+      if (!c) return "";
+      const monitor = getCliMonitorMeta(c);
+      const alerts = getCliMiniDossieAlerts(c, monitor);
+      const fin = getCliMiniDossieFinanceiro(c, monitor);
+      const obrigs = getCliMiniDossieObrigacoes(c);
+      const logs = getCliMiniDossieInteracoes(c);
+      const why = `Por que está ${monitor.score}% ${monitor.healthLabel}?`;
+      const alertIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`;
+      const waIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11 11 0 0 0 3.2 17.6L2 22l4.5-1.2A11 11 0 1 0 20.5 3.5Zm-8.6 17a9.1 9.1 0 0 1-4.6-1.3l-.3-.2-2.7.7.7-2.6-.2-.3a9.1 9.1 0 1 1 7.1 3.7Zm5-6.8c-.3-.1-1.6-.8-1.9-.9s-.4-.1-.6.1-.7.9-.8 1-.3.2-.6.1a7.4 7.4 0 0 1-2.2-1.4 8.2 8.2 0 0 1-1.5-1.9c-.2-.3 0-.4.1-.6l.4-.5.1-.3c0-.1 0-.3-.1-.4s-.6-1.4-.8-1.9-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3a2 2 0 0 0-.6 1.5 3.5 3.5 0 0 0 .7 1.9 8 8 0 0 0 3.1 3 11 11 0 0 0 2 .8 2.4 2.4 0 0 0 1.7-.5 2.8 2.8 0 0 0 .8-1.6c.1-.2 0-.4 0-.5s-.3-.2-.6-.3Z"/></svg>`;
+
+      return `
+        <section class="cli-mini-dossie" data-cli-dossie="${c.id}" aria-label="Mini-dossiê operacional de ${uiSelectEscape(c.fantasia || c.nome)}">
+          <div class="cli-mini-dossie-actions" role="toolbar" aria-label="Ações rápidas">
+            <button type="button" class="btn-outline" data-cli-dossie-act="perfil" data-cli-id="${c.id}">Ir para Perfil Completo</button>
+            <button type="button" class="btn-outline" data-cli-dossie-act="whatsapp" data-cli-id="${c.id}">
+              ${waIco}
+              Falar no WhatsApp
+            </button>
+            <button type="button" class="btn-outline" data-cli-dossie-act="documento" data-cli-id="${c.id}">Gerar Documento</button>
+            <button type="button" class="btn-outline" data-cli-dossie-act="cobranca" data-cli-id="${c.id}">Nova Cobrança</button>
+          </div>
+          <div class="cli-mini-dossie-grid">
+            <article class="cli-mini-dossie-card">
+              <header class="cli-mini-dossie-card-head">
+                <h4>Raio-X dos Alertas</h4>
+                <span class="sub">${uiSelectEscape(why)}</span>
+              </header>
+              <ul class="cli-mini-dossie-alerts">
+                ${alerts.map((a) => `
+                  <li class="cli-mini-dossie-alert is-${a.tone}">
+                    <span class="cli-mini-dossie-alert-main">
+                      <i class="cli-mini-dossie-alert-ico" aria-hidden="true">${alertIco}</i>
+                      <span>${uiSelectEscape(a.text)}</span>
+                    </span>
+                    ${a.action ? `<button type="button" class="btn-ghost sm" data-cli-dossie-act="${a.action}" data-cli-id="${c.id}"${a.taskId ? ` data-task-id="${a.taskId}"` : ""}>${uiSelectEscape(a.actionLabel)}</button>` : ""}
+                  </li>`).join("")}
+              </ul>
+            </article>
+            <article class="cli-mini-dossie-card">
+              <header class="cli-mini-dossie-card-head">
+                <h4>Termômetro Financeiro</h4>
+                <span class="sub">Liquidez de curto prazo · 7 dias</span>
+              </header>
+              <div class="cli-mini-dossie-fin">
+                <div class="cli-mini-dossie-fin-kpi">
+                  <span class="lab">A receber (7 dias)</span>
+                  <strong>${money(fin.aReceber7)}</strong>
+                </div>
+                <div class="cli-mini-dossie-fin-kpi">
+                  <span class="lab">A pagar (7 dias)</span>
+                  <strong>${money(fin.aPagar7)}</strong>
+                </div>
+                <div class="cli-mini-dossie-fin-badge ${fin.caixaCls}">
+                  <span class="lab">Saúde do caixa</span>
+                  <strong>${fin.caixaLabel}</strong>
+                </div>
+              </div>
+            </article>
+            <article class="cli-mini-dossie-card">
+              <header class="cli-mini-dossie-card-head">
+                <h4>Radar de Obrigações</h4>
+                <span class="sub">Próximas entregas</span>
+              </header>
+              <ul class="cli-mini-dossie-timeline">
+                ${obrigs.map((o) => `
+                  <li>
+                    <span class="when">${uiSelectEscape(o.when)}</span>
+                    <span class="label" title="${uiSelectEscape(o.tip || o.label)}">${uiSelectEscape(o.label)}</span>
+                  </li>`).join("")}
+              </ul>
+            </article>
+            <article class="cli-mini-dossie-card">
+              <header class="cli-mini-dossie-card-head">
+                <h4>Últimas Interações</h4>
+                <span class="sub">Log da equipe</span>
+              </header>
+              <ul class="cli-mini-dossie-log">
+                ${logs.map((l) => `
+                  <li>
+                    <span class="when">${uiSelectEscape(l.when)}</span>
+                    <span class="text">${uiSelectEscape(l.text)}</span>
+                  </li>`).join("")}
+              </ul>
+            </article>
+          </div>
+        </section>`;
+    }
+
+    function resolveCliDossieClientId(rowsMeta) {
+      if (!rowsMeta?.length) return null;
+      if (rowsMeta.length === 1) return rowsMeta[0].c.id;
+      if (cliListSelectedId && rowsMeta.some((r) => r.c.id === cliListSelectedId)) return cliListSelectedId;
+      return null;
+    }
+
+    function selectCliListForDossie(clientId, { toggle } = {}) {
+      if (!clientId) {
+        cliListSelectedId = null;
+        return;
+      }
+      if (toggle && cliListSelectedId === clientId) {
+        cliListSelectedId = null;
+        return;
+      }
+      cliListSelectedId = clientId;
+      closeCliClienteDrawer({ silent: true, keepSelection: true });
+    }
+
+    function handleCliMiniDossieAction(act, clientId, el) {
+      const c = CLIENTES.find((x) => x.id === clientId);
+      if (!c) return;
+      if (act === "perfil") {
+        openClientePerfil(clientId);
+        return;
+      }
+      if (act === "whatsapp") {
+        const phone = String(c.whatsapp || c.telefone || "").replace(/\D/g, "");
+        if (phone.length >= 10) {
+          window.open(`https://wa.me/55${phone.replace(/^55/, "")}`, "_blank", "noopener");
+          toast(`WhatsApp · ${c.fantasia || c.nome}`);
+        } else {
+          toast("WhatsApp não cadastrado — use o perfil para incluir o número");
+        }
+        return;
+      }
+      if (act === "documento") {
+        openClientePerfil(clientId, "documentos");
+        toast("Abrindo documentos para gerar");
+        return;
+      }
+      if (act === "cobranca") {
+        openClientePerfil(clientId, "financeiro");
+        toast("Nova cobrança · financeiro do cliente");
+        return;
+      }
+      if (act === "cert") {
+        if (typeof gotoSecurityCertForCliente === "function") gotoSecurityCertForCliente(clientId);
+        else openClientePerfil(clientId);
+        return;
+      }
+      if (act === "entrega") {
+        const taskId = Number(el?.dataset?.taskId);
+        if (taskId && typeof openEntregaDetailModal === "function") openEntregaDetailModal(taskId);
+        else openClientePerfil(clientId, "entregas");
+        return;
+      }
+      if (act === "solicitar-doc") {
+        toast(`Solicitação de XML enviada · ${c.fantasia || c.nome}`);
+        return;
+      }
+      if (act === "financeiro") {
+        openClientePerfil(clientId, "financeiro");
+        return;
+      }
+      if (act === "auditoria") {
+        openClientePerfil(clientId, "financeiro");
+        toast("Abrindo financeiro · auditoria");
+        return;
+      }
+      toast(act || "Ação registrada");
+    }
+
     function renderClientesList() {
       const wrap = document.getElementById("clientesWrap");
       if (!wrap) return;
       const rowsMeta = collectCliListRowsMeta();
+      if (rowsMeta.length === 1) {
+        cliListSelectedId = rowsMeta[0].c.id;
+      } else if (cliListSelectedId && !rowsMeta.some((r) => r.c.id === cliListSelectedId)) {
+        cliListSelectedId = null;
+      }
+      const dossieId = resolveCliDossieClientId(rowsMeta);
       const baseForKpi = (() => {
-        const q = cliSearchQuery.trim();
         let list = [...CLIENTES];
-        if (q) {
-          const matched = findClientesByOmniQuery(q);
-          const ids = new Set((matched || []).map((c) => c.id));
-          list = matched ? CLIENTES.filter((c) => ids.has(c.id)) : [];
+        if (cliEmpresaFilter && cliEmpresaFilter !== "all") {
+          list = list.filter((c) => c.id === cliEmpresaFilter);
         }
         if (cliRegimeFilter) list = list.filter((c) => c.regime === cliRegimeFilter);
         return list.map((c) => {
@@ -5343,10 +5788,7 @@
       const kpiActive = cliListKpiFilter || "";
       wrap.innerHTML = `
         <div class="cli-list-toolbar" role="toolbar" aria-label="Ferramentas da carteira">
-          <div class="proc-filter search">
-            <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" id="cliSearch" placeholder="Nome, razão social ou CNPJ" value="${cliSearchQuery.replace(/"/g, "&quot;")}" aria-label="Buscar clientes" />
-          </div>
+          ${renderModuleEmpresaPickerHtml("clientes")}
           <div class="proc-filter field">
             <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
             <select id="cliRegimeFilter" aria-label="Filtrar por regime">
@@ -5407,7 +5849,7 @@
             <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${kpis.empresas ? Math.min(100, Math.round((kpis.certAlerta / kpis.empresas) * 100)) : 0}%"></i></span>
           </button>
         </div>
-        <div class="cli-grid cli-mon-grid" id="cliGrid">
+        <div class="cli-grid cli-mon-grid${dossieId ? " has-dossie" : ""}" id="cliGrid">
           <div class="cli-list-head">
             <span>Empresa</span>
             <span>Saúde do Cliente</span>
@@ -5417,10 +5859,11 @@
           ${rowsMeta.length ? rowsMeta.map(({ c, monitor }) => {
             const tipo = c.tipoUnidade || "Matriz";
             const tipoCls = tipo === "Filial" ? "filial" : "matriz";
-            const selected = cliListSelectedId === c.id;
+            const selected = dossieId === c.id;
             const m = monitor || getCliMonitorMeta(c);
+            const dossieHtml = selected ? renderCliMiniDossieHtml(c) : "";
             return `
-              <div class="cli-list-row cli-mon-row is-${tipoCls}${selected ? " is-selected" : ""}" data-cli-id="${c.id}" role="button" tabindex="0" aria-label="Abrir ${c.fantasia || c.nome}" aria-selected="${selected}">
+              <div class="cli-list-row cli-mon-row is-${tipoCls}${selected ? " is-selected is-dossie-anchor" : ""}" data-cli-id="${c.id}" role="button" tabindex="0" aria-label="${selected ? "Recolher" : "Expandir"} dossiê de ${uiSelectEscape(c.fantasia || c.nome)}" aria-selected="${selected}" aria-expanded="${selected}">
                 <div class="cli-id-cell">
                   <strong title="${uiSelectEscape(c.razaoSocial || c.nome)}">${uiSelectEscape(c.fantasia || c.nome)}</strong>
                   <span class="cli-id-sub">${uiSelectEscape(c.cnpj)}</span>
@@ -5440,14 +5883,17 @@
                   <strong>${uiSelectEscape(m.atividade.short)}</strong>
                   <span>${uiSelectEscape(m.atividade.detail)}</span>
                 </div>
-              </div>`;
-          }).join("") : `<div class="cli-empty-panel">${cliSearchQuery || cliRegimeFilter || kpiActive ? "Nenhuma empresa correspondente aos filtros" : "Nenhum cliente cadastrado"}</div>`}
+              </div>
+              ${dossieHtml}`;
+          }).join("") : `<div class="cli-empty-panel">${cliEmpresaFilter !== "all" || cliRegimeFilter || kpiActive ? "Nenhuma empresa correspondente aos filtros" : "Nenhum cliente cadastrado"}</div>`}
         </div>`;
       enhanceUiSelects(wrap);
-      if (cliDrawerOpen && cliListSelectedId) {
+      if (cliDrawerOpen && cliListSelectedId && !dossieId) {
         const still = CLIENTES.find((x) => x.id === cliListSelectedId);
         if (still) paintCliClienteDrawer(still);
         else closeCliClienteDrawer({ silent: true });
+      } else if (dossieId) {
+        closeCliClienteDrawer({ silent: true, keepSelection: true });
       }
     }
 
@@ -6694,16 +7140,16 @@
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
                   Voltar à listagem
                 </button>`}
-                <h2>${c.fantasia || c.nome}</h2>
-                <div class="cli-perfil-meta">
-                  <span>${c.razaoSocial}</span>
-                  <span>·</span>
-                  <span>${c.cnpj}</span>
-                  <span>·</span>
-                  <span>${c.regime}</span>
-                  <span>·</span>
-                  <span>${c.estado}</span>
-                  <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${c.status}</span>
+                <div class="cli-perfil-identity">
+                  ${isClientePortal()
+                    ? `<h2>${c.fantasia || c.nome}</h2>`
+                    : renderModuleEmpresaPickerHtml("perfil")}
+                  <div class="cli-perfil-chips" aria-label="Dados da empresa">
+                    <span>${uiSelectEscape(c.regime || "—")}</span>
+                    <span class="sep" aria-hidden="true">·</span>
+                    <span>${uiSelectEscape(c.estado || "—")}</span>
+                    <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${uiSelectEscape(c.status || "—")}</span>
+                  </div>
                 </div>
                 <button type="button" class="cli-dados-link" data-cli-tool="dados">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -20114,20 +20560,15 @@
       fakeList.classList.add("show");
       const counts = getCertAlertCounts();
       let rows = getCertificadosMonitor();
-      if (securityCertFilterClienteId) {
-        rows = rows.filter((r) => r.id === securityCertFilterClienteId);
-      }
       if (securityCertFilterMode === "acao") {
         rows = rows.filter((r) => r.status === "vencido" || r.status === "a-vencer");
       } else if (securityCertFilterMode !== "all") {
         rows = rows.filter((r) => r.status === securityCertFilterMode);
       }
-      const q = normalizeSearchText(securityCertSearchQuery);
-      if (q) {
-        rows = rows.filter((r) => {
-          const blob = normalizeSearchText([r.razaoSocial, r.fantasia, r.cnpj, r.titular, r.validade].join(" "));
-          return blob.includes(q);
-        });
+      if (secEmpresaFilter && secEmpresaFilter !== "all") {
+        rows = rows.filter((r) => r.id === secEmpresaFilter);
+      } else if (securityCertFilterClienteId) {
+        rows = rows.filter((r) => r.id === securityCertFilterClienteId);
       }
       const filters = [
         { id: "all", label: "Todos" },
@@ -20136,11 +20577,13 @@
         { id: "a-vencer", label: "A vencer" },
         { id: "ok", label: "Válidos" },
       ];
-      const clienteNome = securityCertFilterClienteId
-        ? (CLIENTES.find((c) => c.id === securityCertFilterClienteId)?.fantasia || "empresa")
+      const empresaFiltroId = (secEmpresaFilter && secEmpresaFilter !== "all")
+        ? secEmpresaFilter
+        : securityCertFilterClienteId;
+      const clienteNome = empresaFiltroId
+        ? (CLIENTES.find((c) => c.id === empresaFiltroId)?.fantasia || "empresa")
         : null;
-      const hasActiveFilters = !!(securityCertFilterClienteId || securityCertFilterMode !== "all" || securityCertSearchQuery.trim());
-      const searchEsc = (securityCertSearchQuery || "").replace(/"/g, "&quot;");
+      const hasActiveFilters = !!(empresaFiltroId || securityCertFilterMode !== "all");
       fakeList.innerHTML = `
         <div class="sec-monitor">
           <div class="sec-monitor-top">
@@ -20169,10 +20612,7 @@
             </div>
           </div>
           <div class="sec-filters" role="toolbar" aria-label="Filtros de certificado">
-            <div class="proc-filter search sec-search">
-              <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="search" id="secCertSearch" placeholder="Buscar razão social, CNPJ ou titular" value="${searchEsc}" autocomplete="off" aria-label="Buscar certificados" />
-            </div>
+            ${renderModuleEmpresaPickerHtml("seguranca")}
             ${filters.map((f) => `
               <button type="button" class="sec-filter${securityCertFilterMode === f.id ? " active" : ""}" data-sec-filter="${f.id}">${f.label}</button>
             `).join("")}
@@ -20210,19 +20650,8 @@
         securityCertFilterClienteId = null;
         securityCertFilterMode = "all";
         securityCertSearchQuery = "";
-        renderSegurancaCertificados();
+        setModuleEmpresaFilter("seguranca", "all", { silentToast: true });
         toast("Filtros removidos");
-      });
-      const searchEl = document.getElementById("secCertSearch");
-      searchEl?.addEventListener("input", () => {
-        securityCertSearchQuery = searchEl.value || "";
-        const pos = searchEl.selectionStart;
-        renderSegurancaCertificados();
-        const again = document.getElementById("secCertSearch");
-        if (again) {
-          again.focus();
-          try { again.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
-        }
       });
       fakeList.querySelectorAll("[data-sec-filter]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -20249,16 +20678,14 @@
           <div class="cli-perfil-head">
             <div class="cli-perfil-head-main">
               <div class="cli-perfil-head-left">
-                <h2>${c.fantasia || c.nome}</h2>
-                <div class="cli-perfil-meta">
-                  <span>${c.razaoSocial}</span>
-                  <span>·</span>
-                  <span>${c.cnpj}</span>
-                  <span>·</span>
-                  <span>${c.regime}</span>
-                  <span>·</span>
-                  <span>${c.estado}</span>
-                  <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${c.status}</span>
+                <div class="cli-perfil-identity">
+                  <h2>${c.fantasia || c.nome}</h2>
+                  <div class="cli-perfil-chips" aria-label="Dados da empresa">
+                    <span>${uiSelectEscape(c.regime || "—")}</span>
+                    <span class="sep" aria-hidden="true">·</span>
+                    <span>${uiSelectEscape(c.estado || "—")}</span>
+                    <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${uiSelectEscape(c.status || "—")}</span>
+                  </div>
                 </div>
               </div>
               <div class="cli-perfil-head-actions">
@@ -20852,9 +21279,9 @@
     });
 
     agendaWrap.addEventListener("input", (e) => {
-      if (e.target.id === "agendaEntregaSearch") {
-        agendaEntregaQuery = e.target.value || "";
-        renderAgendaEntregasBoard();
+      const search = e.target.closest("[data-mod-empresa-search]");
+      if (search) {
+        filterModEmpresaOptions(search.dataset.modEmpresaSearch || "agenda", search.value);
       }
     });
 
@@ -20901,6 +21328,13 @@
         cliListKpiFilter = cliListKpiFilter === next ? "" : next;
         cliListMenuId = null;
         renderClientesList();
+        return;
+      }
+      const dossieAct = e.target.closest("[data-cli-dossie-act]");
+      if (dossieAct) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCliMiniDossieAction(dossieAct.dataset.cliDossieAct || "", dossieAct.dataset.cliId, dossieAct);
         return;
       }
       const rowMenuBtn = e.target.closest("[data-cli-row-menu]");
@@ -20955,8 +21389,11 @@
         return;
       }
       const openBtn = e.target.closest(".cli-list-row[data-cli-id]");
-      if (openBtn && !e.target.closest("[data-cli-actions]")) {
-        openClientePerfil(openBtn.dataset.cliId);
+      if (openBtn && !e.target.closest("[data-cli-actions], .cli-mini-dossie")) {
+        const id = openBtn.dataset.cliId;
+        const onlyOne = collectCliListRowsMeta().length === 1;
+        selectCliListForDossie(id, { toggle: !onlyOne });
+        renderClientesList();
         return;
       }
       if (cliListMenuId && !e.target.closest(".cli-row-menu-wrap")) {
@@ -21423,11 +21860,6 @@
           el.focus();
           try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
         }
-        return;
-      }
-      if (e.target.id === "cliSearch") {
-        cliSearchQuery = e.target.value || "";
-        renderClientesList();
         return;
       }
       if (e.target.id === "cliProcSearch") {
@@ -22345,11 +22777,10 @@
     });
 
     procFilters.addEventListener("input", (e) => {
-      const t = e.target;
-      if (t.id === "procSearch") {
-        procFiltros.search = t.value.trim();
-        renderProcessosGrid(getProcessosFiltrados());
-        renderProcessosQuantidade();
+      const search = e.target.closest("[data-mod-empresa-search]");
+      if (search) {
+        e.stopPropagation();
+        filterModEmpresaOptions(search.dataset.modEmpresaSearch || "processos", search.value);
       }
     });
 
@@ -22362,10 +22793,7 @@
     });
 
     procFilters.addEventListener("keydown", (e) => {
-      if (e.target.id === "procSearch" && e.key === "Enter") {
-        procFiltros.search = e.target.value.trim();
-        renderProcessos();
-      }
+      if (e.target.closest("[data-mod-empresa-search]")) e.stopPropagation();
     });
 
     procFilters.addEventListener("click", (e) => {
@@ -22464,6 +22892,10 @@
     document.getElementById("empresaSelectBtn").addEventListener("click", (e) => {
       e.stopPropagation();
       closeAllChipSelects();
+      document.querySelectorAll(".module-empresa-picker .empresa-wrap.open").forEach((el) => {
+        el.classList.remove("open");
+        el.querySelector("[data-mod-empresa-toggle]")?.setAttribute("aria-expanded", "false");
+      });
       empresaWrap.classList.toggle("open");
       if (empresaWrap.classList.contains("open")) {
         empresaSearch.value = "";
@@ -22480,6 +22912,55 @@
       const opt = e.target.closest(".empresa-option");
       if (!opt || opt.classList.contains("hidden")) return;
       selectEmpresaFromOption(opt);
+    });
+
+    document.addEventListener("click", (e) => {
+      const modBtn = e.target.closest("[data-mod-empresa-toggle]");
+      if (modBtn) {
+        e.stopPropagation();
+        const scope = modBtn.dataset.modEmpresaToggle || "clientes";
+        const modWrap = document.getElementById(`modEmpresaWrap-${scope}`);
+        if (!modWrap) return;
+        closeAllChipSelects();
+        empresaWrap?.classList.remove("open");
+        document.querySelectorAll(".module-empresa-picker .empresa-wrap.open").forEach((el) => {
+          if (el !== modWrap) {
+            el.classList.remove("open");
+            el.querySelector("[data-mod-empresa-toggle]")?.setAttribute("aria-expanded", "false");
+          }
+        });
+        const willOpen = !modWrap.classList.contains("open");
+        modWrap.classList.toggle("open", willOpen);
+        modBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        if (willOpen) {
+          const search = document.getElementById(`modEmpresaSearch-${scope}`);
+          if (search) {
+            search.value = "";
+            filterModEmpresaOptions(scope, "");
+            setTimeout(() => search.focus(), 0);
+          }
+        }
+        return;
+      }
+      const modOpt = e.target.closest("[data-mod-empresa-opt]");
+      if (modOpt && !modOpt.classList.contains("hidden")) {
+        e.stopPropagation();
+        const scope = modOpt.dataset.modEmpresaScope || "clientes";
+        const id = modOpt.dataset.modEmpresaOpt || "all";
+        setModuleEmpresaFilter(scope, id);
+        return;
+      }
+      document.querySelectorAll(".module-empresa-picker .empresa-wrap.open").forEach((wrap) => {
+        if (!wrap.contains(e.target)) {
+          wrap.classList.remove("open");
+          wrap.querySelector("[data-mod-empresa-toggle]")?.setAttribute("aria-expanded", "false");
+        }
+      });
+    });
+
+    document.addEventListener("input", (e) => {
+      const search = e.target.closest("[data-mod-empresa-search]");
+      if (search) filterModEmpresaOptions(search.dataset.modEmpresaSearch || "clientes", search.value);
     });
 
     dashboard.addEventListener("click", (e) => {

@@ -409,6 +409,14 @@
       if (!isClientePortal()) return agendaTasks;
       return agendaTasks.filter((t) => t.clienteId === portalClienteId);
     }
+
+    function agendaTasksForModule() {
+      let tasks = agendaTasksScoped();
+      if (agendaEmpresaFilter && agendaEmpresaFilter !== "all") {
+        tasks = tasks.filter((t) => t.clienteId === agendaEmpresaFilter);
+      }
+      return tasks;
+    }
     let agendaMonth = new Date(2026, 6, 1);
     let agendaSelected = "2026-07-14";
 
@@ -544,7 +552,7 @@
     }
 
     function tasksForDay(iso) {
-      return agendaTasksScoped().filter((t) => t.date === iso && !t.arquivada);
+      return agendaTasksForModule().filter((t) => t.date === iso && !t.arquivada);
     }
 
     const entregaActivityById = {};
@@ -1398,6 +1406,10 @@
     };
     let cliSearchQuery = "";
     let cliRegimeFilter = "";
+    let cliEmpresaFilter = "all";
+    let procEmpresaFilter = "all";
+    let secEmpresaFilter = "all";
+    let agendaEmpresaFilter = "all";
     let cliListKpiFilter = "";
     let cliListSelectedId = null;
     let cliListMenuId = null;
@@ -2277,6 +2289,7 @@
 
     function openCertMonitor({ clienteId = null, mode = "all", toastMsg } = {}) {
       securityCertFilterClienteId = clienteId || null;
+      secEmpresaFilter = clienteId || "all";
       securityCertFilterMode = mode || "all";
       if (!openTabIds.includes("seguranca")) openTabIds.push("seguranca");
       skipToast = true;
@@ -2404,7 +2417,7 @@
       const y = agendaMonth.getFullYear();
       const m = String(agendaMonth.getMonth() + 1).padStart(2, "0");
       const prefix = `${y}-${m}`;
-      return agendaTasksScoped().filter((t) => !t.arquivada && String(t.date || "").startsWith(prefix));
+      return agendaTasksForModule().filter((t) => !t.arquivada && String(t.date || "").startsWith(prefix));
     }
 
     function renderAgendaMain() {
@@ -2508,7 +2521,8 @@
 
     function getAgendaOpsFilteredData() {
       const procs = (sections.find((s) => s.id === "processos")?.items || [])
-        .filter((p) => !p.arquivado && (!isClientePortal() || p.clienteId === portalClienteId));
+        .filter((p) => !p.arquivado && (!isClientePortal() || p.clienteId === portalClienteId))
+        .filter((p) => !agendaEmpresaFilter || agendaEmpresaFilter === "all" || p.clienteId === agendaEmpresaFilter);
       return { procs, entregas: [] };
     }
 
@@ -2576,6 +2590,8 @@
 
     function populateAgendaEntregaFilters() {
       initAgendaEntregaStatusMenu();
+      const pickerSlot = document.getElementById("agendaEmpresaPickerSlot");
+      if (pickerSlot) pickerSlot.innerHTML = renderModuleEmpresaPickerHtml("agenda");
       const viewSel = document.getElementById("agendaEntregaView");
       const funSel = document.getElementById("agendaEntregaFuncionario");
       const respSel = document.getElementById("agendaEntregaResp");
@@ -2597,12 +2613,8 @@
     }
 
     function filterAgendaEntregaTasks(tasks) {
-      const q = normalizeSearchText(agendaEntregaQuery);
       return tasks.filter((t) => {
-        if (q) {
-          const hay = normalizeSearchText([t.nome, t.razaoSocial, t.responsavel, t.cnpj].filter(Boolean).join(" "));
-          if (!hay.includes(q)) return false;
-        }
+        if (agendaEmpresaFilter && agendaEmpresaFilter !== "all" && t.clienteId !== agendaEmpresaFilter) return false;
         if (agendaEntregaFuncionario && t.responsavel !== agendaEntregaFuncionario) return false;
         if (agendaEntregaStatus && t.status !== agendaEntregaStatus) return false;
         if (agendaEntregaResp && t.responsavel !== agendaEntregaResp) return false;
@@ -3026,9 +3038,139 @@
       toast(`${titles[field]}: ${labels[field]} · ${short}`);
     }
 
+    function getModuleEmpresaFilter(scope) {
+      if (scope === "clientes") return cliEmpresaFilter || "all";
+      if (scope === "processos") return procEmpresaFilter || "all";
+      if (scope === "seguranca") return secEmpresaFilter || "all";
+      if (scope === "agenda") return agendaEmpresaFilter || "all";
+      if (scope === "perfil") return cliPerfilId || "all";
+      return "all";
+    }
+
+    function getModuleEmpresaDisplay(scope) {
+      const id = getModuleEmpresaFilter(scope);
+      if (!id || id === "all") {
+        return { id: "all", code: "", name: "Todas as empresas", cnpjLine: "Filtrar por empresa" };
+      }
+      const c = CLIENTES.find((x) => x.id === id);
+      if (!c) {
+        if (scope === "perfil") return { id: "all", code: "", name: "Selecionar empresa", cnpjLine: "Trocar empresa" };
+        return { id: "all", code: "", name: "Todas as empresas", cnpjLine: "Filtrar por empresa" };
+      }
+      return {
+        id: c.id,
+        code: c.code || "",
+        name: c.fantasia || c.nome || c.short || "",
+        cnpjLine: c.cnpj ? `CNPJ ${c.cnpj}` : "",
+      };
+    }
+
+    function escModEmpresa(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderModuleEmpresaPickerHtml(scope) {
+      const sc = scope || "clientes";
+      const hideAll = sc === "perfil";
+      const tip = hideAll ? "Trocar empresa" : "Filtrar por empresa";
+      const selected = getModuleEmpresaFilter(sc);
+      const d = getModuleEmpresaDisplay(sc);
+      const options = CLIENTES.map((c) => {
+        const active = c.id === selected ? " active" : "";
+        const label = escModEmpresa(c.fantasia || c.nome || "");
+        return `
+          <button type="button" class="empresa-option${active}" data-mod-empresa-opt="${c.id}" data-mod-empresa-scope="${sc}" data-code="${escModEmpresa(c.code || "")}" data-short="${label}" data-cnpj="${escModEmpresa(c.cnpj || "")}">
+            <span class="opt-main"><span class="opt-code">${escModEmpresa(c.code || "")}</span>${label}</span>
+            <small>CNPJ ${escModEmpresa(c.cnpj || "")}${c.estado ? ` · ${escModEmpresa(c.estado)}` : ""}${c.status ? ` · ${escModEmpresa(c.status)}` : ""}</small>
+          </button>`;
+      }).join("");
+      return `
+        <div class="module-empresa-picker${hideAll ? " is-perfil" : ""}" data-mod-empresa-scope="${sc}">
+          <div class="empresa-wrap" id="modEmpresaWrap-${sc}">
+            <button type="button" class="empresa-trigger tip-bottom" id="modEmpresaSelectBtn-${sc}" data-mod-empresa-toggle="${sc}" data-tip="${tip}" aria-expanded="false" aria-haspopup="listbox" aria-label="${tip}">
+              <span class="trigger-text">
+                <span class="name-line">
+                  <span class="empresa-code"${d.code ? "" : " hidden"}>${escModEmpresa(d.code)}</span>
+                  <span class="empresa-name">${escModEmpresa(d.name)}</span>
+                </span>
+                <span class="empresa-cnpj"${d.cnpjLine ? "" : " hidden"}>${escModEmpresa(d.cnpjLine)}</span>
+              </span>
+              <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="empresa-menu" id="modEmpresaMenu-${sc}">
+              <div class="empresa-search">
+                <input type="search" id="modEmpresaSearch-${sc}" data-mod-empresa-search="${sc}" placeholder="Buscar empresa..." autocomplete="off" aria-label="Buscar empresa" />
+              </div>
+              <div class="empresa-options" id="modEmpresaOptions-${sc}">
+                ${hideAll ? "" : `
+                <button type="button" class="empresa-option${selected === "all" ? " active" : ""}" data-mod-empresa-opt="all" data-mod-empresa-scope="${sc}" data-code="" data-short="Todas as empresas" data-cnpj="">
+                  <span class="opt-main">Todas as empresas</span>
+                  <small>Mostra todas as empresas deste menu</small>
+                </button>`}
+                ${options}
+              </div>
+              <div class="empresa-empty" id="modEmpresaEmpty-${sc}" hidden>Nenhuma empresa encontrada</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function filterModEmpresaOptions(scope, query) {
+      const sc = scope || "clientes";
+      const q = normalizeSearchText(query || "");
+      let visible = 0;
+      document.querySelectorAll(`#modEmpresaOptions-${sc} .empresa-option`).forEach((opt) => {
+        const blob = normalizeSearchText([
+          opt.dataset.short || "",
+          opt.dataset.code || "",
+          opt.dataset.cnpj || "",
+          opt.textContent || "",
+        ].join(" "));
+        const show = !q || blob.includes(q) || opt.dataset.modEmpresaOpt === "all";
+        opt.classList.toggle("hidden", !show);
+        if (show) visible += 1;
+      });
+      const empty = document.getElementById(`modEmpresaEmpty-${sc}`);
+      if (empty) empty.hidden = visible > 0;
+    }
+
+    function setModuleEmpresaFilter(scope, id, { silentToast } = {}) {
+      const next = id || "all";
+      const c = next !== "all" ? CLIENTES.find((x) => x.id === next) : null;
+      const label = c ? (c.fantasia || c.nome || c.short) : "Todas as empresas";
+      if (scope === "perfil") {
+        if (!c) return;
+        document.getElementById(`modEmpresaWrap-${scope}`)?.classList.remove("open");
+        if (cliPerfilId === next) {
+          if (!silentToast) toast(`Empresa: ${label}`);
+          return;
+        }
+        bumpRecentClient(c.id);
+        cliPerfilId = c.id;
+        if (typeof renderClientes === "function") renderClientes();
+        if (!silentToast) toast(`Empresa: ${label}`);
+        return;
+      }
+      if (scope === "clientes") cliEmpresaFilter = next;
+      else if (scope === "processos") procEmpresaFilter = next;
+      else if (scope === "seguranca") {
+        secEmpresaFilter = next;
+        securityCertFilterClienteId = next !== "all" ? next : null;
+      } else if (scope === "agenda") agendaEmpresaFilter = next;
+      document.getElementById(`modEmpresaWrap-${scope}`)?.classList.remove("open");
+      if (scope === "clientes" && typeof renderClientesList === "function") renderClientesList();
+      else if (scope === "processos" && typeof renderProcessos === "function") renderProcessos();
+      else if (scope === "seguranca" && typeof renderSegurancaCertificados === "function") renderSegurancaCertificados();
+      else if (scope === "agenda" && typeof renderAgenda === "function") renderAgenda();
+      if (!silentToast) toast(next === "all" ? "Filtro: todas as empresas" : `Filtro: ${label}`);
+    }
+
     function selectEmpresaFromOption(opt, { silentToast, keepFilter } = {}) {
       if (!keepFilter) chipListFilter = null;
-      document.querySelectorAll(".empresa-option").forEach((o) => o.classList.remove("active"));
+      document.querySelectorAll("#empresaOptions .empresa-option").forEach((o) => o.classList.remove("active"));
       opt.classList.add("active");
       selectedEmpresaId = opt.dataset.id || "farmelhor";
       const code = opt.dataset.code || "";
@@ -3055,7 +3197,7 @@
       const searchEl = document.getElementById("empresaSearch");
       if (searchEl) searchEl.value = "";
       filterEmpresas("");
-      empresaWrap.classList.remove("open");
+      document.getElementById("empresaWrap")?.classList.remove("open");
       updateInfoChips();
       if (current === "visao") renderDashboard();
       if (!silentToast) {

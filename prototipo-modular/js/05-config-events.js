@@ -776,20 +776,15 @@
       fakeList.classList.add("show");
       const counts = getCertAlertCounts();
       let rows = getCertificadosMonitor();
-      if (securityCertFilterClienteId) {
-        rows = rows.filter((r) => r.id === securityCertFilterClienteId);
-      }
       if (securityCertFilterMode === "acao") {
         rows = rows.filter((r) => r.status === "vencido" || r.status === "a-vencer");
       } else if (securityCertFilterMode !== "all") {
         rows = rows.filter((r) => r.status === securityCertFilterMode);
       }
-      const q = normalizeSearchText(securityCertSearchQuery);
-      if (q) {
-        rows = rows.filter((r) => {
-          const blob = normalizeSearchText([r.razaoSocial, r.fantasia, r.cnpj, r.titular, r.validade].join(" "));
-          return blob.includes(q);
-        });
+      if (secEmpresaFilter && secEmpresaFilter !== "all") {
+        rows = rows.filter((r) => r.id === secEmpresaFilter);
+      } else if (securityCertFilterClienteId) {
+        rows = rows.filter((r) => r.id === securityCertFilterClienteId);
       }
       const filters = [
         { id: "all", label: "Todos" },
@@ -798,11 +793,13 @@
         { id: "a-vencer", label: "A vencer" },
         { id: "ok", label: "Válidos" },
       ];
-      const clienteNome = securityCertFilterClienteId
-        ? (CLIENTES.find((c) => c.id === securityCertFilterClienteId)?.fantasia || "empresa")
+      const empresaFiltroId = (secEmpresaFilter && secEmpresaFilter !== "all")
+        ? secEmpresaFilter
+        : securityCertFilterClienteId;
+      const clienteNome = empresaFiltroId
+        ? (CLIENTES.find((c) => c.id === empresaFiltroId)?.fantasia || "empresa")
         : null;
-      const hasActiveFilters = !!(securityCertFilterClienteId || securityCertFilterMode !== "all" || securityCertSearchQuery.trim());
-      const searchEsc = (securityCertSearchQuery || "").replace(/"/g, "&quot;");
+      const hasActiveFilters = !!(empresaFiltroId || securityCertFilterMode !== "all");
       fakeList.innerHTML = `
         <div class="sec-monitor">
           <div class="sec-monitor-top">
@@ -831,10 +828,7 @@
             </div>
           </div>
           <div class="sec-filters" role="toolbar" aria-label="Filtros de certificado">
-            <div class="proc-filter search sec-search">
-              <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="search" id="secCertSearch" placeholder="Buscar razão social, CNPJ ou titular" value="${searchEsc}" autocomplete="off" aria-label="Buscar certificados" />
-            </div>
+            ${renderModuleEmpresaPickerHtml("seguranca")}
             ${filters.map((f) => `
               <button type="button" class="sec-filter${securityCertFilterMode === f.id ? " active" : ""}" data-sec-filter="${f.id}">${f.label}</button>
             `).join("")}
@@ -872,19 +866,8 @@
         securityCertFilterClienteId = null;
         securityCertFilterMode = "all";
         securityCertSearchQuery = "";
-        renderSegurancaCertificados();
+        setModuleEmpresaFilter("seguranca", "all", { silentToast: true });
         toast("Filtros removidos");
-      });
-      const searchEl = document.getElementById("secCertSearch");
-      searchEl?.addEventListener("input", () => {
-        securityCertSearchQuery = searchEl.value || "";
-        const pos = searchEl.selectionStart;
-        renderSegurancaCertificados();
-        const again = document.getElementById("secCertSearch");
-        if (again) {
-          again.focus();
-          try { again.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
-        }
       });
       fakeList.querySelectorAll("[data-sec-filter]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -911,16 +894,14 @@
           <div class="cli-perfil-head">
             <div class="cli-perfil-head-main">
               <div class="cli-perfil-head-left">
-                <h2>${c.fantasia || c.nome}</h2>
-                <div class="cli-perfil-meta">
-                  <span>${c.razaoSocial}</span>
-                  <span>·</span>
-                  <span>${c.cnpj}</span>
-                  <span>·</span>
-                  <span>${c.regime}</span>
-                  <span>·</span>
-                  <span>${c.estado}</span>
-                  <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${c.status}</span>
+                <div class="cli-perfil-identity">
+                  <h2>${c.fantasia || c.nome}</h2>
+                  <div class="cli-perfil-chips" aria-label="Dados da empresa">
+                    <span>${uiSelectEscape(c.regime || "—")}</span>
+                    <span class="sep" aria-hidden="true">·</span>
+                    <span>${uiSelectEscape(c.estado || "—")}</span>
+                    <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${uiSelectEscape(c.status || "—")}</span>
+                  </div>
                 </div>
               </div>
               <div class="cli-perfil-head-actions">
@@ -1514,9 +1495,9 @@
     });
 
     agendaWrap.addEventListener("input", (e) => {
-      if (e.target.id === "agendaEntregaSearch") {
-        agendaEntregaQuery = e.target.value || "";
-        renderAgendaEntregasBoard();
+      const search = e.target.closest("[data-mod-empresa-search]");
+      if (search) {
+        filterModEmpresaOptions(search.dataset.modEmpresaSearch || "agenda", search.value);
       }
     });
 
@@ -1563,6 +1544,13 @@
         cliListKpiFilter = cliListKpiFilter === next ? "" : next;
         cliListMenuId = null;
         renderClientesList();
+        return;
+      }
+      const dossieAct = e.target.closest("[data-cli-dossie-act]");
+      if (dossieAct) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleCliMiniDossieAction(dossieAct.dataset.cliDossieAct || "", dossieAct.dataset.cliId, dossieAct);
         return;
       }
       const rowMenuBtn = e.target.closest("[data-cli-row-menu]");
@@ -1617,8 +1605,11 @@
         return;
       }
       const openBtn = e.target.closest(".cli-list-row[data-cli-id]");
-      if (openBtn && !e.target.closest("[data-cli-actions]")) {
-        openClientePerfil(openBtn.dataset.cliId);
+      if (openBtn && !e.target.closest("[data-cli-actions], .cli-mini-dossie")) {
+        const id = openBtn.dataset.cliId;
+        const onlyOne = collectCliListRowsMeta().length === 1;
+        selectCliListForDossie(id, { toggle: !onlyOne });
+        renderClientesList();
         return;
       }
       if (cliListMenuId && !e.target.closest(".cli-row-menu-wrap")) {
@@ -2085,11 +2076,6 @@
           el.focus();
           try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
         }
-        return;
-      }
-      if (e.target.id === "cliSearch") {
-        cliSearchQuery = e.target.value || "";
-        renderClientesList();
         return;
       }
       if (e.target.id === "cliProcSearch") {
@@ -3007,11 +2993,10 @@
     });
 
     procFilters.addEventListener("input", (e) => {
-      const t = e.target;
-      if (t.id === "procSearch") {
-        procFiltros.search = t.value.trim();
-        renderProcessosGrid(getProcessosFiltrados());
-        renderProcessosQuantidade();
+      const search = e.target.closest("[data-mod-empresa-search]");
+      if (search) {
+        e.stopPropagation();
+        filterModEmpresaOptions(search.dataset.modEmpresaSearch || "processos", search.value);
       }
     });
 
@@ -3024,10 +3009,7 @@
     });
 
     procFilters.addEventListener("keydown", (e) => {
-      if (e.target.id === "procSearch" && e.key === "Enter") {
-        procFiltros.search = e.target.value.trim();
-        renderProcessos();
-      }
+      if (e.target.closest("[data-mod-empresa-search]")) e.stopPropagation();
     });
 
     procFilters.addEventListener("click", (e) => {
@@ -3126,6 +3108,10 @@
     document.getElementById("empresaSelectBtn").addEventListener("click", (e) => {
       e.stopPropagation();
       closeAllChipSelects();
+      document.querySelectorAll(".module-empresa-picker .empresa-wrap.open").forEach((el) => {
+        el.classList.remove("open");
+        el.querySelector("[data-mod-empresa-toggle]")?.setAttribute("aria-expanded", "false");
+      });
       empresaWrap.classList.toggle("open");
       if (empresaWrap.classList.contains("open")) {
         empresaSearch.value = "";
@@ -3142,6 +3128,55 @@
       const opt = e.target.closest(".empresa-option");
       if (!opt || opt.classList.contains("hidden")) return;
       selectEmpresaFromOption(opt);
+    });
+
+    document.addEventListener("click", (e) => {
+      const modBtn = e.target.closest("[data-mod-empresa-toggle]");
+      if (modBtn) {
+        e.stopPropagation();
+        const scope = modBtn.dataset.modEmpresaToggle || "clientes";
+        const modWrap = document.getElementById(`modEmpresaWrap-${scope}`);
+        if (!modWrap) return;
+        closeAllChipSelects();
+        empresaWrap?.classList.remove("open");
+        document.querySelectorAll(".module-empresa-picker .empresa-wrap.open").forEach((el) => {
+          if (el !== modWrap) {
+            el.classList.remove("open");
+            el.querySelector("[data-mod-empresa-toggle]")?.setAttribute("aria-expanded", "false");
+          }
+        });
+        const willOpen = !modWrap.classList.contains("open");
+        modWrap.classList.toggle("open", willOpen);
+        modBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        if (willOpen) {
+          const search = document.getElementById(`modEmpresaSearch-${scope}`);
+          if (search) {
+            search.value = "";
+            filterModEmpresaOptions(scope, "");
+            setTimeout(() => search.focus(), 0);
+          }
+        }
+        return;
+      }
+      const modOpt = e.target.closest("[data-mod-empresa-opt]");
+      if (modOpt && !modOpt.classList.contains("hidden")) {
+        e.stopPropagation();
+        const scope = modOpt.dataset.modEmpresaScope || "clientes";
+        const id = modOpt.dataset.modEmpresaOpt || "all";
+        setModuleEmpresaFilter(scope, id);
+        return;
+      }
+      document.querySelectorAll(".module-empresa-picker .empresa-wrap.open").forEach((wrap) => {
+        if (!wrap.contains(e.target)) {
+          wrap.classList.remove("open");
+          wrap.querySelector("[data-mod-empresa-toggle]")?.setAttribute("aria-expanded", "false");
+        }
+      });
+    });
+
+    document.addEventListener("input", (e) => {
+      const search = e.target.closest("[data-mod-empresa-search]");
+      if (search) filterModEmpresaOptions(search.dataset.modEmpresaSearch || "clientes", search.value);
     });
 
     dashboard.addEventListener("click", (e) => {

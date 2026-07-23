@@ -1651,13 +1651,15 @@
       margin-left: auto;
     }
 
-    .agenda-entregas-filters .proc-filter {
-      flex: 0 1 auto;
+    .agenda-entregas-filters .agenda-empresa-picker-slot,
+    .agenda-entregas-filters .module-empresa-picker {
+      flex: 0 1 280px;
+      max-width: min(320px, 42vw);
+      min-width: 180px;
     }
 
-    .agenda-entregas-filters .proc-filter.search {
-      flex: 0 1 200px;
-      max-width: 260px;
+    .agenda-entregas-filters .proc-filter {
+      flex: 0 1 auto;
     }
 
     .agenda-entregas-filters .proc-filter.field {
