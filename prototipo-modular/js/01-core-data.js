@@ -850,10 +850,14 @@
       dreOpen: { rb: true, ded: true, cust: true },
       drawer: null,
       conc: {
+        q: "",
         tipo: "",
         valor: "",
         idTitulo: "",
         status: "",
+        de: "",
+        ate: "",
+        selected: [],
         catRowId: null,
         categories: {},
         movs: null,
@@ -865,6 +869,7 @@
         bancos: null,
         bancoPickId: null,
         bancoPickPadrao: false,
+        opsExpanded: false,
         bancoMeta: {
           codigo: "756",
           agencia: "0903",

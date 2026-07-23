@@ -2122,6 +2122,9 @@
       const viewTools = document.getElementById("dashViewTools");
       const expandBtn = document.getElementById("expandBtn");
       if (!home) return;
+      if (typeof setFinConcOpsExpanded === "function" && finDash?.conc?.opsExpanded) {
+        setFinConcOpsExpanded(false);
+      }
       if (viewTools && viewTools.parentElement !== home) {
         const before = home.querySelector("#expandBtn");
         if (before) home.insertBefore(viewTools, before);
@@ -2153,8 +2156,45 @@
           document.getElementById("filterBtn")?.setAttribute("aria-expanded", "false");
         }
       }
-      if (expandBtn) host.appendChild(expandBtn);
+      if (expandBtn) {
+        const concHost = finDash.tab === "conciliacao" ? document.getElementById("finConcExpandHost") : null;
+        if (concHost) concHost.appendChild(expandBtn);
+        else host.appendChild(expandBtn);
+      }
       home.classList.add("is-fin-parked");
+      if (typeof syncFinConcOpsExpandChrome === "function") syncFinConcOpsExpandChrome();
+    }
+
+    function setFinConcOpsExpanded(on) {
+      if (!finDash.conc) return;
+      const active = !!on && finDash.tab === "conciliacao";
+      finDash.conc.opsExpanded = active;
+      const ops = document.getElementById("finConcOps");
+      ops?.classList.toggle("is-expanded", active);
+      const contentPanelEl = document.getElementById("contentPanel");
+      contentPanelEl?.classList.remove("is-expanded");
+      document.getElementById("expandBackdrop")?.classList.toggle("show", active);
+      document.body.classList.toggle("panel-expanded", active);
+      document.body.classList.toggle("fin-conc-ops-expanded", active);
+      document.body.style.overflow = active ? "hidden" : "";
+      const btn = document.getElementById("expandBtn");
+      if (btn) {
+        const expandIcon = btn.querySelector(".icon-expand");
+        const collapseIcon = btn.querySelector(".icon-collapse");
+        if (expandIcon) expandIcon.hidden = active;
+        if (collapseIcon) collapseIcon.hidden = !active;
+        btn.setAttribute("data-tip", active ? "Sair da tela toda" : "Expandir movimentações");
+        btn.setAttribute("aria-label", active ? "Sair da tela toda" : "Expandir movimentações");
+      }
+    }
+
+    function syncFinConcOpsExpandChrome() {
+      if (!finDash.conc) return;
+      if (finDash.tab !== "conciliacao") {
+        if (finDash.conc.opsExpanded) setFinConcOpsExpanded(false);
+        return;
+      }
+      setFinConcOpsExpanded(!!finDash.conc.opsExpanded);
     }
 
     function ensureFinOpenTabs() {
@@ -2350,16 +2390,23 @@
         if (m.ofxPendingValidate && !m.ofxValidated) {
           return { ...m, catId, status: "aberto" };
         }
-        const status = catId ? "conciliado" : (m.status || "aberto");
+        /* status explícito "aberto" (ex.: após desconciliar) prevalece sem categoria */
+        if (m.status === "aberto" && !catId) {
+          return { ...m, catId: "", status: "aberto" };
+        }
+        const status = (catId || m.status === "conciliado") ? "conciliado" : (m.status || "aberto");
         return { ...m, catId, status };
       });
     }
 
     function filterFinConcMovements(rows) {
+      const q = normalizeSearchText(finDash.conc.q || "");
       const tipo = finDash.conc.tipo || "";
       const status = finDash.conc.status || "";
       const valorQ = normalizeSearchText(finDash.conc.valor || "");
       const idQ = normalizeSearchText(finDash.conc.idTitulo || "");
+      const deIso = finOfxBrToIso(finDash.conc.de || "");
+      const ateIso = finOfxBrToIso(finDash.conc.ate || "");
       return rows.filter((r) => {
         if (tipo && r.tipo !== tipo) return false;
         if (status && r.status !== status) return false;
@@ -2368,6 +2415,13 @@
           const raw = normalizeSearchText(String(r.valor));
           const fmt = normalizeSearchText(money(r.valor));
           if (!raw.includes(valorQ) && !fmt.includes(valorQ)) return false;
+        }
+        if (q && !normalizeSearchText(`${r.desc || ""} ${r.data || ""} ${r.valor} ${r.tituloId || ""}`).includes(q)) return false;
+        if (deIso || ateIso) {
+          const rowIso = finOfxBrToIso(r.data || "");
+          if (!rowIso) return false;
+          if (deIso && rowIso < deIso) return false;
+          if (ateIso && rowIso > ateIso) return false;
         }
         return true;
       });
@@ -2468,6 +2522,336 @@
 
     function getFinConcMovById(movId) {
       return getFinConcMovements().find((m) => m.id === movId) || null;
+    }
+
+    function pushFinConcHistory(movId, text, origem = "sistema") {
+      const list = ensureFinConcMovs();
+      const idx = list.findIndex((m) => m.id === movId);
+      if (idx < 0) return;
+      if (!Array.isArray(list[idx].history)) list[idx].history = [];
+      const now = new Date();
+      const when = `${String(now.getDate()).padStart(2, "0")}/${String(now.getMonth() + 1).padStart(2, "0")}/${now.getFullYear()} · ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+      list[idx].history.unshift({ when, who: origem === "usuario" ? "Você" : "Sistema", text, origem });
+    }
+
+    function ensureFinConcMovHistorySeed(m) {
+      if (Array.isArray(m.history) && m.history.length) return m.history;
+      const hist = [];
+      hist.push({ when: `${m.data || "09/07/2026"} · 09:00`, who: "Sistema", text: "Movimentação importada / lançada no extrato", origem: "sistema" });
+      if (m.status === "conciliado" || m.catId) {
+        hist.unshift({
+          when: `${m.data || "09/07/2026"} · 14:30`,
+          who: "Você",
+          text: m.catId ? `Conciliado · ${finDreCatLabel(m.catId)}` : "Conciliado",
+          origem: "usuario",
+        });
+      }
+      m.history = hist;
+      return m.history;
+    }
+
+    function renderFinConcRowActions(r) {
+      const menuOpen = finDash.conc.rowMenuId === r.id;
+      const moreSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>`;
+      if (r.status === "conciliado") {
+        return `
+          <div class="fin-conc-row-acts">
+            <button type="button" class="btn-outline fin-conc-gerar-btn" data-fin-conc-gerar="${r.id}">Recategorizar</button>
+            <div class="fin-conc-row-menu-wrap${menuOpen ? " open" : ""}">
+              <button type="button" class="fin-conc-row-menu-btn tip-bottom" data-fin-conc-row-menu="${r.id}" data-tip="Mais ações" aria-label="Mais ações" aria-expanded="${menuOpen}" aria-haspopup="true">${moreSvg}</button>
+              <div class="fin-conc-row-menu" role="menu" ${menuOpen ? "" : "hidden"}>
+                <button type="button" role="menuitem" data-fin-conc-hist="${r.id}">Histórico</button>
+                <button type="button" role="menuitem" class="is-danger" data-fin-conc-desconciliar="${r.id}">Desconciliar</button>
+              </div>
+            </div>
+          </div>`;
+      }
+      return `
+        <div class="fin-conc-row-acts">
+          <button type="button" class="btn-primary fin-conc-gerar-btn" data-fin-conc-vincular="${r.id}">Conciliar</button>
+          <div class="fin-conc-row-menu-wrap${menuOpen ? " open" : ""}">
+            <button type="button" class="fin-conc-row-menu-btn tip-bottom" data-fin-conc-row-menu="${r.id}" data-tip="Mais ações" aria-label="Mais ações" aria-expanded="${menuOpen}" aria-haspopup="true">${moreSvg}</button>
+            <div class="fin-conc-row-menu" role="menu" ${menuOpen ? "" : "hidden"}>
+              <button type="button" role="menuitem" data-fin-conc-gerar="${r.id}">Gerar novo</button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function openFinConcHistoricoModal(movId) {
+      const mov = getFinConcMovById(movId);
+      if (!mov) { toast("Movimentação não encontrada"); return; }
+      const raw = ensureFinConcMovs().find((m) => m.id === movId);
+      const hist = ensureFinConcMovHistorySeed(raw || mov);
+      openModal({
+        title: "Histórico da movimentação",
+        sub: `${uiSelectEscape(mov.desc)} · ${money(mov.valor)}`,
+        body: `
+          <div class="fin-conc-hist-modal">
+            <div class="fin-conc-hist-summary">
+              <span class="fin-status-pill ${mov.status}">${mov.status === "conciliado" ? "Conciliado" : "Em aberto"}</span>
+              <span class="mono">${uiSelectEscape(mov.data)}</span>
+              <span class="mono">${uiSelectEscape(mov.tituloId || "—")}</span>
+            </div>
+            <ol class="fin-conc-hist-list">
+              ${hist.map((h) => `
+                <li>
+                  <div class="fin-conc-hist-dot" aria-hidden="true"></div>
+                  <div class="fin-conc-hist-body">
+                    <strong>${uiSelectEscape(h.text)}</strong>
+                    <span>${uiSelectEscape(h.when)} · ${uiSelectEscape(h.who || "Sistema")}</span>
+                  </div>
+                </li>`).join("")}
+            </ol>
+          </div>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+      });
+      prepareFinConcModalChrome();
+    }
+
+    function openFinConcDesconciliarModal(movId) {
+      const mov = getFinConcMovById(movId);
+      if (!mov) { toast("Movimentação não encontrada"); return; }
+      if (finDash.conc.mesFinalizado) {
+        toast("Mês finalizado · desconciliar bloqueado");
+        return;
+      }
+      openModal({
+        title: "Desconciliar movimentação",
+        sub: "",
+        body: `
+          <div class="fin-conc-finalizar-modal">
+            <p class="fin-conc-finalizar-msg">
+              Remover a conciliação de <strong>${uiSelectEscape(mov.desc)}</strong> (${money(mov.valor)})?
+              O status voltará para <strong>Em aberto</strong> e o evento será registrado no histórico.
+            </p>
+          </div>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-outline fin-ofx-danger" id="finConcDesconciliarConfirm">Desconciliar</button>`,
+      });
+      prepareFinConcModalChrome();
+      document.getElementById("finConcDesconciliarConfirm")?.addEventListener("click", () => {
+        const list = ensureFinConcMovs();
+        const idx = list.findIndex((m) => m.id === movId);
+        if (idx < 0) return;
+        list[idx].status = "aberto";
+        list[idx].catId = "";
+        list[idx].vinculoTituloId = "";
+        list[idx].ofxPendingValidate = false;
+        list[idx].ofxValidated = false;
+        delete finDash.conc.categories[movId];
+        pushFinConcHistory(movId, "Desconciliado · status Em aberto", "usuario");
+        closeModal();
+        renderFinModuleDash();
+        toast("Movimentação desconciliada");
+      });
+    }
+
+    function openFinConcVincularTituloModal(movId) {
+      const mov = getFinConcMovById(movId);
+      if (!mov) { toast("Movimentação não encontrada"); return; }
+      if (finDash.conc.mesFinalizado) {
+        toast("Mês finalizado · conciliar bloqueado");
+        return;
+      }
+      const defaultLado = mov.tipo === "credito" ? "receber" : "pagar";
+      finDash.conc.vincular = { movId, lado: defaultLado, tituloId: "" };
+
+      const paint = () => {
+        const st = finDash.conc.vincular;
+        const lado = st.lado || defaultLado;
+        const titulos = (typeof FIN_TITULOS_SEED !== "undefined" ? FIN_TITULOS_SEED : [])
+          .filter((t) => t.lado === lado && t.status !== "pago");
+        const listHtml = titulos.length ? titulos.map((t) => `
+          <button type="button" class="fin-conc-vinc-item${st.tituloId === t.id ? " is-selected" : ""}" data-fin-vinc-titulo="${t.id}">
+            <div class="fin-conc-vinc-main">
+              <strong>${uiSelectEscape(t.desc)}</strong>
+              <span>${uiSelectEscape(t.sacado)} · ${uiSelectEscape(t.nossoNumero)}</span>
+            </div>
+            <div class="fin-conc-vinc-meta">
+              <span class="mono">${uiSelectEscape(t.vencimento)}</span>
+              <span class="num">${money(t.valor)}</span>
+            </div>
+          </button>`).join("") : `<div class="fin-table-empty">Nenhum título ${lado === "pagar" ? "a pagar" : "a receber"} pendente.</div>`;
+
+        openModal({
+          title: "Conciliar com título",
+          sub: `${uiSelectEscape(mov.desc)} · ${money(mov.valor)} · ${uiSelectEscape(mov.data)}`,
+          wide: true,
+          body: `
+            <div class="fin-conc-vinc-modal">
+              <div class="fin-conc-vinc-mov">
+                <span class="fin-ofx-tipo ${mov.tipo}">${mov.tipo === "credito" ? "CREDITO" : "DEBITO"}</span>
+                <strong>${uiSelectEscape(mov.desc)}</strong>
+                <span class="num fin-val ${mov.tipo === "credito" ? "in" : "out"}">${money(mov.valor)}</span>
+              </div>
+              <div class="fin-conc-vinc-tabs" role="tablist" aria-label="Tipo de título">
+                <button type="button" class="fin-conc-vinc-tab${lado === "pagar" ? " active" : ""}" data-fin-vinc-lado="pagar" role="tab" aria-selected="${lado === "pagar"}">Contas a pagar</button>
+                <button type="button" class="fin-conc-vinc-tab${lado === "receber" ? " active" : ""}" data-fin-vinc-lado="receber" role="tab" aria-selected="${lado === "receber"}">Contas a receber</button>
+              </div>
+              <div class="fin-conc-vinc-list" role="listbox" aria-label="Títulos">${listHtml}</div>
+            </div>`,
+          foot: `
+            <button type="button" class="btn-ghost" data-close>Cancelar</button>
+            <button type="button" class="btn-primary" id="finConcVincularConfirm" ${st.tituloId ? "" : "disabled"}>Conciliar</button>`,
+        });
+        prepareFinConcModalChrome();
+
+        modalBody.querySelectorAll("[data-fin-vinc-lado]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            finDash.conc.vincular.lado = btn.dataset.finVincLado;
+            finDash.conc.vincular.tituloId = "";
+            paint();
+          });
+        });
+        modalBody.querySelectorAll("[data-fin-vinc-titulo]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            finDash.conc.vincular.tituloId = btn.dataset.finVincTitulo;
+            paint();
+          });
+        });
+        document.getElementById("finConcVincularConfirm")?.addEventListener("click", () => {
+          const tid = finDash.conc.vincular?.tituloId;
+          const titulo = (FIN_TITULOS_SEED || []).find((t) => t.id === tid);
+          if (!titulo) { toast("Selecione um título"); return; }
+          const list = ensureFinConcMovs();
+          const idx = list.findIndex((m) => m.id === movId);
+          if (idx < 0) return;
+          list[idx].status = "conciliado";
+          list[idx].vinculoTituloId = titulo.id;
+          list[idx].tituloId = titulo.nossoNumero || list[idx].tituloId;
+          pushFinConcHistory(movId, `Conciliado manualmente com título ${titulo.nossoNumero} · ${titulo.desc}`, "usuario");
+          finDash.conc.vincular = null;
+          closeModal();
+          renderFinModuleDash();
+          toast(`Conciliado · ${titulo.nossoNumero}`);
+        });
+      };
+      paint();
+    }
+
+    function buildFinConcMatchPairs() {
+      const abertos = getFinConcMovements().filter((m) => m.status === "aberto");
+      const titulos = FIN_TITULOS_SEED || [];
+      const levels = ["alto", "medio", "baixo"];
+      const pairs = [];
+      abertos.forEach((m, i) => {
+        const lado = m.tipo === "credito" ? "receber" : "pagar";
+        const cands = titulos.filter((t) => t.lado === lado);
+        const t = cands[i % Math.max(cands.length, 1)] || titulos[i % titulos.length];
+        if (!t) return;
+        const exact = Math.abs((t.valor || 0) - (m.valor || 0)) < 0.02;
+        const nivel = exact ? "alto" : levels[i % 3];
+        pairs.push({
+          id: `mp-${m.id}-${t.id}`,
+          movId: m.id,
+          tituloId: t.id,
+          movDesc: m.desc,
+          movData: m.data,
+          movValor: m.valor,
+          titDesc: t.desc,
+          titSacado: t.sacado,
+          titValor: t.valor,
+          titNum: t.nossoNumero,
+          nivel,
+          selected: false,
+        });
+      });
+      return pairs;
+    }
+
+    function openFinConcMatchingModal() {
+      const auto = finDash.conc.regras?.automacao || "inativo";
+      let pairs = buildFinConcMatchPairs();
+      if (auto === "semi") {
+        pairs = pairs.map((p) => ({ ...p, selected: p.nivel === "alto" }));
+      } else if (auto === "ativo") {
+        pairs = pairs.map((p) => ({ ...p, selected: p.nivel !== "baixo" }));
+      } else {
+        pairs = pairs.map((p) => ({ ...p, selected: false }));
+      }
+      finDash.conc.matchPairs = pairs;
+      const nivelLab = { alto: "Alto", medio: "Médio", baixo: "Baixo" };
+
+      const paint = () => {
+        const list = finDash.conc.matchPairs || [];
+        const selCount = list.filter((p) => p.selected).length;
+        openModal({
+          title: "Correspondências sugeridas",
+          sub: `Motor de matching (protótipo) · modo ${auto === "ativo" ? "automático" : auto === "semi" ? "semiautomático" : "manual"}`,
+          wide: true,
+          body: `
+            <div class="fin-conc-match-modal">
+              <div class="fin-conc-match-legend" aria-hidden="true">
+                <span class="fin-conc-match-pill alto">Alto</span>
+                <span class="fin-conc-match-pill medio">Médio</span>
+                <span class="fin-conc-match-pill baixo">Baixo</span>
+              </div>
+              <div class="fin-conc-match-list">
+                ${list.length ? list.map((p) => `
+                  <label class="fin-conc-match-row">
+                    <input type="checkbox" data-fin-match-sel="${p.id}" ${p.selected ? "checked" : ""} />
+                    <div class="fin-conc-match-cols">
+                      <div>
+                        <strong>${uiSelectEscape(p.movDesc)}</strong>
+                        <span>${uiSelectEscape(p.movData)} · ${money(p.movValor)}</span>
+                      </div>
+                      <div class="fin-conc-match-arrow" aria-hidden="true">↔</div>
+                      <div>
+                        <strong>${uiSelectEscape(p.titDesc)}</strong>
+                        <span>${uiSelectEscape(p.titSacado)} · ${uiSelectEscape(p.titNum)} · ${money(p.titValor)}</span>
+                      </div>
+                      <span class="fin-conc-match-pill ${p.nivel}">${nivelLab[p.nivel]}</span>
+                    </div>
+                  </label>`).join("") : `<div class="fin-table-empty">Nenhuma correspondência · não há movimentos em aberto.</div>`}
+              </div>
+            </div>`,
+          foot: `
+            <button type="button" class="btn-ghost" data-close>Cancelar</button>
+            <button type="button" class="btn-outline" id="finConcMatchAll" ${list.length ? "" : "disabled"}>Confirmar todas</button>
+            <button type="button" class="btn-primary" id="finConcMatchSel" ${selCount ? "" : "disabled"}>Confirmar selecionadas (${selCount})</button>`,
+        });
+        prepareFinConcModalChrome();
+
+        modalBody.querySelectorAll("[data-fin-match-sel]").forEach((chk) => {
+          chk.addEventListener("change", () => {
+            const id = chk.dataset.finMatchSel;
+            const p = (finDash.conc.matchPairs || []).find((x) => x.id === id);
+            if (p) p.selected = !!chk.checked;
+            const n = (finDash.conc.matchPairs || []).filter((x) => x.selected).length;
+            const btn = document.getElementById("finConcMatchSel");
+            if (btn) {
+              btn.disabled = !n;
+              btn.textContent = `Confirmar selecionadas (${n})`;
+            }
+          });
+        });
+
+        const applyPairs = (onlySelected) => {
+          const chosen = (finDash.conc.matchPairs || []).filter((p) => (onlySelected ? p.selected : true));
+          if (!chosen.length) { toast("Nenhuma correspondência para confirmar"); return; }
+          const movs = ensureFinConcMovs();
+          let n = 0;
+          chosen.forEach((p) => {
+            const idx = movs.findIndex((m) => m.id === p.movId);
+            if (idx < 0) return;
+            movs[idx].status = "conciliado";
+            movs[idx].vinculoTituloId = p.tituloId;
+            movs[idx].tituloId = p.titNum || movs[idx].tituloId;
+            pushFinConcHistory(p.movId, `Conciliação automática (${nivelLab[p.nivel]}) · ${p.titNum}`, "sistema");
+            n += 1;
+          });
+          finDash.conc.matchPairs = null;
+          closeModal();
+          renderFinModuleDash();
+          toast(`${n} correspondência(s) confirmada(s)`);
+        };
+
+        document.getElementById("finConcMatchSel")?.addEventListener("click", () => applyPairs(true));
+        document.getElementById("finConcMatchAll")?.addEventListener("click", () => applyPairs(false));
+      };
+      paint();
     }
 
     function renderFinConcPlanoPickList(_tipoMov, q, selectedId) {
@@ -2715,6 +3099,13 @@
         finDash.conc.categories[mov.id] = draft.catId;
         finDash.conc.gerar = null;
         if (fromOfx) markFinOfxSessionConciliado(mov.id);
+        pushFinConcHistory(
+          mov.id,
+          fromOfx
+            ? `Classificado no OFX · ${finDreCatLabel(draft.catId)} (pendente Importar tudo)`
+            : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`,
+          "usuario"
+        );
         toast(fromOfx
           ? `Classificado no OFX · confirme em Importar tudo · ${finDreCatLabel(draft.catId)}`
           : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`);
@@ -2779,7 +3170,7 @@
             </div>
             <label class="fin-transf-field">
               <span class="fin-transf-lab">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M12 2 2 8h20L12 2z"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 22h18"/><path d="M6 18V11"/><path d="M10 18V11"/><path d="M14 18V11"/><path d="M18 18V11"/><path d="m12 2 8 5H4z"/></svg>
                 Conta de destino
               </span>
               <select id="finTransfDestino" aria-label="Conta de destino">
@@ -4357,14 +4748,14 @@
 
             <div class="fin-ofx-bulk">
               <div class="fin-ofx-bulk-left">
-                <button type="button" class="btn-outline" data-fin-ofx-bulk="select-page">Selecionar (${selCount})</button>
-                <button type="button" class="btn-outline" data-fin-ofx-bulk="select-all">Selecionar todas (${totalVis})</button>
-                <button type="button" class="btn-ghost" data-fin-ofx-bulk="clear">Limpar seleção</button>
                 ${isExport ? "" : `
                 <button type="button" class="btn-outline" data-fin-ofx-bulk="edit" ${selCount ? "" : "disabled"}>Editar</button>
                 <button type="button" class="btn-outline fin-ofx-danger" data-fin-ofx-bulk="delete" ${selCount ? "" : "disabled"}>Excluir selecionadas</button>`}
+                <div class="fin-ofx-bulk-clear-col">
+                  <button type="button" class="btn-ghost fin-ofx-bulk-clear" data-fin-ofx-bulk="clear">Limpar seleção</button>
+                  <div class="fin-ofx-bulk-meta">Exibindo ${totalVis} de ${all.length}</div>
+                </div>
               </div>
-              <div class="fin-ofx-bulk-meta">Exibindo ${totalVis} de ${all.length}</div>
             </div>
 
             <div class="fin-ofx-table-card">
@@ -4372,7 +4763,12 @@
                 <table class="fin-data-table fin-ofx-table">
                   <thead>
                     <tr>
-                      <th class="chk"><span class="sr-only">Selecionar</span></th>
+                      <th class="chk">
+                        <div class="fin-ofx-chk-head">
+                          <input type="checkbox" id="finOfxSelAll" ${rows.length && selCount === rows.length ? "checked" : ""} ${rows.length ? "" : "disabled"} aria-label="Selecionar todas as movimentações visíveis" title="Selecionar tudo" />
+                          <span class="fin-ofx-sel-count" aria-hidden="true">${selCount}</span>
+                        </div>
+                      </th>
                       <th>Descrição</th>
                       <th>Data</th>
                       <th>Tipo</th>
@@ -4471,14 +4867,21 @@
         });
       });
 
+      document.getElementById("finOfxSelAll")?.addEventListener("change", (e) => {
+        const ids = rows.map((r) => r.id);
+        if (e.target.checked) {
+          finDash.conc.ofx.selected = [...new Set([...(finDash.conc.ofx.selected || []), ...ids])];
+        } else {
+          const drop = new Set(ids);
+          finDash.conc.ofx.selected = (finDash.conc.ofx.selected || []).filter((id) => !drop.has(id));
+        }
+        refresh();
+      });
+
       modalBody.querySelectorAll("[data-fin-ofx-bulk]").forEach((btn) => {
         btn.addEventListener("click", () => {
           const act = btn.dataset.finOfxBulk;
-          const ids = rows.map((r) => r.id);
-          if (act === "select-page" || act === "select-all") {
-            finDash.conc.ofx.selected = [...new Set([...(finDash.conc.ofx.selected || []), ...ids])];
-            refresh();
-          } else if (act === "clear") {
+          if (act === "clear") {
             finDash.conc.ofx.selected = [];
             refresh();
           } else if (act === "edit") {
@@ -4558,14 +4961,97 @@
       setFinConcOfxExpanded(!!finDash.conc.ofx.expanded);
     }
 
-    function openFinConcOfxExportModal() {
-      if (!finDash.conc.ofx) {
-        finDash.conc.ofx = { q: "", tipo: "", conciliacao: "todas", de: "", ate: "", selected: [], modalOpen: false, expanded: false, sessionConciliados: [] };
+    function openFinExportContabilModal() {
+      const bancos = ensureFinConcBancos();
+      if (!finDash.conc.exportContabil) {
+        finDash.conc.exportContabil = { descLanc: "ofx", selected: null };
       }
-      finDash.conc.ofx.mode = "export";
-      if (!finDash.conc.ofx.conciliacao) finDash.conc.ofx.conciliacao = "todas";
-      finDash.conc.ofx.selected = [];
-      openFinConcOfxModal();
+      const st = finDash.conc.exportContabil;
+      if (!Array.isArray(st.selected)) st.selected = bancos.map((b) => b.id);
+      const selected = new Set(st.selected);
+      const descLanc = st.descLanc || "ofx";
+      const selCount = [...selected].filter((id) => bancos.some((b) => b.id === id)).length;
+
+      openModal({
+        title: "Exportar arquivo",
+        sub: "Selecione os bancos que devem compor o layout.",
+        body: `
+          <div class="fin-transf-modal fin-exp-contabil">
+            <label class="fin-transf-field">
+              <span class="fin-transf-lab">Descrição do lançamento</span>
+              <select id="finExpContabilDesc" aria-label="Descrição do lançamento">
+                <option value="ofx" ${descLanc === "ofx" ? "selected" : ""}>Descrição do OFX</option>
+                <option value="mov" ${descLanc === "mov" ? "selected" : ""}>Descrição da movimentação</option>
+                <option value="hist" ${descLanc === "hist" ? "selected" : ""}>Histórico contábil</option>
+              </select>
+            </label>
+
+            <div class="fin-exp-contabil-block">
+              <div class="fin-exp-contabil-tools">
+                <span class="fin-exp-contabil-lab">Bancos do layout</span>
+                <span class="fin-exp-contabil-meta" id="finExpContabilMeta">${selCount} selecionado(s)</span>
+                <div class="fin-exp-contabil-tools-acts">
+                  <button type="button" class="btn-ghost" id="finExpContabilSelAll">Selecionar todos</button>
+                  <button type="button" class="btn-ghost" id="finExpContabilClear">Limpar</button>
+                </div>
+              </div>
+              <div class="fin-exp-contabil-list" role="group" aria-label="Bancos do layout">
+                ${bancos.map((b) => {
+                  const checked = selected.has(b.id);
+                  return `
+                    <label class="fin-exp-contabil-row">
+                      <input type="checkbox" data-fin-exp-banco="${b.id}" ${checked ? "checked" : ""} />
+                      <span class="fin-exp-contabil-txt">
+                        <strong>${uiSelectEscape(b.nome)}</strong>
+                        <span>Ag. ${uiSelectEscape(b.agencia || "—")} · Conta ${uiSelectEscape(finConcBancoContaLabel(b))} · ID ${uiSelectEscape(b.codigo || "—")}</span>
+                      </span>
+                    </label>`;
+                }).join("")}
+              </div>
+            </div>
+          </div>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" id="finExpContabilSave">Exportar</button>`,
+      });
+
+      prepareFinConcModalChrome();
+      enhanceUiSelects(modalBody);
+
+      const syncSelected = () => {
+        st.selected = [...modalBody.querySelectorAll("[data-fin-exp-banco]:checked")].map((el) => el.dataset.finExpBanco);
+        const meta = document.getElementById("finExpContabilMeta");
+        if (meta) meta.textContent = `${st.selected.length} selecionado(s)`;
+      };
+
+      document.getElementById("finExpContabilDesc")?.addEventListener("change", (ev) => {
+        st.descLanc = ev.target.value || "ofx";
+      });
+      document.getElementById("finExpContabilSelAll")?.addEventListener("click", () => {
+        modalBody.querySelectorAll("[data-fin-exp-banco]").forEach((el) => { el.checked = true; });
+        syncSelected();
+      });
+      document.getElementById("finExpContabilClear")?.addEventListener("click", () => {
+        modalBody.querySelectorAll("[data-fin-exp-banco]").forEach((el) => { el.checked = false; });
+        syncSelected();
+      });
+      modalBody.querySelectorAll("[data-fin-exp-banco]").forEach((el) => {
+        el.addEventListener("change", syncSelected);
+      });
+      document.getElementById("finExpContabilSave")?.addEventListener("click", () => {
+        syncSelected();
+        if (!st.selected.length) {
+          toast("Selecione ao menos um banco");
+          return;
+        }
+        const n = st.selected.length;
+        toast(`Arquivo contábil gerado · ${n} banco${n > 1 ? "s" : ""}`);
+        closeModal();
+      });
+    }
+
+    function openFinConcOfxExportModal() {
+      openFinExportContabilModal();
     }
 
     function ensureFinConcRegrasLista() {
@@ -4609,7 +5095,7 @@
           <div class="fin-conc-regras-scope" role="tablist" aria-label="Aplicar a">
             <span class="fin-conc-scope-lab">Aplicar a:</span>
             <button type="button" class="fin-conc-scope-btn${r.escopo === "banco" ? " active" : ""}" data-fin-regra-escopo="banco">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M12 2 2 8h20L12 2z"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 22h18"/><path d="M6 18V11"/><path d="M10 18V11"/><path d="M14 18V11"/><path d="M18 18V11"/><path d="m12 2 8 5H4z"/></svg>
               ${uiSelectEscape(banco)}
             </button>
             <button type="button" class="fin-conc-scope-btn${r.escopo === "todos" ? " active" : ""}" data-fin-regra-escopo="todos">
@@ -4963,7 +5449,7 @@
                 return `
                   <button type="button" class="fin-conc-pick-row${selected ? " is-selected" : ""}" data-fin-banco-pick="${b.id}">
                     <span class="fin-conc-pick-ico" aria-hidden="true">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M12 2 2 8h20L12 2z"/></svg>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 22h18"/><path d="M6 18V11"/><path d="M10 18V11"/><path d="M14 18V11"/><path d="M18 18V11"/><path d="m12 2 8 5H4z"/></svg>
                     </span>
                     <span class="fin-conc-pick-info">
                       <strong>${uiSelectEscape(b.nome)}</strong>
@@ -4973,7 +5459,7 @@
                       <span class="cfg-icon-btn" data-fin-banco-edit="${b.id}" role="button" tabindex="0" aria-label="Editar banco">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                       </span>
-                      ${selected ? `<span class="fin-conc-pick-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>` : ""}
+                      <span class="fin-conc-pick-check${selected ? "" : " is-empty"}" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
                     </span>
                   </button>`;
               }).join("")}
@@ -5098,6 +5584,9 @@
       const all = getFinConcMovements();
       const rows = filterFinConcMovements(all);
       const abertos = all.filter((r) => r.status === "aberto").length;
+      if (!Array.isArray(finDash.conc.selected)) finDash.conc.selected = [];
+      const selected = new Set(finDash.conc.selected);
+      const selCount = rows.filter((r) => selected.has(r.id)).length;
       const cards = getFinConcSaldoCards();
       const ctx = finDash.conc.contexto || "contabil";
       const ctxOpen = !!finDash.conc.contextoOpen;
@@ -5137,9 +5626,6 @@
                   </div>
                 </div>
                 <button type="button" class="btn-primary" data-fin-conc="finalizar">Finalizar mês</button>
-                <button type="button" class="cfg-icon-btn" data-fin-conc="regras" aria-label="Configurações e regras" title="Conciliação automática">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </button>
               </div>
             </div>
             <div class="fin-conc-saldo-kpis">
@@ -5155,45 +5641,76 @@
             </div>
           </div>
 
-          <div class="fin-op-toolbar">
-            <button type="button" class="btn-primary" data-fin-conc-import="ofx">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Importar OFX
-            </button>
-            <div class="fin-op-filters">
-              <div class="proc-filter field tipo tip-bottom" data-tip="Filtrar por tipo">
-                <select id="finConcTipo" aria-label="Filtrar tipo">
-                  <option value="" ${!finDash.conc.tipo ? "selected" : ""}>Tipo</option>
-                  <option value="credito" ${finDash.conc.tipo === "credito" ? "selected" : ""}>Crédito</option>
-                  <option value="debito" ${finDash.conc.tipo === "debito" ? "selected" : ""}>Débito</option>
-                </select>
+          <div class="fin-conc-ops${finDash.conc.opsExpanded ? " is-expanded" : ""}" id="finConcOps">
+          <div class="fin-op-toolbar fin-conc-toolbar">
+            <div class="fin-conc-toolbar-row fin-conc-toolbar-actions">
+              <div class="fin-conc-toolbar-left">
+                <button type="button" class="btn-primary" data-fin-conc-import="ofx">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Importar OFX
+                </button>
+                <button type="button" class="btn-outline tip-bottom" data-fin-conc="add" data-tip="Cria lançamento em aberto no extrato">Adicionar manualmente</button>
               </div>
-              <div class="proc-filter field valor tip-bottom" data-tip="Filtrar por valor">
-                <input type="search" id="finConcValor" placeholder="Valor" value="${(finDash.conc.valor || "").replace(/"/g, "&quot;")}" aria-label="Filtrar valor" />
-              </div>
-              <div class="proc-filter field id-titulo tip-bottom" data-tip="Filtrar por ID do título">
-                <input type="search" id="finConcIdTitulo" placeholder="ID título" value="${(finDash.conc.idTitulo || "").replace(/"/g, "&quot;")}" aria-label="Filtrar ID do título" />
-              </div>
-              <div class="proc-filter field status tip-bottom" data-tip="Filtrar por status">
-                <select id="finConcStatus" aria-label="Filtrar status">
-                  <option value="" ${!finDash.conc.status ? "selected" : ""}>Status</option>
-                  <option value="conciliado" ${finDash.conc.status === "conciliado" ? "selected" : ""}>Conciliado</option>
-                  <option value="aberto" ${finDash.conc.status === "aberto" ? "selected" : ""}>Em aberto</option>
-                </select>
+              <div class="fin-conc-toolbar-right">
+                <button type="button" class="btn-outline tip-bottom" data-fin-conc="matching" data-tip="Executar motor de matching">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  Matching
+                </button>
+                <button type="button" class="btn-ghost tip-bottom" data-fin-conc="export" data-tip="Exportar arquivo contábil">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Exportar contábil
+                </button>
+                <button type="button" class="btn-outline tip-bottom" data-fin-conc="excel" data-tip="Baixar planilha modelo de conciliação">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>
+                  Excel
+                </button>
+                <button type="button" class="cfg-icon-btn tip-bottom" data-fin-conc="regras" data-tip="Regras de conciliação automática" aria-label="Regras de conciliação automática">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+                <span class="fin-conc-expand-host" id="finConcExpandHost"></span>
               </div>
             </div>
-            <div class="fin-op-actions">
-              <button type="button" class="btn-ghost" data-fin-conc="export">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Exportar OFX
-              </button>
-              <button type="button" class="btn-primary" data-fin-conc="add">Adicionar manualmente</button>
-              <button type="button" class="btn-outline tip-bottom" data-fin-conc="excel" data-tip="Baixar planilha modelo de conciliação">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h2"/><path d="M8 17h2"/><path d="M14 13h2"/><path d="M14 17h2"/></svg>
-                Excel
-              </button>
+            <div class="fin-conc-toolbar-row fin-conc-toolbar-filters">
+              <div class="fin-op-filters fin-ofx-filters" role="search" aria-label="Filtros da conciliação">
+                <div class="proc-filter search fin-ofx-q tip-bottom" data-tip="Buscar movimentação">
+                  <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <input type="search" id="finConcQ" placeholder="Buscar movimentação…" value="${(finDash.conc.q || "").replace(/"/g, "&quot;")}" aria-label="Buscar movimentação" />
+                </div>
+                <div class="proc-filter field valor" data-tip="Filtrar por valor">
+                  <input type="search" id="finConcValor" placeholder="Valor" value="${(finDash.conc.valor || "").replace(/"/g, "&quot;")}" aria-label="Filtrar valor" />
+                </div>
+                <div class="proc-filter field id-titulo" data-tip="Filtrar por ID do título">
+                  <input type="search" id="finConcIdTitulo" placeholder="ID título" value="${(finDash.conc.idTitulo || "").replace(/"/g, "&quot;")}" aria-label="Filtrar ID do título" />
+                </div>
+                <div class="proc-filter field fin-ofx-tipo" data-tip="Filtrar por tipo">
+                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/><path d="m14 15 3 3 3-3"/></svg>
+                  <select id="finConcTipo" aria-label="Filtrar tipo">
+                    <option value="" ${!finDash.conc.tipo ? "selected" : ""}>Todos</option>
+                    <option value="credito" ${finDash.conc.tipo === "credito" ? "selected" : ""}>Crédito</option>
+                    <option value="debito" ${finDash.conc.tipo === "debito" ? "selected" : ""}>Débito</option>
+                  </select>
+                </div>
+                <div class="proc-filter field fin-ofx-conc" data-tip="Filtrar por status">
+                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+                  <select id="finConcStatus" aria-label="Filtrar status">
+                    <option value="" ${!finDash.conc.status ? "selected" : ""}>Status</option>
+                    <option value="conciliado" ${finDash.conc.status === "conciliado" ? "selected" : ""}>Conciliado</option>
+                    <option value="aberto" ${finDash.conc.status === "aberto" ? "selected" : ""}>Em aberto</option>
+                  </select>
+                </div>
+                <div class="proc-filter field fin-ofx-date" data-tip="Data inicial">
+                  <input type="text" id="finConcDe" class="fin-ofx-date-text" inputmode="numeric" placeholder="De dd/mm/aaaa" value="${finOfxDateDisplay(finDash.conc.de || "").replace(/"/g, "&quot;")}" aria-label="Data inicial" autocomplete="off" />
+                  <button type="button" class="fin-ofx-date-cal" data-fin-conc-cal="finConcDe" aria-label="Abrir calendário data inicial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button>
+                  <input type="date" id="finConcDePick" class="fin-ofx-date-native" value="${finOfxBrToIso(finDash.conc.de || "")}" tabindex="-1" aria-hidden="true" />
+                </div>
+                <div class="proc-filter field fin-ofx-date" data-tip="Data final">
+                  <input type="text" id="finConcAte" class="fin-ofx-date-text" inputmode="numeric" placeholder="Até dd/mm/aaaa" value="${finOfxDateDisplay(finDash.conc.ate || "").replace(/"/g, "&quot;")}" aria-label="Data final" autocomplete="off" />
+                  <button type="button" class="fin-ofx-date-cal" data-fin-conc-cal="finConcAte" aria-label="Abrir calendário data final"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button>
+                  <input type="date" id="finConcAtePick" class="fin-ofx-date-native" value="${finOfxBrToIso(finDash.conc.ate || "")}" tabindex="-1" aria-hidden="true" />
+                </div>
+              </div>
+              <div class="fin-op-meta">${rows.length} movimentações · ${abertos} em aberto</div>
             </div>
-            <div class="fin-op-meta">${rows.length} movimentações · ${abertos} em aberto</div>
           </div>
 
           <div class="fin-op-card fin-table-card">
@@ -5201,6 +5718,12 @@
               <table class="fin-data-table fin-conc-table">
                 <thead>
                   <tr>
+                    <th class="chk">
+                      <div class="fin-conc-chk-head">
+                        <input type="checkbox" id="finConcSelAll" ${rows.length && selCount === rows.length ? "checked" : ""} ${rows.length ? "" : "disabled"} aria-label="Selecionar todas as movimentações visíveis" title="Selecionar tudo" />
+                        <span class="fin-conc-sel-count" aria-hidden="true">${selCount}</span>
+                      </div>
+                    </th>
                     <th>Data</th>
                     <th>ID título</th>
                     <th>Descrição original do banco</th>
@@ -5214,9 +5737,12 @@
                   ${rows.length ? rows.map((r) => {
                     const open = finDash.conc.catRowId === r.id;
                     const catLab = r.catId ? finDreCatLabel(r.catId) : "";
-                    const actLabel = r.status === "conciliado" ? "Recategorizar" : "Gerar / Conciliar";
+                    const isSel = selected.has(r.id);
                     return `
-                      <tr class="${open ? "is-cat-open" : ""}">
+                      <tr class="${open ? "is-cat-open" : ""}${isSel ? " is-selected" : ""}">
+                        <td class="chk">
+                          <input type="checkbox" data-fin-conc-row="${r.id}" ${isSel ? "checked" : ""} aria-label="Selecionar movimentação" />
+                        </td>
                         <td class="mono">${r.data}</td>
                         <td class="mono">${uiSelectEscape(r.tituloId || "—")}</td>
                         <td>
@@ -5233,13 +5759,14 @@
                         <td class="num fin-val ${r.tipo === "credito" ? "in" : "out"}">${r.tipo === "credito" ? "+" : "−"} ${money(r.valor)}</td>
                         <td><span class="fin-status-pill ${r.status}">${r.status === "conciliado" ? "Conciliado" : "Em aberto"}</span></td>
                         <td class="acts">
-                          <button type="button" class="btn-outline fin-conc-gerar-btn" data-fin-conc-gerar="${r.id}">${actLabel}</button>
+                          ${renderFinConcRowActions(r)}
                         </td>
                       </tr>`;
-                  }).join("") : `<tr><td colspan="7" class="fin-table-empty">Nenhuma movimentação com os filtros atuais.</td></tr>`}
+                  }).join("") : `<tr><td colspan="8" class="fin-table-empty">Nenhuma movimentação com os filtros atuais.</td></tr>`}
                 </tbody>
               </table>
             </div>
+          </div>
           </div>
         </div>`;
     }

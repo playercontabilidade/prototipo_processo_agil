@@ -3751,14 +3751,14 @@
                 return `
                   <button type="button" class="fin-conc-pick-row${selected ? " is-selected" : ""}" data-fin-tit-banco-pick="${b.id}">
                     <span class="fin-conc-pick-ico" aria-hidden="true">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="10" width="18" height="11" rx="2"/><path d="M12 2 2 8h20L12 2z"/></svg>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 22h18"/><path d="M6 18V11"/><path d="M10 18V11"/><path d="M14 18V11"/><path d="M18 18V11"/><path d="m12 2 8 5H4z"/></svg>
                     </span>
                     <span class="fin-conc-pick-info">
                       <strong>${uiSelectEscape(b.nome)}</strong>
                       <span>${uiSelectEscape(b.codigo || "—")} · Ag: ${uiSelectEscape(b.agencia || "—")} · Cc: ${uiSelectEscape(finTitulosBancoContaLabel(b))}</span>
                     </span>
                     <span class="fin-conc-pick-actions">
-                      ${selected ? `<span class="fin-conc-pick-check" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>` : ""}
+                      <span class="fin-conc-pick-check${selected ? "" : " is-empty"}" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>
                     </span>
                   </button>`;
               }).join("")}

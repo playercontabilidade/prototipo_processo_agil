@@ -1123,9 +1123,13 @@
     }
 
     function setExpanded(on) {
+      if (on && typeof setFinConcOpsExpanded === "function" && finDash?.conc?.opsExpanded) {
+        setFinConcOpsExpanded(false);
+      }
       contentPanel.classList.toggle("is-expanded", on);
       expandBackdrop.classList.toggle("show", on);
       document.body.classList.toggle("panel-expanded", on);
+      document.body.classList.remove("fin-conc-ops-expanded");
       empresaWrap.classList.remove("open");
       document.getElementById("tabAddWrap")?.classList.remove("open");
       document.getElementById("tabSwitcher")?.classList.remove("open");
@@ -1615,6 +1619,11 @@
       if (cliListMenuId && !e.target.closest(".cli-row-menu-wrap")) {
         cliListMenuId = null;
         if (cliView === "lista") renderClientesList();
+        return;
+      }
+      if (finDash.conc?.rowMenuId && !e.target.closest(".fin-conc-row-menu-wrap")) {
+        finDash.conc.rowMenuId = null;
+        if (finDash.tab === "conciliacao") renderFinModuleDash();
         return;
       }
       if (e.target.closest("[data-cli-back]")) {
@@ -2323,6 +2332,24 @@
         openFinConcOfxPickModal();
         return;
       }
+      const concCalBtn = e.target.closest("[data-fin-conc-cal]");
+      if (concCalBtn) {
+        e.preventDefault();
+        const textId = concCalBtn.dataset.finConcCal;
+        const text = document.getElementById(textId);
+        const pick = document.getElementById(`${textId}Pick`);
+        if (!pick) return;
+        const iso = finOfxBrToIso(text?.value || "");
+        if (iso) pick.value = iso;
+        try {
+          if (typeof pick.showPicker === "function") pick.showPicker();
+          else pick.click();
+        } catch (_) {
+          pick.focus();
+          pick.click();
+        }
+        return;
+      }
       const concCtx = e.target.closest("[data-fin-conc-ctx]");
       if (concCtx) {
         const v = concCtx.dataset.finConcCtx;
@@ -2354,6 +2381,8 @@
           openFinConcFinalizarMesModal();
         } else if (act === "regras") {
           openFinConcRegrasModal();
+        } else if (act === "matching") {
+          openFinConcMatchingModal();
         } else if (act === "export") {
           openFinConcOfxExportModal();
         } else if (act === "excel") {
@@ -2363,8 +2392,39 @@
         }
         return;
       }
+      const concVincular = e.target.closest("[data-fin-conc-vincular]");
+      if (concVincular) {
+        finDash.conc.rowMenuId = null;
+        const id = concVincular.dataset.finConcVincular;
+        if (id) openFinConcVincularTituloModal(id);
+        return;
+      }
+      const concRowMenu = e.target.closest("[data-fin-conc-row-menu]");
+      if (concRowMenu) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = concRowMenu.dataset.finConcRowMenu;
+        finDash.conc.rowMenuId = finDash.conc.rowMenuId === id ? null : id;
+        renderFinModuleDash();
+        return;
+      }
+      const concHist = e.target.closest("[data-fin-conc-hist]");
+      if (concHist) {
+        finDash.conc.rowMenuId = null;
+        const id = concHist.dataset.finConcHist;
+        if (id) openFinConcHistoricoModal(id);
+        return;
+      }
+      const concDes = e.target.closest("[data-fin-conc-desconciliar]");
+      if (concDes) {
+        finDash.conc.rowMenuId = null;
+        const id = concDes.dataset.finConcDesconciliar;
+        if (id) openFinConcDesconciliarModal(id);
+        return;
+      }
       const concGerar = e.target.closest("[data-fin-conc-gerar]");
       if (concGerar) {
+        finDash.conc.rowMenuId = null;
         const id = concGerar.dataset.finConcGerar;
         if (id) openFinConcGerarTituloModal(id, { fromOfx: false });
         return;
@@ -2720,6 +2780,30 @@
         scheduleFinClientAcRefresh();
         return;
       }
+      if (e.target.id === "finConcQ") {
+        finDash.conc.q = e.target.value || "";
+        const pos = e.target.selectionStart;
+        renderFinModuleDash();
+        const el = document.getElementById("finConcQ");
+        if (el) {
+          el.focus();
+          try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
+        }
+        return;
+      }
+      if (e.target.id === "finConcDe" || e.target.id === "finConcAte") {
+        const key = e.target.id === "finConcDe" ? "de" : "ate";
+        finDash.conc[key] = e.target.value || "";
+        const pos = e.target.selectionStart;
+        const keepId = e.target.id;
+        renderFinModuleDash();
+        const el = document.getElementById(keepId);
+        if (el) {
+          el.focus();
+          try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
+        }
+        return;
+      }
       if (e.target.id === "finConcValor") {
         finDash.conc.valor = e.target.value || "";
         const pos = e.target.selectionStart;
@@ -2924,6 +3008,32 @@
       if (e.target.id === "finConcStatus") {
         finDash.conc.status = e.target.value || "";
         finDash.conc.catRowId = null;
+        renderFinModuleDash();
+        return;
+      }
+      if (e.target.id === "finConcDePick" || e.target.id === "finConcAtePick") {
+        const key = e.target.id === "finConcDePick" ? "de" : "ate";
+        finDash.conc[key] = finOfxDateDisplay(e.target.value || "");
+        finDash.conc.catRowId = null;
+        renderFinModuleDash();
+        return;
+      }
+      if (e.target.id === "finConcSelAll") {
+        const visible = filterFinConcMovements(getFinConcMovements()).map((r) => r.id);
+        if (e.target.checked) {
+          finDash.conc.selected = [...new Set([...(finDash.conc.selected || []), ...visible])];
+        } else {
+          const drop = new Set(visible);
+          finDash.conc.selected = (finDash.conc.selected || []).filter((id) => !drop.has(id));
+        }
+        renderFinModuleDash();
+        return;
+      }
+      if (e.target.matches?.("[data-fin-conc-row]")) {
+        const id = e.target.dataset.finConcRow;
+        const set = new Set(finDash.conc.selected || []);
+        if (e.target.checked) set.add(id); else set.delete(id);
+        finDash.conc.selected = [...set];
         renderFinModuleDash();
         return;
       }
@@ -3496,6 +3606,13 @@
     });
 
     expandBtn.addEventListener("click", () => {
+      const concOps = document.getElementById("finConcOps");
+      if (concOps && finDash?.tab === "conciliacao" && typeof setFinConcOpsExpanded === "function") {
+        const on = !finDash.conc.opsExpanded;
+        setFinConcOpsExpanded(on);
+        toast(on ? "Movimentações em tela toda" : "Modo normal");
+        return;
+      }
       const on = !contentPanel.classList.contains("is-expanded");
       setExpanded(on);
       toast(on ? "Tela toda" : "Modo normal");
@@ -3522,7 +3639,13 @@
       setSection(item.dataset.switchTab);
     });
 
-    expandBackdrop.addEventListener("click", () => setExpanded(false));
+    expandBackdrop.addEventListener("click", () => {
+      if (finDash?.conc?.opsExpanded && typeof setFinConcOpsExpanded === "function") {
+        setFinConcOpsExpanded(false);
+        return;
+      }
+      setExpanded(false);
+    });
 
     const filterLabels = {
       pendencias: "Pendências de hoje",
