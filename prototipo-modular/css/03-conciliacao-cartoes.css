@@ -58,10 +58,111 @@
       justify-content: space-between;
       padding-top: 0;
       border-top: none;
+      overflow: visible;
+      position: relative;
+      z-index: 4;
     }
 
     .fin-conc-toolbar .fin-op-filters {
       flex: 1 1 auto;
+      overflow: visible;
+    }
+
+    .fin-conc-filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow: visible;
+    }
+
+    .fin-conc-status-chips {
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .fin-conc-status-chips button {
+      height: 36px;
+      padding: 0 12px;
+      font-size: .78rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .fin-conc-filter-wrap {
+      flex: 0 0 auto;
+      position: relative;
+      z-index: 6;
+    }
+
+    .fin-conc-filter-wrap.open {
+      z-index: 40;
+    }
+
+    .fin-conc-filter-wrap .btn-filter {
+      position: relative;
+    }
+
+    .fin-conc-filter-dot {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 2px var(--surface);
+    }
+
+    .fin-conc-filter-panel {
+      left: 0;
+      right: auto;
+      width: min(300px, calc(100vw - 48px));
+      max-height: none;
+      overflow: visible;
+    }
+
+    .fin-op-toolbar.fin-conc-toolbar {
+      overflow: visible;
+    }
+
+    .fin-conc-ops:not(.is-expanded) {
+      overflow: visible;
+    }
+
+    .fin-conc-filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+      font-size: .78rem;
+      font-weight: 650;
+      color: var(--navy-deep);
+    }
+
+    .fin-conc-filter-field input,
+    .fin-conc-filter-field select {
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--navy-deep);
+      font: inherit;
+      font-size: .84rem;
+      font-weight: 500;
+    }
+
+    .fin-conc-filter-field input:focus,
+    .fin-conc-filter-field select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .fin-conc-filter-panel .filter-actions .linkish:disabled {
+      opacity: .45;
+      pointer-events: none;
     }
 
     .fin-conc-toolbar .fin-op-meta {

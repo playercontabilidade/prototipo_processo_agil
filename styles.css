@@ -1344,8 +1344,9 @@
       flex-wrap: nowrap;
       align-items: center;
       gap: 8px;
+      height: 54px;
       min-height: 54px;
-      padding: 10px 52px 10px 16px;
+      padding: 0 56px 0 16px;
       box-sizing: border-box;
       background: var(--toolbar);
       border-bottom: 1px solid var(--border);
@@ -1374,15 +1375,57 @@
     }
 
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker {
-      flex: 1 1 240px;
-      max-width: min(360px, 48vw);
-      min-width: 200px;
+      flex: 0 1 auto;
+      width: max-content;
+      max-width: min(420px, 46vw);
+      min-width: 0;
+    }
+
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-wrap,
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger {
+      width: auto;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger .trigger-text {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger .name-line {
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+    }
+
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger .empresa-code {
+      flex-shrink: 0;
+    }
+
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger .empresa-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .proc-filter.field {
-      flex: 0 1 150px;
+      flex: 0 0 auto;
       min-width: 130px;
       max-width: 180px;
+    }
+
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .cli-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 36px;
+      flex: 0 0 auto;
+      flex-shrink: 0;
+      box-sizing: border-box;
+      margin: 0;
+      white-space: nowrap;
     }
 
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .proc-filter input,
@@ -1394,35 +1437,38 @@
       box-sizing: border-box;
     }
 
-    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .cli-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: 36px;
-      flex-shrink: 0;
-      box-sizing: border-box;
-      margin: 0;
-    }
-
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .cli-add-btn {
       margin-left: auto;
       height: 36px;
+      min-height: 36px;
+      max-height: 36px;
+      padding: 0 12px;
       flex-shrink: 0;
       box-sizing: border-box;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      line-height: 1;
+      white-space: nowrap;
     }
 
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .panel-tools {
-      top: 10px;
+      top: 0;
       right: 12px;
-      height: 36px;
+      height: 54px;
+      margin: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 8px;
     }
 
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .btn-expand {
       width: 36px;
       height: 36px;
+      min-width: 36px;
+      min-height: 36px;
       margin: 0;
       flex-shrink: 0;
       box-sizing: border-box;
@@ -1438,8 +1484,9 @@
     @media (max-width: 900px) {
       .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar {
         flex-wrap: wrap;
+        height: auto;
         min-height: 0;
-        padding: 10px 52px 10px 12px;
+        padding: 10px 56px 10px 12px;
         gap: 8px;
       }
 
@@ -1476,7 +1523,11 @@
 
     @media (max-width: 640px) {
       .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar {
-        padding: 10px 48px 10px 10px;
+        padding: 10px 52px 10px 10px;
+      }
+
+      .content-panel.toolbar-compact:has(.clientes-wrap.show) .panel-tools {
+        height: 54px;
       }
 
       .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .cli-add-btn {
@@ -1596,9 +1647,21 @@
       color: var(--navy-deep);
       letter-spacing: -0.02em;
       gap: 8px;
+      overflow: visible;
+      white-space: normal;
+      max-width: 100%;
+      min-width: 0;
+    }
+
+    .module-empresa-picker .empresa-trigger .empresa-name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .module-empresa-picker .empresa-trigger .empresa-code {
+      flex-shrink: 0;
       font-size: .78rem;
       font-weight: 700;
       color: var(--accent);
@@ -1606,6 +1669,7 @@
       border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
       border-radius: var(--radius-sm);
       padding: 2px 7px;
+      line-height: 1.25;
       margin-right: 0;
     }
 
@@ -4941,10 +5005,111 @@
       justify-content: space-between;
       padding-top: 0;
       border-top: none;
+      overflow: visible;
+      position: relative;
+      z-index: 4;
     }
 
     .fin-conc-toolbar .fin-op-filters {
       flex: 1 1 auto;
+      overflow: visible;
+    }
+
+    .fin-conc-filters {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      overflow: visible;
+    }
+
+    .fin-conc-status-chips {
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .fin-conc-status-chips button {
+      height: 36px;
+      padding: 0 12px;
+      font-size: .78rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .fin-conc-filter-wrap {
+      flex: 0 0 auto;
+      position: relative;
+      z-index: 6;
+    }
+
+    .fin-conc-filter-wrap.open {
+      z-index: 40;
+    }
+
+    .fin-conc-filter-wrap .btn-filter {
+      position: relative;
+    }
+
+    .fin-conc-filter-dot {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 2px var(--surface);
+    }
+
+    .fin-conc-filter-panel {
+      left: 0;
+      right: auto;
+      width: min(300px, calc(100vw - 48px));
+      max-height: none;
+      overflow: visible;
+    }
+
+    .fin-op-toolbar.fin-conc-toolbar {
+      overflow: visible;
+    }
+
+    .fin-conc-ops:not(.is-expanded) {
+      overflow: visible;
+    }
+
+    .fin-conc-filter-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 10px;
+      font-size: .78rem;
+      font-weight: 650;
+      color: var(--navy-deep);
+    }
+
+    .fin-conc-filter-field input,
+    .fin-conc-filter-field select {
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--navy-deep);
+      font: inherit;
+      font-size: .84rem;
+      font-weight: 500;
+    }
+
+    .fin-conc-filter-field input:focus,
+    .fin-conc-filter-field select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .fin-conc-filter-panel .filter-actions .linkish:disabled {
+      opacity: .45;
+      pointer-events: none;
     }
 
     .fin-conc-toolbar .fin-op-meta {
@@ -12360,10 +12525,11 @@
     .cli-list-row {
       display: grid;
       grid-template-columns:
-        minmax(220px, 2fr)
-        minmax(140px, 1fr)
-        minmax(180px, 1.4fr)
-        minmax(110px, 0.85fr);
+        minmax(200px, 2fr)
+        minmax(130px, 1fr)
+        minmax(160px, 1.3fr)
+        minmax(100px, 0.8fr)
+        minmax(118px, auto);
       gap: 10px 16px;
       align-items: center;
       padding: 12px 16px;
@@ -12545,237 +12711,219 @@
     }
 
     .cli-mini-dossie {
-      flex: 1 1 auto;
-      min-height: 220px;
+      flex: 0 0 auto;
+      min-height: 0;
       display: flex;
       flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
       gap: 12px;
-      padding: 12px 16px 16px;
+      padding: 12px 16px 14px;
       border-bottom: 1px solid var(--border);
-      background: color-mix(in srgb, var(--accent) 4%, var(--surface-2));
+      background: var(--surface);
       animation: cliMiniDossieIn .28s var(--ease);
     }
 
     @keyframes cliMiniDossieIn {
-      from { opacity: 0; transform: translateY(-6px); }
+      from { opacity: 0; transform: translateY(-4px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .cli-mini-dossie-actions {
+    .cli-mini-dossie-top {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
       align-items: center;
-    }
-
-    .cli-mini-dossie-actions .btn-outline {
-      height: 32px;
-      padding: 0 12px;
-      font-size: .76rem;
-      font-weight: 600;
-    }
-
-    .cli-mini-dossie-grid {
-      display: grid;
-      grid-template-columns: 1fr;
+      justify-content: space-between;
       gap: 12px;
-      flex: 1 1 auto;
-      min-height: 0;
-      align-content: start;
-    }
-
-    @media (min-width: 1200px) {
-      .cli-mini-dossie-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-template-rows: auto auto;
-      }
-    }
-
-    .cli-mini-dossie-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      box-shadow: var(--shadow);
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
       min-width: 0;
     }
 
-    .cli-mini-dossie-card-head h4 {
+    .cli-mini-dossie-why {
+      border: none;
+      background: transparent;
+      padding: 0;
       margin: 0;
+      font: inherit;
+      font-size: .8rem;
+      font-weight: 650;
+      color: var(--accent);
+      text-align: left;
+      cursor: pointer;
+      min-width: 0;
+      line-height: 1.35;
+      text-decoration: underline;
+      text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+      text-underline-offset: 3px;
+    }
+
+    .cli-mini-dossie-why:hover { color: var(--navy-deep); }
+
+    .cli-mini-dossie-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .cli-mini-dossie-actions .cli-row-menu-wrap { z-index: 4; }
+
+    .cli-mini-dossie-tabs {
+      width: 100%;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+
+    .cli-mini-dossie-tabs .cli-tab {
+      flex: 1 1 0;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    .cli-mini-dossie-panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 12px 14px;
+      min-width: 0;
+    }
+
+    .cli-mini-dossie-panel-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .cli-mini-dossie-panel-head strong {
+      display: block;
       font-size: .84rem;
       font-weight: 700;
       color: var(--navy-deep);
       letter-spacing: -0.01em;
     }
 
-    .cli-mini-dossie-card-head .sub {
+    .cli-mini-dossie-panel-head .sub {
       display: block;
       margin-top: 2px;
-      font-size: .72rem;
+      font-size: .7rem;
       color: var(--muted);
       font-weight: 500;
     }
 
-    .cli-mini-dossie-alerts,
-    .cli-mini-dossie-timeline,
-    .cli-mini-dossie-log {
-      list-style: none;
+    .cli-mini-dossie-panel .cli-drawer-meta {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 14px;
       margin: 0;
       padding: 0;
+      border: none;
+      border-radius: 0;
+      background: transparent;
+    }
+
+    .cli-mini-dossie-panel .cli-drawer-meta > div {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 2px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
     }
 
-    .cli-mini-dossie-alert {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 8px 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      min-width: 0;
-    }
-
-    .cli-mini-dossie-alert.is-ok {
-      border-color: color-mix(in srgb, var(--ok) 28%, var(--border));
-      background: color-mix(in srgb, var(--ok) 8%, var(--surface));
-    }
-
-    .cli-mini-dossie-alert.is-warn {
-      border-color: color-mix(in srgb, var(--warn) 30%, var(--border));
-      background: color-mix(in srgb, var(--warn) 8%, var(--surface));
-    }
-
-    .cli-mini-dossie-alert.is-bad {
-      border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
-      background: color-mix(in srgb, var(--danger) 8%, var(--surface));
-    }
-
-    .cli-mini-dossie-alert-main {
-      display: flex;
-      align-items: flex-start;
-      gap: 8px;
-      min-width: 0;
-      font-size: .78rem;
-      font-weight: 600;
-      color: var(--navy-deep);
-      line-height: 1.35;
-    }
-
-    .cli-mini-dossie-alert-ico {
-      flex-shrink: 0;
-      margin-top: 1px;
-      color: var(--muted);
-    }
-
-    .cli-mini-dossie-alert.is-warn .cli-mini-dossie-alert-ico { color: var(--warn); }
-    .cli-mini-dossie-alert.is-bad .cli-mini-dossie-alert-ico { color: var(--danger); }
-    .cli-mini-dossie-alert.is-ok .cli-mini-dossie-alert-ico { color: var(--ok); }
-
-    .cli-mini-dossie-alert .btn-ghost.sm {
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
-    .cli-mini-dossie-fin {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-    }
-
-    .cli-mini-dossie-fin-kpi,
-    .cli-mini-dossie-fin-badge {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      padding: 10px;
-      border-radius: var(--radius-sm);
-      border: 1px solid var(--border);
-      background: var(--surface-2);
-      min-width: 0;
-    }
-
-    .cli-mini-dossie-fin .lab {
-      font-size: .66rem;
-      font-weight: 650;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: .03em;
-    }
-
-    .cli-mini-dossie-fin strong {
-      font-size: .92rem;
-      font-weight: 750;
-      color: var(--navy-deep);
-      font-variant-numeric: tabular-nums;
-      letter-spacing: -0.02em;
-    }
-
-    .cli-mini-dossie-fin-badge.is-ok {
-      border-color: color-mix(in srgb, var(--ok) 35%, var(--border));
-      background: color-mix(in srgb, var(--ok) 10%, var(--surface));
-    }
-
-    .cli-mini-dossie-fin-badge.is-ok strong { color: var(--ok); }
-
-    .cli-mini-dossie-fin-badge.is-bad {
-      border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
-      background: color-mix(in srgb, var(--danger) 10%, var(--surface));
-    }
-
-    .cli-mini-dossie-fin-badge.is-bad strong { color: var(--danger); }
-
-    .cli-mini-dossie-timeline li,
-    .cli-mini-dossie-log li {
-      display: grid;
-      grid-template-columns: 72px minmax(0, 1fr);
-      gap: 10px;
-      align-items: start;
-      padding: 6px 0;
-      border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-    }
-
-    .cli-mini-dossie-timeline li:last-child,
-    .cli-mini-dossie-log li:last-child {
+    .cli-mini-dossie-panel .cli-drawer-meta > div:nth-last-child(-n+2) {
       border-bottom: none;
       padding-bottom: 0;
     }
 
-    .cli-mini-dossie-timeline .when,
-    .cli-mini-dossie-log .when {
-      font-size: .7rem;
-      font-weight: 700;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: .02em;
+    .cli-mini-dossie-panel .cli-drawer-meta span {
+      color: var(--muted);
+      font-weight: 600;
+      font-size: .68rem;
     }
 
-    .cli-mini-dossie-timeline .label,
-    .cli-mini-dossie-log .text {
-      font-size: .78rem;
-      font-weight: 600;
+    .cli-mini-dossie-panel .cli-drawer-meta strong {
       color: var(--navy-deep);
-      line-height: 1.35;
-      min-width: 0;
+      font-weight: 750;
+      font-variant-numeric: tabular-nums;
+      font-size: .9rem;
+    }
+
+    .cli-mini-dossie-panel .cli-drawer-meta strong.ok { color: var(--ok); }
+    .cli-mini-dossie-panel .cli-drawer-meta strong.bad { color: var(--danger); }
+
+    button.fin-drawer-item.cli-mini-dossie-hit {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: background .12s ease;
+    }
+
+    button.fin-drawer-item.cli-mini-dossie-hit:hover:not(:disabled) {
+      background: var(--tab-soft-bg);
+    }
+
+    button.fin-drawer-item.cli-mini-dossie-hit:disabled {
+      cursor: default;
+      opacity: .85;
+    }
+
+    .cli-mini-dossie-hit.is-warn .rank { color: var(--warn); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+    .cli-mini-dossie-hit.is-bad .rank { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+    .cli-mini-dossie-hit.is-ok .rank { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+    .cli-mini-dossie-hit .rank {
+      width: 28px;
+      min-width: 28px;
+      height: 28px;
+      padding: 0;
+      display: grid;
+      place-items: center;
+      font-size: 0;
+    }
+
+    .cli-mini-dossie-hit .rank svg {
+      display: block;
+    }
+
+    .cli-mini-dossie-when {
+      display: inline-block;
+      margin-right: 6px;
+      padding: 1px 7px;
+      border-radius: var(--radius-pill);
+      border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+      background: var(--tab-soft-bg);
+      color: var(--tab-soft-fg);
+      font-size: .66rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      vertical-align: 1px;
+    }
+
+    .cli-mini-dossie-hit.is-warn .cli-mini-dossie-when {
+      border-color: color-mix(in srgb, var(--warn) 30%, var(--border));
+      background: color-mix(in srgb, var(--warn) 12%, transparent);
+      color: var(--warn);
+    }
+
+    .cli-mini-dossie-hit.is-bad .cli-mini-dossie-when {
+      border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+      background: color-mix(in srgb, var(--danger) 12%, transparent);
+      color: var(--danger);
+    }
+
+    .cli-mini-dossie-hit .amt {
+      color: var(--accent);
+      font-size: .72rem;
+      font-weight: 650;
+      white-space: nowrap;
     }
 
     @media (max-width: 720px) {
-      .cli-mini-dossie-fin {
-        grid-template-columns: 1fr;
-      }
-      .cli-mini-dossie-alert {
-        flex-direction: column;
-        align-items: stretch;
-      }
-      .cli-mini-dossie-alert .btn-ghost.sm {
-        width: 100%;
-        justify-content: center;
+      .cli-mini-dossie-tabs .cli-tab {
+        flex: 1 1 calc(50% - 4px);
       }
     }
 
@@ -12948,6 +13096,21 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .cli-mon-actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .cli-mon-actions .btn-outline {
+      height: 30px;
+      padding: 0 10px;
+      font-size: .74rem;
+      font-weight: 650;
+      white-space: nowrap;
     }
 
     .cli-id-cell {
@@ -13205,7 +13368,7 @@
       }
       .cli-list-head,
       .cli-list-row {
-        grid-template-columns: minmax(160px, 1.5fr) minmax(110px, 1fr) minmax(120px, 1.2fr);
+        grid-template-columns: minmax(160px, 1.5fr) minmax(110px, 1fr) minmax(120px, 1.2fr) minmax(100px, auto);
       }
       .cli-list-head span:nth-child(4),
       .cli-list-row .cli-mon-ativ {
@@ -13312,16 +13475,23 @@
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
       min-height: 0;
-      padding: 2px 6px 2px 2px;
+      padding: 4px 8px 4px 4px;
       margin: 0 0 0 -2px;
       max-width: 100%;
+      overflow: visible;
+    }
+
+    .cli-perfil-head-left .module-empresa-picker .empresa-trigger .trigger-text {
+      overflow: visible;
+      gap: 2px;
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .name-line {
       font-size: 1.1rem;
       font-weight: 700;
       color: var(--navy-deep);
-      line-height: 1.25;
+      line-height: 1.35;
+      overflow: visible;
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-cnpj {

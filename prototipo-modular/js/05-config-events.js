@@ -1554,7 +1554,27 @@
       if (dossieAct) {
         e.preventDefault();
         e.stopPropagation();
+        cliListMenuId = null;
         handleCliMiniDossieAction(dossieAct.dataset.cliDossieAct || "", dossieAct.dataset.cliId, dossieAct);
+        return;
+      }
+      const dossieTab = e.target.closest("[data-cli-dossie-tab]");
+      if (dossieTab) {
+        e.preventDefault();
+        e.stopPropagation();
+        cliMiniDossieTab = dossieTab.dataset.cliDossieTab || "alertas";
+        cliListMenuId = null;
+        renderClientesList();
+        return;
+      }
+      const dossieMenuBtn = e.target.closest("[data-cli-dossie-menu]");
+      if (dossieMenuBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = dossieMenuBtn.dataset.cliDossieMenu;
+        const key = `dossie:${id}`;
+        cliListMenuId = cliListMenuId === key ? null : key;
+        renderClientesList();
         return;
       }
       const rowMenuBtn = e.target.closest("[data-cli-row-menu]");
@@ -1625,6 +1645,11 @@
         finDash.conc.rowMenuId = null;
         if (finDash.tab === "conciliacao") renderFinModuleDash();
         return;
+      }
+      if (finDash.conc?.filtersOpen && !e.target.closest("#finConcFilterWrap")) {
+        finDash.conc.filtersOpen = false;
+        const keepsFlow = e.target.closest("[data-fin-conc], [data-fin-conc-status], #finConcQ");
+        if (!keepsFlow && finDash.tab === "conciliacao") renderFinModuleDash();
       }
       if (e.target.closest("[data-cli-back]")) {
         closeClientePerfil();
@@ -2332,24 +2357,6 @@
         openFinConcOfxPickModal();
         return;
       }
-      const concCalBtn = e.target.closest("[data-fin-conc-cal]");
-      if (concCalBtn) {
-        e.preventDefault();
-        const textId = concCalBtn.dataset.finConcCal;
-        const text = document.getElementById(textId);
-        const pick = document.getElementById(`${textId}Pick`);
-        if (!pick) return;
-        const iso = finOfxBrToIso(text?.value || "");
-        if (iso) pick.value = iso;
-        try {
-          if (typeof pick.showPicker === "function") pick.showPicker();
-          else pick.click();
-        } catch (_) {
-          pick.focus();
-          pick.click();
-        }
-        return;
-      }
       const concCtx = e.target.closest("[data-fin-conc-ctx]");
       if (concCtx) {
         const v = concCtx.dataset.finConcCtx;
@@ -2389,7 +2396,26 @@
           toast("Modelo de planilha de conciliação");
         } else if (act === "add") {
           openFinConcAddModal();
+        } else if (act === "filters") {
+          finDash.conc.filtersOpen = !finDash.conc.filtersOpen;
+          renderFinModuleDash();
+        } else if (act === "filters-close") {
+          finDash.conc.filtersOpen = false;
+          renderFinModuleDash();
+        } else if (act === "filters-clear") {
+          finDash.conc.tipo = "";
+          finDash.conc.valor = "";
+          finDash.conc.idTitulo = "";
+          finDash.conc.filtersOpen = true;
+          renderFinModuleDash();
         }
+        return;
+      }
+      const concStatus = e.target.closest("[data-fin-conc-status]");
+      if (concStatus) {
+        finDash.conc.status = concStatus.dataset.finConcStatus || "";
+        finDash.conc.catRowId = null;
+        renderFinModuleDash();
         return;
       }
       const concVincular = e.target.closest("[data-fin-conc-vincular]");
@@ -2791,21 +2817,9 @@
         }
         return;
       }
-      if (e.target.id === "finConcDe" || e.target.id === "finConcAte") {
-        const key = e.target.id === "finConcDe" ? "de" : "ate";
-        finDash.conc[key] = e.target.value || "";
-        const pos = e.target.selectionStart;
-        const keepId = e.target.id;
-        renderFinModuleDash();
-        const el = document.getElementById(keepId);
-        if (el) {
-          el.focus();
-          try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
-        }
-        return;
-      }
       if (e.target.id === "finConcValor") {
         finDash.conc.valor = e.target.value || "";
+        finDash.conc.filtersOpen = true;
         const pos = e.target.selectionStart;
         renderFinModuleDash();
         const el = document.getElementById("finConcValor");
@@ -2817,6 +2831,7 @@
       }
       if (e.target.id === "finConcIdTitulo") {
         finDash.conc.idTitulo = e.target.value || "";
+        finDash.conc.filtersOpen = true;
         const pos = e.target.selectionStart;
         renderFinModuleDash();
         const el = document.getElementById("finConcIdTitulo");
@@ -3002,18 +3017,12 @@
       if (e.target.id === "finConcTipo") {
         finDash.conc.tipo = e.target.value || "";
         finDash.conc.catRowId = null;
+        finDash.conc.filtersOpen = true;
         renderFinModuleDash();
         return;
       }
       if (e.target.id === "finConcStatus") {
         finDash.conc.status = e.target.value || "";
-        finDash.conc.catRowId = null;
-        renderFinModuleDash();
-        return;
-      }
-      if (e.target.id === "finConcDePick" || e.target.id === "finConcAtePick") {
-        const key = e.target.id === "finConcDePick" ? "de" : "ate";
-        finDash.conc[key] = finOfxDateDisplay(e.target.value || "");
         finDash.conc.catRowId = null;
         renderFinModuleDash();
         return;

@@ -855,8 +855,7 @@
         valor: "",
         idTitulo: "",
         status: "",
-        de: "",
-        ate: "",
+        filtersOpen: false,
         selected: [],
         catRowId: null,
         categories: {},
@@ -1418,6 +1417,7 @@
     let cliListKpiFilter = "";
     let cliListSelectedId = null;
     let cliListMenuId = null;
+    let cliMiniDossieTab = "alertas";
     let cliDrawerOpen = false;
     const CLI_TIPO_OPTIONS = ["LTDA", "ME", "EIRELI", "SA", "Sociedade Simples", "MEI", "Outros"];
     let cliCadastro = createEmptyCliCadastro();

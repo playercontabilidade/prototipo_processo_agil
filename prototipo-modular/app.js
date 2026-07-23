@@ -855,8 +855,7 @@
         valor: "",
         idTitulo: "",
         status: "",
-        de: "",
-        ate: "",
+        filtersOpen: false,
         selected: [],
         catRowId: null,
         categories: {},
@@ -1418,6 +1417,7 @@
     let cliListKpiFilter = "";
     let cliListSelectedId = null;
     let cliListMenuId = null;
+    let cliMiniDossieTab = "alertas";
     let cliDrawerOpen = false;
     const CLI_TIPO_OPTIONS = ["LTDA", "ME", "EIRELI", "SA", "Sociedade Simples", "MEI", "Outros"];
     let cliCadastro = createEmptyCliCadastro();
@@ -5532,10 +5532,12 @@
     function getCliMiniDossieFinanceiro(c, monitor) {
       const aReceber7 = Math.round((monitor.aReceber || 0) * 0.38);
       const aPagar7 = Math.round((monitor.aPagar || 0) * 0.42);
+      const liquido7 = aReceber7 - aPagar7;
       const risco = aPagar7 > aReceber7 * 1.05;
       return {
         aReceber7,
         aPagar7,
+        liquido7,
         saldo: monitor.saldo || 0,
         caixaLabel: risco ? "Risco de furo" : "Saudável",
         caixaCls: risco ? "is-bad" : "is-ok",
@@ -5544,6 +5546,13 @@
 
     function getCliMiniDossieObrigacoes(c) {
       const today = "2026-07-14";
+      const calIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+      const alertIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`;
+      const shieldIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+      const fmtDate = (iso) => {
+        const [y, m, d] = String(iso || "").split("-");
+        return y && m && d ? `${d}/${m}/${y}` : "";
+      };
       const tasks = agendaTasks
         .filter((t) => t.clienteId === c.id && !t.arquivada && String(t.date || "") >= today)
         .slice()
@@ -5552,23 +5561,48 @@
       const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
       const items = tasks.map((t) => {
         const diff = Math.round((new Date(t.date) - new Date(today)) / 86400000);
-        let when = t.date;
-        if (diff === 0) when = "Hoje";
-        else if (diff === 1) when = "Amanhã";
-        else if (diff > 1) when = `${diff} dias`;
-        return { when, label: t.nome, tip: t.prazoLegal || t.competencia || "" };
+        let when = fmtDate(t.date) || t.date;
+        let tone = "ok";
+        if (diff === 0) { when = "Hoje"; tone = "warn"; }
+        else if (diff === 1) { when = "Amanhã"; tone = "warn"; }
+        else if (diff > 1 && diff <= 7) { when = `Em ${diff} dias`; tone = "warn"; }
+        else if (diff > 7) { when = `Em ${diff} dias`; tone = "ok"; }
+        const tipParts = [fmtDate(t.date), t.prazoLegal || t.competencia].filter(Boolean);
+        return {
+          when,
+          label: t.nome,
+          tip: tipParts.join(" · "),
+          action: "entrega",
+          actionLabel: "Abrir entrega",
+          taskId: t.id,
+          tone,
+          ico: calIco,
+        };
       });
       if (cert && cert.status !== "ok") {
+        const late = cert.status === "vencido";
         items.splice(Math.min(1, items.length), 0, {
-          when: cert.status === "vencido" ? "Atrasado" : "Em breve",
-          label: "Venc. Certificado",
+          when: late ? "Atrasado" : "Em breve",
+          label: "Vencimento do certificado",
           tip: cert.validadeLabel || "",
+          action: "cert",
+          actionLabel: late ? "Ver certificado" : "Monitorar",
+          tone: late ? "bad" : "warn",
+          ico: late ? alertIco : shieldIco,
         });
       }
       if (!items.length) {
-        items.push({ when: "—", label: "Sem entregas próximas", tip: "" });
+        items.push({
+          when: "—",
+          label: "Sem entregas próximas",
+          tip: "Nenhuma obrigação no radar",
+          action: "entregas",
+          actionLabel: "Ver entregas",
+          tone: "ok",
+          ico: calIco,
+        });
       }
-      return items.slice(0, 4);
+      return items.slice(0, 3);
     }
 
     function getCliMiniDossieInteracoes(c) {
@@ -5600,85 +5634,104 @@
       const alerts = getCliMiniDossieAlerts(c, monitor);
       const fin = getCliMiniDossieFinanceiro(c, monitor);
       const obrigs = getCliMiniDossieObrigacoes(c);
-      const logs = getCliMiniDossieInteracoes(c);
-      const why = `Por que está ${monitor.score}% ${monitor.healthLabel}?`;
+      const logs = getCliMiniDossieInteracoes(c).slice(0, 3);
+      const nome = c.fantasia || c.nome;
+      const tab = cliMiniDossieTab || "alertas";
       const alertIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`;
-      const waIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11 11 0 0 0 3.2 17.6L2 22l4.5-1.2A11 11 0 1 0 20.5 3.5Zm-8.6 17a9.1 9.1 0 0 1-4.6-1.3l-.3-.2-2.7.7.7-2.6-.2-.3a9.1 9.1 0 1 1 7.1 3.7Zm5-6.8c-.3-.1-1.6-.8-1.9-.9s-.4-.1-.6.1-.7.9-.8 1-.3.2-.6.1a7.4 7.4 0 0 1-2.2-1.4 8.2 8.2 0 0 1-1.5-1.9c-.2-.3 0-.4.1-.6l.4-.5.1-.3c0-.1 0-.3-.1-.4s-.6-1.4-.8-1.9-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3a2 2 0 0 0-.6 1.5 3.5 3.5 0 0 0 .7 1.9 8 8 0 0 0 3.1 3 11 11 0 0 0 2 .8 2.4 2.4 0 0 0 1.7-.5 2.8 2.8 0 0 0 .8-1.6c.1-.2 0-.4 0-.5s-.3-.2-.6-.3Z"/></svg>`;
+      const alertCount = alerts.filter((a) => a.id !== "ok").length;
+      const liquidoTxt = `${fin.liquido7 >= 0 ? "+" : "−"} ${money(Math.abs(fin.liquido7))}`;
+
+      let panel = "";
+      if (tab === "financeiro") {
+        panel = `
+          <div class="cli-mini-dossie-panel-head">
+            <div>
+              <strong>Termômetro financeiro</strong>
+              <span class="sub">Próximos 7 dias</span>
+            </div>
+            <button type="button" class="btn-ghost sm" data-cli-dossie-act="financeiro" data-cli-id="${c.id}">Abrir financeiro</button>
+          </div>
+          <div class="fin-drawer-meta cli-drawer-meta">
+            <div><span>A receber</span><strong>${money(fin.aReceber7)}</strong></div>
+            <div><span>A pagar</span><strong>${money(fin.aPagar7)}</strong></div>
+            <div><span>Líquido</span><strong class="${fin.liquido7 >= 0 ? "ok" : "bad"}">${liquidoTxt}</strong></div>
+            <div><span>Saúde do caixa</span><strong class="${fin.caixaCls === "is-ok" ? "ok" : "bad"}">${fin.caixaLabel}</strong></div>
+          </div>`;
+      } else if (tab === "obrigacoes") {
+        panel = `
+          <div class="cli-mini-dossie-panel-head">
+            <div>
+              <strong>Radar de obrigações</strong>
+              <span class="sub">Próximas entregas</span>
+            </div>
+            <button type="button" class="btn-ghost sm" data-cli-dossie-act="entregas" data-cli-id="${c.id}">Ver entregas</button>
+          </div>
+          <div class="fin-drawer-list">
+            ${obrigs.map((o) => `
+              <button type="button" class="fin-drawer-item cli-mini-dossie-hit is-${o.tone || "ok"}" data-cli-dossie-act="${o.action || "entregas"}" data-cli-id="${c.id}"${o.taskId ? ` data-task-id="${o.taskId}"` : ""}>
+                <span class="rank" aria-hidden="true">${o.ico || ""}</span>
+                <div>
+                  <strong>
+                    <span class="cli-mini-dossie-when">${uiSelectEscape(o.when)}</span>
+                    ${uiSelectEscape(o.label)}
+                  </strong>
+                  ${o.tip ? `<div class="meta">${uiSelectEscape(o.tip)}</div>` : ""}
+                </div>
+                <span class="amt">${uiSelectEscape(o.actionLabel || "Abrir")}</span>
+              </button>`).join("")}
+          </div>`;
+      } else if (tab === "interacoes") {
+        const chatIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>`;
+        panel = `
+          <div class="cli-mini-dossie-panel-head">
+            <div>
+              <strong>Últimas interações</strong>
+              <span class="sub">Log da equipe</span>
+            </div>
+            <button type="button" class="btn-ghost sm" data-cli-dossie-act="comentarios" data-cli-id="${c.id}">Ver todas</button>
+          </div>
+          <div class="fin-drawer-list">
+            ${logs.map((l) => `
+              <button type="button" class="fin-drawer-item cli-mini-dossie-hit" data-cli-dossie-act="comentarios" data-cli-id="${c.id}">
+                <span class="rank" aria-hidden="true">${chatIco}</span>
+                <div>
+                  <strong>${uiSelectEscape(l.text)}</strong>
+                  <div class="meta">${uiSelectEscape(l.when)}</div>
+                </div>
+                <span class="amt">Abrir</span>
+              </button>`).join("")}
+          </div>`;
+      } else {
+        panel = `
+          <div class="cli-mini-dossie-panel-head">
+            <div>
+              <strong>Raio-X dos alertas</strong>
+              <span class="sub">Prioridade operacional</span>
+            </div>
+          </div>
+          <div class="fin-drawer-list">
+            ${alerts.map((a) => `
+              <button type="button" class="fin-drawer-item cli-mini-dossie-hit is-${a.tone}"${a.action ? ` data-cli-dossie-act="${a.action}" data-cli-id="${c.id}"${a.taskId ? ` data-task-id="${a.taskId}"` : ""}` : " disabled"}>
+                <span class="rank" aria-hidden="true">${alertIco}</span>
+                <div>
+                  <strong>${uiSelectEscape(a.text)}</strong>
+                </div>
+                <span class="amt">${uiSelectEscape(a.actionLabel || "—")}</span>
+              </button>`).join("")}
+          </div>`;
+      }
 
       return `
-        <section class="cli-mini-dossie" data-cli-dossie="${c.id}" aria-label="Mini-dossiê operacional de ${uiSelectEscape(c.fantasia || c.nome)}">
-          <div class="cli-mini-dossie-actions" role="toolbar" aria-label="Ações rápidas">
-            <button type="button" class="btn-outline" data-cli-dossie-act="perfil" data-cli-id="${c.id}">Ir para Perfil Completo</button>
-            <button type="button" class="btn-outline" data-cli-dossie-act="whatsapp" data-cli-id="${c.id}">
-              ${waIco}
-              Falar no WhatsApp
-            </button>
-            <button type="button" class="btn-outline" data-cli-dossie-act="documento" data-cli-id="${c.id}">Gerar Documento</button>
-            <button type="button" class="btn-outline" data-cli-dossie-act="cobranca" data-cli-id="${c.id}">Nova Cobrança</button>
+        <section class="cli-mini-dossie" data-cli-dossie="${c.id}" aria-label="Mini-dossiê operacional de ${uiSelectEscape(nome)}">
+          <div class="cli-tabs cli-mini-dossie-tabs" role="tablist" aria-label="Seções do dossiê">
+            <button type="button" class="cli-tab${tab === "alertas" ? " active" : ""}" role="tab" aria-selected="${tab === "alertas"}" data-cli-dossie-tab="alertas">Alertas${alertCount ? ` · ${alertCount}` : ""}</button>
+            <button type="button" class="cli-tab${tab === "financeiro" ? " active" : ""}" role="tab" aria-selected="${tab === "financeiro"}" data-cli-dossie-tab="financeiro">Financeiro</button>
+            <button type="button" class="cli-tab${tab === "obrigacoes" ? " active" : ""}" role="tab" aria-selected="${tab === "obrigacoes"}" data-cli-dossie-tab="obrigacoes">Obrigações${obrigs.length ? ` · ${obrigs.length}` : ""}</button>
+            <button type="button" class="cli-tab${tab === "interacoes" ? " active" : ""}" role="tab" aria-selected="${tab === "interacoes"}" data-cli-dossie-tab="interacoes">Interações</button>
           </div>
-          <div class="cli-mini-dossie-grid">
-            <article class="cli-mini-dossie-card">
-              <header class="cli-mini-dossie-card-head">
-                <h4>Raio-X dos Alertas</h4>
-                <span class="sub">${uiSelectEscape(why)}</span>
-              </header>
-              <ul class="cli-mini-dossie-alerts">
-                ${alerts.map((a) => `
-                  <li class="cli-mini-dossie-alert is-${a.tone}">
-                    <span class="cli-mini-dossie-alert-main">
-                      <i class="cli-mini-dossie-alert-ico" aria-hidden="true">${alertIco}</i>
-                      <span>${uiSelectEscape(a.text)}</span>
-                    </span>
-                    ${a.action ? `<button type="button" class="btn-ghost sm" data-cli-dossie-act="${a.action}" data-cli-id="${c.id}"${a.taskId ? ` data-task-id="${a.taskId}"` : ""}>${uiSelectEscape(a.actionLabel)}</button>` : ""}
-                  </li>`).join("")}
-              </ul>
-            </article>
-            <article class="cli-mini-dossie-card">
-              <header class="cli-mini-dossie-card-head">
-                <h4>Termômetro Financeiro</h4>
-                <span class="sub">Liquidez de curto prazo · 7 dias</span>
-              </header>
-              <div class="cli-mini-dossie-fin">
-                <div class="cli-mini-dossie-fin-kpi">
-                  <span class="lab">A receber (7 dias)</span>
-                  <strong>${money(fin.aReceber7)}</strong>
-                </div>
-                <div class="cli-mini-dossie-fin-kpi">
-                  <span class="lab">A pagar (7 dias)</span>
-                  <strong>${money(fin.aPagar7)}</strong>
-                </div>
-                <div class="cli-mini-dossie-fin-badge ${fin.caixaCls}">
-                  <span class="lab">Saúde do caixa</span>
-                  <strong>${fin.caixaLabel}</strong>
-                </div>
-              </div>
-            </article>
-            <article class="cli-mini-dossie-card">
-              <header class="cli-mini-dossie-card-head">
-                <h4>Radar de Obrigações</h4>
-                <span class="sub">Próximas entregas</span>
-              </header>
-              <ul class="cli-mini-dossie-timeline">
-                ${obrigs.map((o) => `
-                  <li>
-                    <span class="when">${uiSelectEscape(o.when)}</span>
-                    <span class="label" title="${uiSelectEscape(o.tip || o.label)}">${uiSelectEscape(o.label)}</span>
-                  </li>`).join("")}
-              </ul>
-            </article>
-            <article class="cli-mini-dossie-card">
-              <header class="cli-mini-dossie-card-head">
-                <h4>Últimas Interações</h4>
-                <span class="sub">Log da equipe</span>
-              </header>
-              <ul class="cli-mini-dossie-log">
-                ${logs.map((l) => `
-                  <li>
-                    <span class="when">${uiSelectEscape(l.when)}</span>
-                    <span class="text">${uiSelectEscape(l.text)}</span>
-                  </li>`).join("")}
-              </ul>
-            </article>
+
+          <div class="cli-mini-dossie-panel" role="tabpanel">
+            ${panel}
           </div>
         </section>`;
     }
@@ -5693,12 +5746,15 @@
     function selectCliListForDossie(clientId, { toggle } = {}) {
       if (!clientId) {
         cliListSelectedId = null;
+        cliMiniDossieTab = "alertas";
         return;
       }
       if (toggle && cliListSelectedId === clientId) {
         cliListSelectedId = null;
+        cliMiniDossieTab = "alertas";
         return;
       }
+      if (cliListSelectedId !== clientId) cliMiniDossieTab = "alertas";
       cliListSelectedId = clientId;
       closeCliClienteDrawer({ silent: true, keepSelection: true });
     }
@@ -5708,6 +5764,10 @@
       if (!c) return;
       if (act === "perfil") {
         openClientePerfil(clientId);
+        return;
+      }
+      if (act === "comentarios") {
+        openClientePerfil(clientId, "comentarios");
         return;
       }
       if (act === "whatsapp") {
@@ -5747,6 +5807,10 @@
       }
       if (act === "financeiro") {
         openClientePerfil(clientId, "financeiro");
+        return;
+      }
+      if (act === "entregas") {
+        openClientePerfil(clientId, "entregas");
         return;
       }
       if (act === "auditoria") {
@@ -5860,6 +5924,7 @@
             <span>Saúde do Cliente</span>
             <span>Alertas</span>
             <span>Atividade</span>
+            <span class="cli-head-actions">Ações</span>
           </div>
           ${rowsMeta.length ? rowsMeta.map(({ c, monitor }) => {
             const tipo = c.tipoUnidade || "Matriz";
@@ -5887,6 +5952,9 @@
                 <div class="cli-mon-ativ">
                   <strong>${uiSelectEscape(m.atividade.short)}</strong>
                   <span>${uiSelectEscape(m.atividade.detail)}</span>
+                </div>
+                <div class="cli-mon-actions" data-cli-actions>
+                  <button type="button" class="btn-outline sm" data-cli-dossie-act="perfil" data-cli-id="${c.id}">Abrir perfil</button>
                 </div>
               </div>
               ${dossieHtml}`;
@@ -10800,6 +10868,7 @@
         finDash.unidade = "all";
         finDash.empresaQuery = "";
         finDash.acOpen = false;
+        /* Visão consolidada vive no Painel; abas operacionais pedem cliente. */
         if (finDash.tab !== "dashboard") finDash.tab = "dashboard";
         finDash._clientPickLockUntil = Date.now() + 350;
         renderFinModuleDash();
@@ -10812,7 +10881,7 @@
       finDash.unidade = cli.id;
       finDash.empresaQuery = cli.fantasia || cli.nome || "";
       finDash.acOpen = false;
-      if (finDash.tab !== "dashboard") finDash.tab = "dashboard";
+      /* Mantém a aba atual (Financeiro / Auditoria / Configurações). */
       finDash._clientPickLockUntil = Date.now() + 350;
       renderFinModuleDash();
       toast(`Cliente selecionado: ${finDash.empresaQuery}`);
@@ -12252,14 +12321,19 @@
       });
     }
 
+    function finConcHasExtraFilters() {
+      return !!(finDash.conc.tipo || finDash.conc.valor || finDash.conc.idTitulo);
+    }
+
     function filterFinConcMovements(rows) {
       const q = normalizeSearchText(finDash.conc.q || "");
       const tipo = finDash.conc.tipo || "";
       const status = finDash.conc.status || "";
       const valorQ = normalizeSearchText(finDash.conc.valor || "");
       const idQ = normalizeSearchText(finDash.conc.idTitulo || "");
-      const deIso = finOfxBrToIso(finDash.conc.de || "");
-      const ateIso = finOfxBrToIso(finDash.conc.ate || "");
+      const { start, end } = getFinPeriodRange();
+      const startMs = start?.getTime?.() || 0;
+      const endMs = end?.getTime?.() || Number.POSITIVE_INFINITY;
       return rows.filter((r) => {
         if (tipo && r.tipo !== tipo) return false;
         if (status && r.status !== status) return false;
@@ -12270,12 +12344,11 @@
           if (!raw.includes(valorQ) && !fmt.includes(valorQ)) return false;
         }
         if (q && !normalizeSearchText(`${r.desc || ""} ${r.data || ""} ${r.valor} ${r.tituloId || ""}`).includes(q)) return false;
-        if (deIso || ateIso) {
-          const rowIso = finOfxBrToIso(r.data || "");
-          if (!rowIso) return false;
-          if (deIso && rowIso < deIso) return false;
-          if (ateIso && rowIso > ateIso) return false;
-        }
+        const rowIso = finOfxBrToIso(r.data || "");
+        if (!rowIso) return false;
+        const rowMs = new Date(`${rowIso}T12:00:00`).getTime();
+        if (Number.isNaN(rowMs)) return false;
+        if (rowMs < startMs || rowMs > endMs) return false;
         return true;
       });
     }
@@ -12744,10 +12817,26 @@
 
     function openFinConcGerarTituloModal(movId, opts = {}) {
       const fromOfx = !!opts.fromOfx;
-      const mov = getFinConcMovById(movId);
+      const batchIds = Array.isArray(opts.batchIds) && opts.batchIds.length
+        ? [...new Set(opts.batchIds.map(String))]
+        : [String(movId)];
+      const isBatch = batchIds.length > 1;
+      const mov = getFinConcMovById(batchIds[0] || movId);
       if (!mov) {
         toast("Movimentação não encontrada");
         return;
+      }
+      const batchMovs = batchIds.map((id) => getFinConcMovById(id)).filter(Boolean);
+      if (!batchMovs.length) {
+        toast("Nenhuma movimentação válida na seleção");
+        return;
+      }
+      if (isBatch) {
+        const tipos = new Set(batchMovs.map((m) => m.tipo));
+        if (tipos.size > 1) {
+          toast("Selecione só créditos ou só débitos para gerar em lote");
+          return;
+        }
       }
       if (fromOfx && finDash.conc.ofx) {
         finDash.conc.ofx.modalOpen = false;
@@ -12758,19 +12847,22 @@
       }
 
       const lado = mov.tipo === "credito" ? "receber" : "pagar";
-      const titleBase = lado === "receber" ? "Gerar título a receber" : "Gerar título a pagar";
+      const titleBase = isBatch
+        ? (lado === "receber" ? "Gerar títulos a receber" : "Gerar títulos a pagar")
+        : (lado === "receber" ? "Gerar título a receber" : "Gerar título a pagar");
       const title = fromOfx ? `${titleBase} (OFX)` : titleBase;
       const banco = finDash.conc.banco || "SICREDI";
       const catId0 = mov.catId || finDash.conc.categories[mov.id] || "";
       const draft = {
         movId: mov.id,
+        batchIds,
         fromOfx,
         catId: catId0,
         planoQ: "",
         forma: mov.tipo === "credito" ? "PIX" : "TED",
         clienteNome: "",
-        desc: mov.desc || "",
-        keyword: mov.desc || "",
+        desc: isBatch ? "" : (mov.desc || ""),
+        keyword: isBatch ? "" : (mov.desc || ""),
       };
       finDash.conc.gerar = draft;
 
@@ -12800,21 +12892,30 @@
         }
       };
 
+      const batchTotal = batchMovs.reduce((acc, m) => acc + (Number(m.valor) || 0), 0);
+      const summaryDesc = isBatch
+        ? `${batchMovs.length} movimentações · modelo: ${mov.desc}`
+        : mov.desc;
+      const summaryAmt = isBatch ? batchTotal : mov.valor;
+
       openModal({
         title,
-        sub: "Confira os dados, escolha a forma de pagamento e classifique o lançamento.",
+        sub: isBatch
+          ? `Classifique ${batchMovs.length} lançamentos de uma vez · mesmos dados de pagamento e plano de contas.`
+          : "Confira os dados, escolha a forma de pagamento e classifique o lançamento.",
         wide: true,
         body: `
           <div class="fin-gerar-modal">
             <div class="fin-gerar-summary">
               <div class="fin-gerar-summary-main">
-                <strong>${uiSelectEscape(mov.desc)}</strong>
-                <span class="fin-gerar-amt ${mov.tipo === "credito" ? "in" : "out"}">${money(mov.valor)}</span>
+                <strong>${uiSelectEscape(summaryDesc)}</strong>
+                <span class="fin-gerar-amt ${mov.tipo === "credito" ? "in" : "out"}">${money(summaryAmt)}</span>
               </div>
               <div class="fin-gerar-summary-meta">
                 <span>${uiSelectEscape(mov.data)}</span>
                 <span>${uiSelectEscape(banco)}</span>
                 <span class="fin-ofx-tipo ${mov.tipo}">${mov.tipo === "credito" ? "CREDITO" : "DEBITO"}</span>
+                ${isBatch ? `<span>${batchMovs.length} itens</span>` : ""}
               </div>
             </div>
 
@@ -12825,8 +12926,8 @@
                 </header>
                 <div class="fin-gerar-col-body">
                   <label class="fin-gerar-field">
-                    <span class="fin-gerar-lab">Descrição</span>
-                    <input type="text" id="finGerarDesc" value="${uiSelectEscape(draft.desc)}" />
+                    <span class="fin-gerar-lab">Descrição${isBatch ? " (opcional · aplica a todas)" : ""}</span>
+                    <input type="text" id="finGerarDesc" value="${uiSelectEscape(draft.desc)}" placeholder="${isBatch ? "Deixe em branco para manter a descrição de cada item" : ""}" />
                   </label>
                   <label class="fin-gerar-field">
                     <span class="fin-gerar-lab">Palavras-chave</span>
@@ -12872,7 +12973,7 @@
           </div>`,
         foot: `
           <button type="button" class="btn-ghost" id="finGerarCancel">Cancelar</button>
-          <button type="button" class="btn-primary" id="finGerarSave">Gerar título</button>`,
+          <button type="button" class="btn-primary" id="finGerarSave">${isBatch ? `Gerar ${batchMovs.length} títulos` : "Gerar título"}</button>`,
       });
 
       prepareFinConcModalChrome();
@@ -12932,36 +13033,50 @@
           return;
         }
         const list = ensureFinConcMovs();
-        const idx = list.findIndex((m) => m.id === mov.id);
-        if (idx < 0) {
+        const descOverride = (document.getElementById("finGerarDesc")?.value || draft.desc || "").trim();
+        const keyword = (document.getElementById("finGerarKeyword")?.value || "").trim();
+        const targets = isBatch ? batchMovs : [mov];
+        let applied = 0;
+        targets.forEach((target) => {
+          const idx = list.findIndex((m) => m.id === target.id);
+          if (idx < 0) return;
+          list[idx] = {
+            ...list[idx],
+            desc: descOverride || list[idx].desc,
+            status: fromOfx ? "aberto" : "conciliado",
+            catId: draft.catId,
+            forma: draft.forma,
+            keyword,
+            clienteNome: draft.clienteNome || list[idx].clienteNome || "",
+            ofxPendingValidate: fromOfx ? true : !!list[idx].ofxPendingValidate,
+            ofxValidated: fromOfx ? false : !!list[idx].ofxValidated,
+          };
+          finDash.conc.categories[target.id] = draft.catId;
+          if (fromOfx) markFinOfxSessionConciliado(target.id);
+          pushFinConcHistory(
+            target.id,
+            fromOfx
+              ? `Classificado no OFX${isBatch ? " (lote)" : ""} · ${finDreCatLabel(draft.catId)} (pendente Importar tudo)`
+              : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`,
+            "usuario"
+          );
+          applied += 1;
+        });
+        if (!applied) {
           toast("Movimentação não encontrada");
           return;
         }
-        const desc = (document.getElementById("finGerarDesc")?.value || draft.desc || "").trim() || mov.desc;
-        list[idx] = {
-          ...list[idx],
-          desc,
-          status: fromOfx ? "aberto" : "conciliado",
-          catId: draft.catId,
-          forma: draft.forma,
-          keyword: (document.getElementById("finGerarKeyword")?.value || "").trim(),
-          clienteNome: draft.clienteNome || list[idx].clienteNome || "",
-          ofxPendingValidate: fromOfx ? true : !!list[idx].ofxPendingValidate,
-          ofxValidated: fromOfx ? false : !!list[idx].ofxValidated,
-        };
-        finDash.conc.categories[mov.id] = draft.catId;
         finDash.conc.gerar = null;
-        if (fromOfx) markFinOfxSessionConciliado(mov.id);
-        pushFinConcHistory(
-          mov.id,
-          fromOfx
-            ? `Classificado no OFX · ${finDreCatLabel(draft.catId)} (pendente Importar tudo)`
-            : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`,
-          "usuario"
-        );
+        if (finDash.conc.ofx && isBatch) {
+          finDash.conc.ofx.selected = [];
+        }
         toast(fromOfx
-          ? `Classificado no OFX · confirme em Importar tudo · ${finDreCatLabel(draft.catId)}`
-          : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`);
+          ? (isBatch
+            ? `${applied} classificadas no OFX · confirme em Importar tudo · ${finDreCatLabel(draft.catId)}`
+            : `Classificado no OFX · confirme em Importar tudo · ${finDreCatLabel(draft.catId)}`)
+          : (isBatch
+            ? `${applied} títulos gerados e conciliados · ${finDreCatLabel(draft.catId)}`
+            : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`));
         goBack();
         if (!fromOfx) renderFinModuleDash();
       });
@@ -14656,10 +14771,11 @@
               </div>
             </div>
           </div>`,
-        foot: isExport ? `
+          foot: isExport ? `
           <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finOfxExportAll">Exportar tudo</button>` : `
           <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-outline" id="finOfxGerarLote" ${selCount >= 2 ? "" : "disabled"}>Gerar em lote</button>
           <button type="button" class="btn-primary" id="finOfxImportAll">Importar tudo</button>`,
       });
 
@@ -14751,6 +14867,15 @@
             refresh();
           }
         });
+      });
+
+      document.getElementById("finOfxGerarLote")?.addEventListener("click", () => {
+        const selectedIds = [...(finDash.conc.ofx.selected || [])];
+        if (selectedIds.length < 2) {
+          toast("Selecione ao menos duas movimentações");
+          return;
+        }
+        openFinConcGerarTituloModal(selectedIds[0], { fromOfx: true, batchIds: selectedIds });
       });
 
       modalBody.querySelectorAll("[data-fin-ofx-row-act]").forEach((btn) => {
@@ -15436,7 +15561,7 @@
     function renderFinConciliacaoPanel() {
       const all = getFinConcMovements();
       const rows = filterFinConcMovements(all);
-      const abertos = all.filter((r) => r.status === "aberto").length;
+      const abertos = rows.filter((r) => r.status === "aberto").length;
       if (!Array.isArray(finDash.conc.selected)) finDash.conc.selected = [];
       const selected = new Set(finDash.conc.selected);
       const selCount = rows.filter((r) => selected.has(r.id)).length;
@@ -15444,6 +15569,9 @@
       const ctx = finDash.conc.contexto || "contabil";
       const ctxOpen = !!finDash.conc.contextoOpen;
       const ctxLabel = ctx === "financeiro" ? "Financeiro" : "Contábil";
+      const statusNow = finDash.conc.status || "";
+      const filtersOpen = !!finDash.conc.filtersOpen;
+      const hasExtra = finConcHasExtraFilters();
 
       return `
         <div class="fin-op-panel fin-conc-panel">
@@ -15524,42 +15652,47 @@
               </div>
             </div>
             <div class="fin-conc-toolbar-row fin-conc-toolbar-filters">
-              <div class="fin-op-filters fin-ofx-filters" role="search" aria-label="Filtros da conciliação">
+              <div class="fin-op-filters fin-ofx-filters fin-conc-filters" role="search" aria-label="Filtros da conciliação">
                 <div class="proc-filter search fin-ofx-q tip-bottom" data-tip="Buscar movimentação">
                   <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                   <input type="search" id="finConcQ" placeholder="Buscar movimentação…" value="${(finDash.conc.q || "").replace(/"/g, "&quot;")}" aria-label="Buscar movimentação" />
                 </div>
-                <div class="proc-filter field valor" data-tip="Filtrar por valor">
-                  <input type="search" id="finConcValor" placeholder="Valor" value="${(finDash.conc.valor || "").replace(/"/g, "&quot;")}" aria-label="Filtrar valor" />
+
+                <div class="btn-filter-wrap fin-conc-filter-wrap${filtersOpen ? " open" : ""}" id="finConcFilterWrap">
+                  <button type="button" class="btn-filter tip-bottom${hasExtra || filtersOpen ? " active" : ""}" data-fin-conc="filters" data-tip="Filtros adicionais" aria-label="Filtros adicionais" aria-expanded="${filtersOpen}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    ${hasExtra ? `<span class="fin-conc-filter-dot" aria-hidden="true"></span>` : ""}
+                  </button>
+                  <div class="filter-panel fin-conc-filter-panel" role="dialog" aria-label="Filtros adicionais">
+                    <h5>Filtros adicionais</h5>
+                    <p class="filter-hint">Refinam a lista dentro do período do topo e do status.</p>
+                    <label class="fin-conc-filter-field">
+                      <span>Valor</span>
+                      <input type="search" id="finConcValor" placeholder="Ex.: 150,00" value="${(finDash.conc.valor || "").replace(/"/g, "&quot;")}" aria-label="Filtrar valor" />
+                    </label>
+                    <label class="fin-conc-filter-field">
+                      <span>ID título</span>
+                      <input type="search" id="finConcIdTitulo" placeholder="Ex.: 10482" value="${(finDash.conc.idTitulo || "").replace(/"/g, "&quot;")}" aria-label="Filtrar ID do título" />
+                    </label>
+                    <label class="fin-conc-filter-field">
+                      <span>Tipo</span>
+                      <select id="finConcTipo" aria-label="Filtrar tipo">
+                        <option value="" ${!finDash.conc.tipo ? "selected" : ""}>Todos</option>
+                        <option value="credito" ${finDash.conc.tipo === "credito" ? "selected" : ""}>Crédito</option>
+                        <option value="debito" ${finDash.conc.tipo === "debito" ? "selected" : ""}>Débito</option>
+                      </select>
+                    </label>
+                    <div class="filter-actions">
+                      <button type="button" class="linkish" data-fin-conc="filters-clear" ${hasExtra ? "" : "disabled"}>Limpar</button>
+                      <button type="button" class="btn-ghost" data-fin-conc="filters-close">Fechar</button>
+                    </div>
+                  </div>
                 </div>
-                <div class="proc-filter field id-titulo" data-tip="Filtrar por ID do título">
-                  <input type="search" id="finConcIdTitulo" placeholder="ID título" value="${(finDash.conc.idTitulo || "").replace(/"/g, "&quot;")}" aria-label="Filtrar ID do título" />
-                </div>
-                <div class="proc-filter field fin-ofx-tipo" data-tip="Filtrar por tipo">
-                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/><path d="m14 15 3 3 3-3"/></svg>
-                  <select id="finConcTipo" aria-label="Filtrar tipo">
-                    <option value="" ${!finDash.conc.tipo ? "selected" : ""}>Todos</option>
-                    <option value="credito" ${finDash.conc.tipo === "credito" ? "selected" : ""}>Crédito</option>
-                    <option value="debito" ${finDash.conc.tipo === "debito" ? "selected" : ""}>Débito</option>
-                  </select>
-                </div>
-                <div class="proc-filter field fin-ofx-conc" data-tip="Filtrar por status">
-                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
-                  <select id="finConcStatus" aria-label="Filtrar status">
-                    <option value="" ${!finDash.conc.status ? "selected" : ""}>Status</option>
-                    <option value="conciliado" ${finDash.conc.status === "conciliado" ? "selected" : ""}>Conciliado</option>
-                    <option value="aberto" ${finDash.conc.status === "aberto" ? "selected" : ""}>Em aberto</option>
-                  </select>
-                </div>
-                <div class="proc-filter field fin-ofx-date" data-tip="Data inicial">
-                  <input type="text" id="finConcDe" class="fin-ofx-date-text" inputmode="numeric" placeholder="De dd/mm/aaaa" value="${finOfxDateDisplay(finDash.conc.de || "").replace(/"/g, "&quot;")}" aria-label="Data inicial" autocomplete="off" />
-                  <button type="button" class="fin-ofx-date-cal" data-fin-conc-cal="finConcDe" aria-label="Abrir calendário data inicial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button>
-                  <input type="date" id="finConcDePick" class="fin-ofx-date-native" value="${finOfxBrToIso(finDash.conc.de || "")}" tabindex="-1" aria-hidden="true" />
-                </div>
-                <div class="proc-filter field fin-ofx-date" data-tip="Data final">
-                  <input type="text" id="finConcAte" class="fin-ofx-date-text" inputmode="numeric" placeholder="Até dd/mm/aaaa" value="${finOfxDateDisplay(finDash.conc.ate || "").replace(/"/g, "&quot;")}" aria-label="Data final" autocomplete="off" />
-                  <button type="button" class="fin-ofx-date-cal" data-fin-conc-cal="finConcAte" aria-label="Abrir calendário data final"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button>
-                  <input type="date" id="finConcAtePick" class="fin-ofx-date-native" value="${finOfxBrToIso(finDash.conc.ate || "")}" tabindex="-1" aria-hidden="true" />
+
+                <div class="agenda-quick-filters fin-conc-status-chips" role="group" aria-label="Status da conciliação">
+                  <button type="button" data-fin-conc-status="" class="${!statusNow ? "active" : ""}" aria-pressed="${!statusNow}">Todos</button>
+                  <button type="button" data-fin-conc-status="aberto" class="${statusNow === "aberto" ? "active" : ""}" aria-pressed="${statusNow === "aberto"}">Em aberto</button>
+                  <button type="button" data-fin-conc-status="conciliado" class="${statusNow === "conciliado" ? "active" : ""}" aria-pressed="${statusNow === "conciliado"}">Conciliado</button>
                 </div>
               </div>
               <div class="fin-op-meta">${rows.length} movimentações · ${abertos} em aberto</div>
@@ -21870,7 +22003,27 @@
       if (dossieAct) {
         e.preventDefault();
         e.stopPropagation();
+        cliListMenuId = null;
         handleCliMiniDossieAction(dossieAct.dataset.cliDossieAct || "", dossieAct.dataset.cliId, dossieAct);
+        return;
+      }
+      const dossieTab = e.target.closest("[data-cli-dossie-tab]");
+      if (dossieTab) {
+        e.preventDefault();
+        e.stopPropagation();
+        cliMiniDossieTab = dossieTab.dataset.cliDossieTab || "alertas";
+        cliListMenuId = null;
+        renderClientesList();
+        return;
+      }
+      const dossieMenuBtn = e.target.closest("[data-cli-dossie-menu]");
+      if (dossieMenuBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = dossieMenuBtn.dataset.cliDossieMenu;
+        const key = `dossie:${id}`;
+        cliListMenuId = cliListMenuId === key ? null : key;
+        renderClientesList();
         return;
       }
       const rowMenuBtn = e.target.closest("[data-cli-row-menu]");
@@ -21941,6 +22094,11 @@
         finDash.conc.rowMenuId = null;
         if (finDash.tab === "conciliacao") renderFinModuleDash();
         return;
+      }
+      if (finDash.conc?.filtersOpen && !e.target.closest("#finConcFilterWrap")) {
+        finDash.conc.filtersOpen = false;
+        const keepsFlow = e.target.closest("[data-fin-conc], [data-fin-conc-status], #finConcQ");
+        if (!keepsFlow && finDash.tab === "conciliacao") renderFinModuleDash();
       }
       if (e.target.closest("[data-cli-back]")) {
         closeClientePerfil();
@@ -22648,24 +22806,6 @@
         openFinConcOfxPickModal();
         return;
       }
-      const concCalBtn = e.target.closest("[data-fin-conc-cal]");
-      if (concCalBtn) {
-        e.preventDefault();
-        const textId = concCalBtn.dataset.finConcCal;
-        const text = document.getElementById(textId);
-        const pick = document.getElementById(`${textId}Pick`);
-        if (!pick) return;
-        const iso = finOfxBrToIso(text?.value || "");
-        if (iso) pick.value = iso;
-        try {
-          if (typeof pick.showPicker === "function") pick.showPicker();
-          else pick.click();
-        } catch (_) {
-          pick.focus();
-          pick.click();
-        }
-        return;
-      }
       const concCtx = e.target.closest("[data-fin-conc-ctx]");
       if (concCtx) {
         const v = concCtx.dataset.finConcCtx;
@@ -22705,7 +22845,26 @@
           toast("Modelo de planilha de conciliação");
         } else if (act === "add") {
           openFinConcAddModal();
+        } else if (act === "filters") {
+          finDash.conc.filtersOpen = !finDash.conc.filtersOpen;
+          renderFinModuleDash();
+        } else if (act === "filters-close") {
+          finDash.conc.filtersOpen = false;
+          renderFinModuleDash();
+        } else if (act === "filters-clear") {
+          finDash.conc.tipo = "";
+          finDash.conc.valor = "";
+          finDash.conc.idTitulo = "";
+          finDash.conc.filtersOpen = true;
+          renderFinModuleDash();
         }
+        return;
+      }
+      const concStatus = e.target.closest("[data-fin-conc-status]");
+      if (concStatus) {
+        finDash.conc.status = concStatus.dataset.finConcStatus || "";
+        finDash.conc.catRowId = null;
+        renderFinModuleDash();
         return;
       }
       const concVincular = e.target.closest("[data-fin-conc-vincular]");
@@ -23107,21 +23266,9 @@
         }
         return;
       }
-      if (e.target.id === "finConcDe" || e.target.id === "finConcAte") {
-        const key = e.target.id === "finConcDe" ? "de" : "ate";
-        finDash.conc[key] = e.target.value || "";
-        const pos = e.target.selectionStart;
-        const keepId = e.target.id;
-        renderFinModuleDash();
-        const el = document.getElementById(keepId);
-        if (el) {
-          el.focus();
-          try { el.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
-        }
-        return;
-      }
       if (e.target.id === "finConcValor") {
         finDash.conc.valor = e.target.value || "";
+        finDash.conc.filtersOpen = true;
         const pos = e.target.selectionStart;
         renderFinModuleDash();
         const el = document.getElementById("finConcValor");
@@ -23133,6 +23280,7 @@
       }
       if (e.target.id === "finConcIdTitulo") {
         finDash.conc.idTitulo = e.target.value || "";
+        finDash.conc.filtersOpen = true;
         const pos = e.target.selectionStart;
         renderFinModuleDash();
         const el = document.getElementById("finConcIdTitulo");
@@ -23318,18 +23466,12 @@
       if (e.target.id === "finConcTipo") {
         finDash.conc.tipo = e.target.value || "";
         finDash.conc.catRowId = null;
+        finDash.conc.filtersOpen = true;
         renderFinModuleDash();
         return;
       }
       if (e.target.id === "finConcStatus") {
         finDash.conc.status = e.target.value || "";
-        finDash.conc.catRowId = null;
-        renderFinModuleDash();
-        return;
-      }
-      if (e.target.id === "finConcDePick" || e.target.id === "finConcAtePick") {
-        const key = e.target.id === "finConcDePick" ? "de" : "ate";
-        finDash.conc[key] = finOfxDateDisplay(e.target.value || "");
         finDash.conc.catRowId = null;
         renderFinModuleDash();
         return;

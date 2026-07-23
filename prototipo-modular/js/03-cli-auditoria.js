@@ -947,6 +947,7 @@
         finDash.unidade = "all";
         finDash.empresaQuery = "";
         finDash.acOpen = false;
+        /* Visão consolidada vive no Painel; abas operacionais pedem cliente. */
         if (finDash.tab !== "dashboard") finDash.tab = "dashboard";
         finDash._clientPickLockUntil = Date.now() + 350;
         renderFinModuleDash();
@@ -959,7 +960,7 @@
       finDash.unidade = cli.id;
       finDash.empresaQuery = cli.fantasia || cli.nome || "";
       finDash.acOpen = false;
-      if (finDash.tab !== "dashboard") finDash.tab = "dashboard";
+      /* Mantém a aba atual (Financeiro / Auditoria / Configurações). */
       finDash._clientPickLockUntil = Date.now() + 350;
       renderFinModuleDash();
       toast(`Cliente selecionado: ${finDash.empresaQuery}`);
@@ -2399,14 +2400,19 @@
       });
     }
 
+    function finConcHasExtraFilters() {
+      return !!(finDash.conc.tipo || finDash.conc.valor || finDash.conc.idTitulo);
+    }
+
     function filterFinConcMovements(rows) {
       const q = normalizeSearchText(finDash.conc.q || "");
       const tipo = finDash.conc.tipo || "";
       const status = finDash.conc.status || "";
       const valorQ = normalizeSearchText(finDash.conc.valor || "");
       const idQ = normalizeSearchText(finDash.conc.idTitulo || "");
-      const deIso = finOfxBrToIso(finDash.conc.de || "");
-      const ateIso = finOfxBrToIso(finDash.conc.ate || "");
+      const { start, end } = getFinPeriodRange();
+      const startMs = start?.getTime?.() || 0;
+      const endMs = end?.getTime?.() || Number.POSITIVE_INFINITY;
       return rows.filter((r) => {
         if (tipo && r.tipo !== tipo) return false;
         if (status && r.status !== status) return false;
@@ -2417,12 +2423,11 @@
           if (!raw.includes(valorQ) && !fmt.includes(valorQ)) return false;
         }
         if (q && !normalizeSearchText(`${r.desc || ""} ${r.data || ""} ${r.valor} ${r.tituloId || ""}`).includes(q)) return false;
-        if (deIso || ateIso) {
-          const rowIso = finOfxBrToIso(r.data || "");
-          if (!rowIso) return false;
-          if (deIso && rowIso < deIso) return false;
-          if (ateIso && rowIso > ateIso) return false;
-        }
+        const rowIso = finOfxBrToIso(r.data || "");
+        if (!rowIso) return false;
+        const rowMs = new Date(`${rowIso}T12:00:00`).getTime();
+        if (Number.isNaN(rowMs)) return false;
+        if (rowMs < startMs || rowMs > endMs) return false;
         return true;
       });
     }
@@ -2891,10 +2896,26 @@
 
     function openFinConcGerarTituloModal(movId, opts = {}) {
       const fromOfx = !!opts.fromOfx;
-      const mov = getFinConcMovById(movId);
+      const batchIds = Array.isArray(opts.batchIds) && opts.batchIds.length
+        ? [...new Set(opts.batchIds.map(String))]
+        : [String(movId)];
+      const isBatch = batchIds.length > 1;
+      const mov = getFinConcMovById(batchIds[0] || movId);
       if (!mov) {
         toast("Movimentação não encontrada");
         return;
+      }
+      const batchMovs = batchIds.map((id) => getFinConcMovById(id)).filter(Boolean);
+      if (!batchMovs.length) {
+        toast("Nenhuma movimentação válida na seleção");
+        return;
+      }
+      if (isBatch) {
+        const tipos = new Set(batchMovs.map((m) => m.tipo));
+        if (tipos.size > 1) {
+          toast("Selecione só créditos ou só débitos para gerar em lote");
+          return;
+        }
       }
       if (fromOfx && finDash.conc.ofx) {
         finDash.conc.ofx.modalOpen = false;
@@ -2905,19 +2926,22 @@
       }
 
       const lado = mov.tipo === "credito" ? "receber" : "pagar";
-      const titleBase = lado === "receber" ? "Gerar título a receber" : "Gerar título a pagar";
+      const titleBase = isBatch
+        ? (lado === "receber" ? "Gerar títulos a receber" : "Gerar títulos a pagar")
+        : (lado === "receber" ? "Gerar título a receber" : "Gerar título a pagar");
       const title = fromOfx ? `${titleBase} (OFX)` : titleBase;
       const banco = finDash.conc.banco || "SICREDI";
       const catId0 = mov.catId || finDash.conc.categories[mov.id] || "";
       const draft = {
         movId: mov.id,
+        batchIds,
         fromOfx,
         catId: catId0,
         planoQ: "",
         forma: mov.tipo === "credito" ? "PIX" : "TED",
         clienteNome: "",
-        desc: mov.desc || "",
-        keyword: mov.desc || "",
+        desc: isBatch ? "" : (mov.desc || ""),
+        keyword: isBatch ? "" : (mov.desc || ""),
       };
       finDash.conc.gerar = draft;
 
@@ -2947,21 +2971,30 @@
         }
       };
 
+      const batchTotal = batchMovs.reduce((acc, m) => acc + (Number(m.valor) || 0), 0);
+      const summaryDesc = isBatch
+        ? `${batchMovs.length} movimentações · modelo: ${mov.desc}`
+        : mov.desc;
+      const summaryAmt = isBatch ? batchTotal : mov.valor;
+
       openModal({
         title,
-        sub: "Confira os dados, escolha a forma de pagamento e classifique o lançamento.",
+        sub: isBatch
+          ? `Classifique ${batchMovs.length} lançamentos de uma vez · mesmos dados de pagamento e plano de contas.`
+          : "Confira os dados, escolha a forma de pagamento e classifique o lançamento.",
         wide: true,
         body: `
           <div class="fin-gerar-modal">
             <div class="fin-gerar-summary">
               <div class="fin-gerar-summary-main">
-                <strong>${uiSelectEscape(mov.desc)}</strong>
-                <span class="fin-gerar-amt ${mov.tipo === "credito" ? "in" : "out"}">${money(mov.valor)}</span>
+                <strong>${uiSelectEscape(summaryDesc)}</strong>
+                <span class="fin-gerar-amt ${mov.tipo === "credito" ? "in" : "out"}">${money(summaryAmt)}</span>
               </div>
               <div class="fin-gerar-summary-meta">
                 <span>${uiSelectEscape(mov.data)}</span>
                 <span>${uiSelectEscape(banco)}</span>
                 <span class="fin-ofx-tipo ${mov.tipo}">${mov.tipo === "credito" ? "CREDITO" : "DEBITO"}</span>
+                ${isBatch ? `<span>${batchMovs.length} itens</span>` : ""}
               </div>
             </div>
 
@@ -2972,8 +3005,8 @@
                 </header>
                 <div class="fin-gerar-col-body">
                   <label class="fin-gerar-field">
-                    <span class="fin-gerar-lab">Descrição</span>
-                    <input type="text" id="finGerarDesc" value="${uiSelectEscape(draft.desc)}" />
+                    <span class="fin-gerar-lab">Descrição${isBatch ? " (opcional · aplica a todas)" : ""}</span>
+                    <input type="text" id="finGerarDesc" value="${uiSelectEscape(draft.desc)}" placeholder="${isBatch ? "Deixe em branco para manter a descrição de cada item" : ""}" />
                   </label>
                   <label class="fin-gerar-field">
                     <span class="fin-gerar-lab">Palavras-chave</span>
@@ -3019,7 +3052,7 @@
           </div>`,
         foot: `
           <button type="button" class="btn-ghost" id="finGerarCancel">Cancelar</button>
-          <button type="button" class="btn-primary" id="finGerarSave">Gerar título</button>`,
+          <button type="button" class="btn-primary" id="finGerarSave">${isBatch ? `Gerar ${batchMovs.length} títulos` : "Gerar título"}</button>`,
       });
 
       prepareFinConcModalChrome();
@@ -3079,36 +3112,50 @@
           return;
         }
         const list = ensureFinConcMovs();
-        const idx = list.findIndex((m) => m.id === mov.id);
-        if (idx < 0) {
+        const descOverride = (document.getElementById("finGerarDesc")?.value || draft.desc || "").trim();
+        const keyword = (document.getElementById("finGerarKeyword")?.value || "").trim();
+        const targets = isBatch ? batchMovs : [mov];
+        let applied = 0;
+        targets.forEach((target) => {
+          const idx = list.findIndex((m) => m.id === target.id);
+          if (idx < 0) return;
+          list[idx] = {
+            ...list[idx],
+            desc: descOverride || list[idx].desc,
+            status: fromOfx ? "aberto" : "conciliado",
+            catId: draft.catId,
+            forma: draft.forma,
+            keyword,
+            clienteNome: draft.clienteNome || list[idx].clienteNome || "",
+            ofxPendingValidate: fromOfx ? true : !!list[idx].ofxPendingValidate,
+            ofxValidated: fromOfx ? false : !!list[idx].ofxValidated,
+          };
+          finDash.conc.categories[target.id] = draft.catId;
+          if (fromOfx) markFinOfxSessionConciliado(target.id);
+          pushFinConcHistory(
+            target.id,
+            fromOfx
+              ? `Classificado no OFX${isBatch ? " (lote)" : ""} · ${finDreCatLabel(draft.catId)} (pendente Importar tudo)`
+              : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`,
+            "usuario"
+          );
+          applied += 1;
+        });
+        if (!applied) {
           toast("Movimentação não encontrada");
           return;
         }
-        const desc = (document.getElementById("finGerarDesc")?.value || draft.desc || "").trim() || mov.desc;
-        list[idx] = {
-          ...list[idx],
-          desc,
-          status: fromOfx ? "aberto" : "conciliado",
-          catId: draft.catId,
-          forma: draft.forma,
-          keyword: (document.getElementById("finGerarKeyword")?.value || "").trim(),
-          clienteNome: draft.clienteNome || list[idx].clienteNome || "",
-          ofxPendingValidate: fromOfx ? true : !!list[idx].ofxPendingValidate,
-          ofxValidated: fromOfx ? false : !!list[idx].ofxValidated,
-        };
-        finDash.conc.categories[mov.id] = draft.catId;
         finDash.conc.gerar = null;
-        if (fromOfx) markFinOfxSessionConciliado(mov.id);
-        pushFinConcHistory(
-          mov.id,
-          fromOfx
-            ? `Classificado no OFX · ${finDreCatLabel(draft.catId)} (pendente Importar tudo)`
-            : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`,
-          "usuario"
-        );
+        if (finDash.conc.ofx && isBatch) {
+          finDash.conc.ofx.selected = [];
+        }
         toast(fromOfx
-          ? `Classificado no OFX · confirme em Importar tudo · ${finDreCatLabel(draft.catId)}`
-          : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`);
+          ? (isBatch
+            ? `${applied} classificadas no OFX · confirme em Importar tudo · ${finDreCatLabel(draft.catId)}`
+            : `Classificado no OFX · confirme em Importar tudo · ${finDreCatLabel(draft.catId)}`)
+          : (isBatch
+            ? `${applied} títulos gerados e conciliados · ${finDreCatLabel(draft.catId)}`
+            : `Título gerado e conciliado · ${finDreCatLabel(draft.catId)}`));
         goBack();
         if (!fromOfx) renderFinModuleDash();
       });
@@ -4803,10 +4850,11 @@
               </div>
             </div>
           </div>`,
-        foot: isExport ? `
+          foot: isExport ? `
           <button type="button" class="btn-ghost" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="finOfxExportAll">Exportar tudo</button>` : `
           <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-outline" id="finOfxGerarLote" ${selCount >= 2 ? "" : "disabled"}>Gerar em lote</button>
           <button type="button" class="btn-primary" id="finOfxImportAll">Importar tudo</button>`,
       });
 
@@ -4898,6 +4946,15 @@
             refresh();
           }
         });
+      });
+
+      document.getElementById("finOfxGerarLote")?.addEventListener("click", () => {
+        const selectedIds = [...(finDash.conc.ofx.selected || [])];
+        if (selectedIds.length < 2) {
+          toast("Selecione ao menos duas movimentações");
+          return;
+        }
+        openFinConcGerarTituloModal(selectedIds[0], { fromOfx: true, batchIds: selectedIds });
       });
 
       modalBody.querySelectorAll("[data-fin-ofx-row-act]").forEach((btn) => {
@@ -5583,7 +5640,7 @@
     function renderFinConciliacaoPanel() {
       const all = getFinConcMovements();
       const rows = filterFinConcMovements(all);
-      const abertos = all.filter((r) => r.status === "aberto").length;
+      const abertos = rows.filter((r) => r.status === "aberto").length;
       if (!Array.isArray(finDash.conc.selected)) finDash.conc.selected = [];
       const selected = new Set(finDash.conc.selected);
       const selCount = rows.filter((r) => selected.has(r.id)).length;
@@ -5591,6 +5648,9 @@
       const ctx = finDash.conc.contexto || "contabil";
       const ctxOpen = !!finDash.conc.contextoOpen;
       const ctxLabel = ctx === "financeiro" ? "Financeiro" : "Contábil";
+      const statusNow = finDash.conc.status || "";
+      const filtersOpen = !!finDash.conc.filtersOpen;
+      const hasExtra = finConcHasExtraFilters();
 
       return `
         <div class="fin-op-panel fin-conc-panel">
@@ -5671,42 +5731,47 @@
               </div>
             </div>
             <div class="fin-conc-toolbar-row fin-conc-toolbar-filters">
-              <div class="fin-op-filters fin-ofx-filters" role="search" aria-label="Filtros da conciliação">
+              <div class="fin-op-filters fin-ofx-filters fin-conc-filters" role="search" aria-label="Filtros da conciliação">
                 <div class="proc-filter search fin-ofx-q tip-bottom" data-tip="Buscar movimentação">
                   <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                   <input type="search" id="finConcQ" placeholder="Buscar movimentação…" value="${(finDash.conc.q || "").replace(/"/g, "&quot;")}" aria-label="Buscar movimentação" />
                 </div>
-                <div class="proc-filter field valor" data-tip="Filtrar por valor">
-                  <input type="search" id="finConcValor" placeholder="Valor" value="${(finDash.conc.valor || "").replace(/"/g, "&quot;")}" aria-label="Filtrar valor" />
+
+                <div class="btn-filter-wrap fin-conc-filter-wrap${filtersOpen ? " open" : ""}" id="finConcFilterWrap">
+                  <button type="button" class="btn-filter tip-bottom${hasExtra || filtersOpen ? " active" : ""}" data-fin-conc="filters" data-tip="Filtros adicionais" aria-label="Filtros adicionais" aria-expanded="${filtersOpen}">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                    ${hasExtra ? `<span class="fin-conc-filter-dot" aria-hidden="true"></span>` : ""}
+                  </button>
+                  <div class="filter-panel fin-conc-filter-panel" role="dialog" aria-label="Filtros adicionais">
+                    <h5>Filtros adicionais</h5>
+                    <p class="filter-hint">Refinam a lista dentro do período do topo e do status.</p>
+                    <label class="fin-conc-filter-field">
+                      <span>Valor</span>
+                      <input type="search" id="finConcValor" placeholder="Ex.: 150,00" value="${(finDash.conc.valor || "").replace(/"/g, "&quot;")}" aria-label="Filtrar valor" />
+                    </label>
+                    <label class="fin-conc-filter-field">
+                      <span>ID título</span>
+                      <input type="search" id="finConcIdTitulo" placeholder="Ex.: 10482" value="${(finDash.conc.idTitulo || "").replace(/"/g, "&quot;")}" aria-label="Filtrar ID do título" />
+                    </label>
+                    <label class="fin-conc-filter-field">
+                      <span>Tipo</span>
+                      <select id="finConcTipo" aria-label="Filtrar tipo">
+                        <option value="" ${!finDash.conc.tipo ? "selected" : ""}>Todos</option>
+                        <option value="credito" ${finDash.conc.tipo === "credito" ? "selected" : ""}>Crédito</option>
+                        <option value="debito" ${finDash.conc.tipo === "debito" ? "selected" : ""}>Débito</option>
+                      </select>
+                    </label>
+                    <div class="filter-actions">
+                      <button type="button" class="linkish" data-fin-conc="filters-clear" ${hasExtra ? "" : "disabled"}>Limpar</button>
+                      <button type="button" class="btn-ghost" data-fin-conc="filters-close">Fechar</button>
+                    </div>
+                  </div>
                 </div>
-                <div class="proc-filter field id-titulo" data-tip="Filtrar por ID do título">
-                  <input type="search" id="finConcIdTitulo" placeholder="ID título" value="${(finDash.conc.idTitulo || "").replace(/"/g, "&quot;")}" aria-label="Filtrar ID do título" />
-                </div>
-                <div class="proc-filter field fin-ofx-tipo" data-tip="Filtrar por tipo">
-                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/><path d="m14 15 3 3 3-3"/></svg>
-                  <select id="finConcTipo" aria-label="Filtrar tipo">
-                    <option value="" ${!finDash.conc.tipo ? "selected" : ""}>Todos</option>
-                    <option value="credito" ${finDash.conc.tipo === "credito" ? "selected" : ""}>Crédito</option>
-                    <option value="debito" ${finDash.conc.tipo === "debito" ? "selected" : ""}>Débito</option>
-                  </select>
-                </div>
-                <div class="proc-filter field fin-ofx-conc" data-tip="Filtrar por status">
-                  <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
-                  <select id="finConcStatus" aria-label="Filtrar status">
-                    <option value="" ${!finDash.conc.status ? "selected" : ""}>Status</option>
-                    <option value="conciliado" ${finDash.conc.status === "conciliado" ? "selected" : ""}>Conciliado</option>
-                    <option value="aberto" ${finDash.conc.status === "aberto" ? "selected" : ""}>Em aberto</option>
-                  </select>
-                </div>
-                <div class="proc-filter field fin-ofx-date" data-tip="Data inicial">
-                  <input type="text" id="finConcDe" class="fin-ofx-date-text" inputmode="numeric" placeholder="De dd/mm/aaaa" value="${finOfxDateDisplay(finDash.conc.de || "").replace(/"/g, "&quot;")}" aria-label="Data inicial" autocomplete="off" />
-                  <button type="button" class="fin-ofx-date-cal" data-fin-conc-cal="finConcDe" aria-label="Abrir calendário data inicial"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button>
-                  <input type="date" id="finConcDePick" class="fin-ofx-date-native" value="${finOfxBrToIso(finDash.conc.de || "")}" tabindex="-1" aria-hidden="true" />
-                </div>
-                <div class="proc-filter field fin-ofx-date" data-tip="Data final">
-                  <input type="text" id="finConcAte" class="fin-ofx-date-text" inputmode="numeric" placeholder="Até dd/mm/aaaa" value="${finOfxDateDisplay(finDash.conc.ate || "").replace(/"/g, "&quot;")}" aria-label="Data final" autocomplete="off" />
-                  <button type="button" class="fin-ofx-date-cal" data-fin-conc-cal="finConcAte" aria-label="Abrir calendário data final"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></button>
-                  <input type="date" id="finConcAtePick" class="fin-ofx-date-native" value="${finOfxBrToIso(finDash.conc.ate || "")}" tabindex="-1" aria-hidden="true" />
+
+                <div class="agenda-quick-filters fin-conc-status-chips" role="group" aria-label="Status da conciliação">
+                  <button type="button" data-fin-conc-status="" class="${!statusNow ? "active" : ""}" aria-pressed="${!statusNow}">Todos</button>
+                  <button type="button" data-fin-conc-status="aberto" class="${statusNow === "aberto" ? "active" : ""}" aria-pressed="${statusNow === "aberto"}">Em aberto</button>
+                  <button type="button" data-fin-conc-status="conciliado" class="${statusNow === "conciliado" ? "active" : ""}" aria-pressed="${statusNow === "conciliado"}">Conciliado</button>
                 </div>
               </div>
               <div class="fin-op-meta">${rows.length} movimentações · ${abertos} em aberto</div>

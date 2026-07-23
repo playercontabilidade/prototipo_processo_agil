@@ -1561,10 +1561,12 @@
     function getCliMiniDossieFinanceiro(c, monitor) {
       const aReceber7 = Math.round((monitor.aReceber || 0) * 0.38);
       const aPagar7 = Math.round((monitor.aPagar || 0) * 0.42);
+      const liquido7 = aReceber7 - aPagar7;
       const risco = aPagar7 > aReceber7 * 1.05;
       return {
         aReceber7,
         aPagar7,
+        liquido7,
         saldo: monitor.saldo || 0,
         caixaLabel: risco ? "Risco de furo" : "Saudável",
         caixaCls: risco ? "is-bad" : "is-ok",
@@ -1573,6 +1575,13 @@
 
     function getCliMiniDossieObrigacoes(c) {
       const today = "2026-07-14";
+      const calIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>`;
+      const alertIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`;
+      const shieldIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`;
+      const fmtDate = (iso) => {
+        const [y, m, d] = String(iso || "").split("-");
+        return y && m && d ? `${d}/${m}/${y}` : "";
+      };
       const tasks = agendaTasks
         .filter((t) => t.clienteId === c.id && !t.arquivada && String(t.date || "") >= today)
         .slice()
@@ -1581,23 +1590,48 @@
       const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
       const items = tasks.map((t) => {
         const diff = Math.round((new Date(t.date) - new Date(today)) / 86400000);
-        let when = t.date;
-        if (diff === 0) when = "Hoje";
-        else if (diff === 1) when = "Amanhã";
-        else if (diff > 1) when = `${diff} dias`;
-        return { when, label: t.nome, tip: t.prazoLegal || t.competencia || "" };
+        let when = fmtDate(t.date) || t.date;
+        let tone = "ok";
+        if (diff === 0) { when = "Hoje"; tone = "warn"; }
+        else if (diff === 1) { when = "Amanhã"; tone = "warn"; }
+        else if (diff > 1 && diff <= 7) { when = `Em ${diff} dias`; tone = "warn"; }
+        else if (diff > 7) { when = `Em ${diff} dias`; tone = "ok"; }
+        const tipParts = [fmtDate(t.date), t.prazoLegal || t.competencia].filter(Boolean);
+        return {
+          when,
+          label: t.nome,
+          tip: tipParts.join(" · "),
+          action: "entrega",
+          actionLabel: "Abrir entrega",
+          taskId: t.id,
+          tone,
+          ico: calIco,
+        };
       });
       if (cert && cert.status !== "ok") {
+        const late = cert.status === "vencido";
         items.splice(Math.min(1, items.length), 0, {
-          when: cert.status === "vencido" ? "Atrasado" : "Em breve",
-          label: "Venc. Certificado",
+          when: late ? "Atrasado" : "Em breve",
+          label: "Vencimento do certificado",
           tip: cert.validadeLabel || "",
+          action: "cert",
+          actionLabel: late ? "Ver certificado" : "Monitorar",
+          tone: late ? "bad" : "warn",
+          ico: late ? alertIco : shieldIco,
         });
       }
       if (!items.length) {
-        items.push({ when: "—", label: "Sem entregas próximas", tip: "" });
+        items.push({
+          when: "—",
+          label: "Sem entregas próximas",
+          tip: "Nenhuma obrigação no radar",
+          action: "entregas",
+          actionLabel: "Ver entregas",
+          tone: "ok",
+          ico: calIco,
+        });
       }
-      return items.slice(0, 4);
+      return items.slice(0, 3);
     }
 
     function getCliMiniDossieInteracoes(c) {
@@ -1629,85 +1663,104 @@
       const alerts = getCliMiniDossieAlerts(c, monitor);
       const fin = getCliMiniDossieFinanceiro(c, monitor);
       const obrigs = getCliMiniDossieObrigacoes(c);
-      const logs = getCliMiniDossieInteracoes(c);
-      const why = `Por que está ${monitor.score}% ${monitor.healthLabel}?`;
+      const logs = getCliMiniDossieInteracoes(c).slice(0, 3);
+      const nome = c.fantasia || c.nome;
+      const tab = cliMiniDossieTab || "alertas";
       const alertIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>`;
-      const waIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.5 3.5A11 11 0 0 0 3.2 17.6L2 22l4.5-1.2A11 11 0 1 0 20.5 3.5Zm-8.6 17a9.1 9.1 0 0 1-4.6-1.3l-.3-.2-2.7.7.7-2.6-.2-.3a9.1 9.1 0 1 1 7.1 3.7Zm5-6.8c-.3-.1-1.6-.8-1.9-.9s-.4-.1-.6.1-.7.9-.8 1-.3.2-.6.1a7.4 7.4 0 0 1-2.2-1.4 8.2 8.2 0 0 1-1.5-1.9c-.2-.3 0-.4.1-.6l.4-.5.1-.3c0-.1 0-.3-.1-.4s-.6-1.4-.8-1.9-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3a2 2 0 0 0-.6 1.5 3.5 3.5 0 0 0 .7 1.9 8 8 0 0 0 3.1 3 11 11 0 0 0 2 .8 2.4 2.4 0 0 0 1.7-.5 2.8 2.8 0 0 0 .8-1.6c.1-.2 0-.4 0-.5s-.3-.2-.6-.3Z"/></svg>`;
+      const alertCount = alerts.filter((a) => a.id !== "ok").length;
+      const liquidoTxt = `${fin.liquido7 >= 0 ? "+" : "−"} ${money(Math.abs(fin.liquido7))}`;
+
+      let panel = "";
+      if (tab === "financeiro") {
+        panel = `
+          <div class="cli-mini-dossie-panel-head">
+            <div>
+              <strong>Termômetro financeiro</strong>
+              <span class="sub">Próximos 7 dias</span>
+            </div>
+            <button type="button" class="btn-ghost sm" data-cli-dossie-act="financeiro" data-cli-id="${c.id}">Abrir financeiro</button>
+          </div>
+          <div class="fin-drawer-meta cli-drawer-meta">
+            <div><span>A receber</span><strong>${money(fin.aReceber7)}</strong></div>
+            <div><span>A pagar</span><strong>${money(fin.aPagar7)}</strong></div>
+            <div><span>Líquido</span><strong class="${fin.liquido7 >= 0 ? "ok" : "bad"}">${liquidoTxt}</strong></div>
+            <div><span>Saúde do caixa</span><strong class="${fin.caixaCls === "is-ok" ? "ok" : "bad"}">${fin.caixaLabel}</strong></div>
+          </div>`;
+      } else if (tab === "obrigacoes") {
+        panel = `
+          <div class="cli-mini-dossie-panel-head">
+            <div>
+              <strong>Radar de obrigações</strong>
+              <span class="sub">Próximas entregas</span>
+            </div>
+            <button type="button" class="btn-ghost sm" data-cli-dossie-act="entregas" data-cli-id="${c.id}">Ver entregas</button>
+          </div>
+          <div class="fin-drawer-list">
+            ${obrigs.map((o) => `
+              <button type="button" class="fin-drawer-item cli-mini-dossie-hit is-${o.tone || "ok"}" data-cli-dossie-act="${o.action || "entregas"}" data-cli-id="${c.id}"${o.taskId ? ` data-task-id="${o.taskId}"` : ""}>
+                <span class="rank" aria-hidden="true">${o.ico || ""}</span>
+                <div>
+                  <strong>
+                    <span class="cli-mini-dossie-when">${uiSelectEscape(o.when)}</span>
+                    ${uiSelectEscape(o.label)}
+                  </strong>
+                  ${o.tip ? `<div class="meta">${uiSelectEscape(o.tip)}</div>` : ""}
+                </div>
+                <span class="amt">${uiSelectEscape(o.actionLabel || "Abrir")}</span>
+              </button>`).join("")}
+          </div>`;
+      } else if (tab === "interacoes") {
+        const chatIco = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>`;
+        panel = `
+          <div class="cli-mini-dossie-panel-head">
+            <div>
+              <strong>Últimas interações</strong>
+              <span class="sub">Log da equipe</span>
+            </div>
+            <button type="button" class="btn-ghost sm" data-cli-dossie-act="comentarios" data-cli-id="${c.id}">Ver todas</button>
+          </div>
+          <div class="fin-drawer-list">
+            ${logs.map((l) => `
+              <button type="button" class="fin-drawer-item cli-mini-dossie-hit" data-cli-dossie-act="comentarios" data-cli-id="${c.id}">
+                <span class="rank" aria-hidden="true">${chatIco}</span>
+                <div>
+                  <strong>${uiSelectEscape(l.text)}</strong>
+                  <div class="meta">${uiSelectEscape(l.when)}</div>
+                </div>
+                <span class="amt">Abrir</span>
+              </button>`).join("")}
+          </div>`;
+      } else {
+        panel = `
+          <div class="cli-mini-dossie-panel-head">
+            <div>
+              <strong>Raio-X dos alertas</strong>
+              <span class="sub">Prioridade operacional</span>
+            </div>
+          </div>
+          <div class="fin-drawer-list">
+            ${alerts.map((a) => `
+              <button type="button" class="fin-drawer-item cli-mini-dossie-hit is-${a.tone}"${a.action ? ` data-cli-dossie-act="${a.action}" data-cli-id="${c.id}"${a.taskId ? ` data-task-id="${a.taskId}"` : ""}` : " disabled"}>
+                <span class="rank" aria-hidden="true">${alertIco}</span>
+                <div>
+                  <strong>${uiSelectEscape(a.text)}</strong>
+                </div>
+                <span class="amt">${uiSelectEscape(a.actionLabel || "—")}</span>
+              </button>`).join("")}
+          </div>`;
+      }
 
       return `
-        <section class="cli-mini-dossie" data-cli-dossie="${c.id}" aria-label="Mini-dossiê operacional de ${uiSelectEscape(c.fantasia || c.nome)}">
-          <div class="cli-mini-dossie-actions" role="toolbar" aria-label="Ações rápidas">
-            <button type="button" class="btn-outline" data-cli-dossie-act="perfil" data-cli-id="${c.id}">Ir para Perfil Completo</button>
-            <button type="button" class="btn-outline" data-cli-dossie-act="whatsapp" data-cli-id="${c.id}">
-              ${waIco}
-              Falar no WhatsApp
-            </button>
-            <button type="button" class="btn-outline" data-cli-dossie-act="documento" data-cli-id="${c.id}">Gerar Documento</button>
-            <button type="button" class="btn-outline" data-cli-dossie-act="cobranca" data-cli-id="${c.id}">Nova Cobrança</button>
+        <section class="cli-mini-dossie" data-cli-dossie="${c.id}" aria-label="Mini-dossiê operacional de ${uiSelectEscape(nome)}">
+          <div class="cli-tabs cli-mini-dossie-tabs" role="tablist" aria-label="Seções do dossiê">
+            <button type="button" class="cli-tab${tab === "alertas" ? " active" : ""}" role="tab" aria-selected="${tab === "alertas"}" data-cli-dossie-tab="alertas">Alertas${alertCount ? ` · ${alertCount}` : ""}</button>
+            <button type="button" class="cli-tab${tab === "financeiro" ? " active" : ""}" role="tab" aria-selected="${tab === "financeiro"}" data-cli-dossie-tab="financeiro">Financeiro</button>
+            <button type="button" class="cli-tab${tab === "obrigacoes" ? " active" : ""}" role="tab" aria-selected="${tab === "obrigacoes"}" data-cli-dossie-tab="obrigacoes">Obrigações${obrigs.length ? ` · ${obrigs.length}` : ""}</button>
+            <button type="button" class="cli-tab${tab === "interacoes" ? " active" : ""}" role="tab" aria-selected="${tab === "interacoes"}" data-cli-dossie-tab="interacoes">Interações</button>
           </div>
-          <div class="cli-mini-dossie-grid">
-            <article class="cli-mini-dossie-card">
-              <header class="cli-mini-dossie-card-head">
-                <h4>Raio-X dos Alertas</h4>
-                <span class="sub">${uiSelectEscape(why)}</span>
-              </header>
-              <ul class="cli-mini-dossie-alerts">
-                ${alerts.map((a) => `
-                  <li class="cli-mini-dossie-alert is-${a.tone}">
-                    <span class="cli-mini-dossie-alert-main">
-                      <i class="cli-mini-dossie-alert-ico" aria-hidden="true">${alertIco}</i>
-                      <span>${uiSelectEscape(a.text)}</span>
-                    </span>
-                    ${a.action ? `<button type="button" class="btn-ghost sm" data-cli-dossie-act="${a.action}" data-cli-id="${c.id}"${a.taskId ? ` data-task-id="${a.taskId}"` : ""}>${uiSelectEscape(a.actionLabel)}</button>` : ""}
-                  </li>`).join("")}
-              </ul>
-            </article>
-            <article class="cli-mini-dossie-card">
-              <header class="cli-mini-dossie-card-head">
-                <h4>Termômetro Financeiro</h4>
-                <span class="sub">Liquidez de curto prazo · 7 dias</span>
-              </header>
-              <div class="cli-mini-dossie-fin">
-                <div class="cli-mini-dossie-fin-kpi">
-                  <span class="lab">A receber (7 dias)</span>
-                  <strong>${money(fin.aReceber7)}</strong>
-                </div>
-                <div class="cli-mini-dossie-fin-kpi">
-                  <span class="lab">A pagar (7 dias)</span>
-                  <strong>${money(fin.aPagar7)}</strong>
-                </div>
-                <div class="cli-mini-dossie-fin-badge ${fin.caixaCls}">
-                  <span class="lab">Saúde do caixa</span>
-                  <strong>${fin.caixaLabel}</strong>
-                </div>
-              </div>
-            </article>
-            <article class="cli-mini-dossie-card">
-              <header class="cli-mini-dossie-card-head">
-                <h4>Radar de Obrigações</h4>
-                <span class="sub">Próximas entregas</span>
-              </header>
-              <ul class="cli-mini-dossie-timeline">
-                ${obrigs.map((o) => `
-                  <li>
-                    <span class="when">${uiSelectEscape(o.when)}</span>
-                    <span class="label" title="${uiSelectEscape(o.tip || o.label)}">${uiSelectEscape(o.label)}</span>
-                  </li>`).join("")}
-              </ul>
-            </article>
-            <article class="cli-mini-dossie-card">
-              <header class="cli-mini-dossie-card-head">
-                <h4>Últimas Interações</h4>
-                <span class="sub">Log da equipe</span>
-              </header>
-              <ul class="cli-mini-dossie-log">
-                ${logs.map((l) => `
-                  <li>
-                    <span class="when">${uiSelectEscape(l.when)}</span>
-                    <span class="text">${uiSelectEscape(l.text)}</span>
-                  </li>`).join("")}
-              </ul>
-            </article>
+
+          <div class="cli-mini-dossie-panel" role="tabpanel">
+            ${panel}
           </div>
         </section>`;
     }
@@ -1722,12 +1775,15 @@
     function selectCliListForDossie(clientId, { toggle } = {}) {
       if (!clientId) {
         cliListSelectedId = null;
+        cliMiniDossieTab = "alertas";
         return;
       }
       if (toggle && cliListSelectedId === clientId) {
         cliListSelectedId = null;
+        cliMiniDossieTab = "alertas";
         return;
       }
+      if (cliListSelectedId !== clientId) cliMiniDossieTab = "alertas";
       cliListSelectedId = clientId;
       closeCliClienteDrawer({ silent: true, keepSelection: true });
     }
@@ -1737,6 +1793,10 @@
       if (!c) return;
       if (act === "perfil") {
         openClientePerfil(clientId);
+        return;
+      }
+      if (act === "comentarios") {
+        openClientePerfil(clientId, "comentarios");
         return;
       }
       if (act === "whatsapp") {
@@ -1776,6 +1836,10 @@
       }
       if (act === "financeiro") {
         openClientePerfil(clientId, "financeiro");
+        return;
+      }
+      if (act === "entregas") {
+        openClientePerfil(clientId, "entregas");
         return;
       }
       if (act === "auditoria") {
@@ -1889,6 +1953,7 @@
             <span>Saúde do Cliente</span>
             <span>Alertas</span>
             <span>Atividade</span>
+            <span class="cli-head-actions">Ações</span>
           </div>
           ${rowsMeta.length ? rowsMeta.map(({ c, monitor }) => {
             const tipo = c.tipoUnidade || "Matriz";
@@ -1916,6 +1981,9 @@
                 <div class="cli-mon-ativ">
                   <strong>${uiSelectEscape(m.atividade.short)}</strong>
                   <span>${uiSelectEscape(m.atividade.detail)}</span>
+                </div>
+                <div class="cli-mon-actions" data-cli-actions>
+                  <button type="button" class="btn-outline sm" data-cli-dossie-act="perfil" data-cli-id="${c.id}">Abrir perfil</button>
                 </div>
               </div>
               ${dossieHtml}`;
