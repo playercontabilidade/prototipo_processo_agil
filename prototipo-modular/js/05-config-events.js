@@ -2448,6 +2448,13 @@
         if (id) openFinConcDesconciliarModal(id);
         return;
       }
+      const concExcluir = e.target.closest("[data-fin-conc-excluir]");
+      if (concExcluir) {
+        finDash.conc.rowMenuId = null;
+        const id = concExcluir.dataset.finConcExcluir;
+        if (id) openFinConcExcluirModal(id);
+        return;
+      }
       const concGerar = e.target.closest("[data-fin-conc-gerar]");
       if (concGerar) {
         finDash.conc.rowMenuId = null;

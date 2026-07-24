@@ -2567,6 +2567,7 @@
               <div class="fin-conc-row-menu" role="menu" ${menuOpen ? "" : "hidden"}>
                 <button type="button" role="menuitem" data-fin-conc-hist="${r.id}">Histórico</button>
                 <button type="button" role="menuitem" class="is-danger" data-fin-conc-desconciliar="${r.id}">Desconciliar</button>
+                <button type="button" role="menuitem" class="is-danger" data-fin-conc-excluir="${r.id}">Excluir</button>
               </div>
             </div>
           </div>`;
@@ -2578,6 +2579,7 @@
             <button type="button" class="fin-conc-row-menu-btn tip-bottom" data-fin-conc-row-menu="${r.id}" data-tip="Mais ações" aria-label="Mais ações" aria-expanded="${menuOpen}" aria-haspopup="true">${moreSvg}</button>
             <div class="fin-conc-row-menu" role="menu" ${menuOpen ? "" : "hidden"}>
               <button type="button" role="menuitem" data-fin-conc-gerar="${r.id}">Gerar novo</button>
+              <button type="button" role="menuitem" class="is-danger" data-fin-conc-excluir="${r.id}">Excluir</button>
             </div>
           </div>
         </div>`;
@@ -2650,6 +2652,48 @@
         closeModal();
         renderFinModuleDash();
         toast("Movimentação desconciliada");
+      });
+    }
+
+    function openFinConcExcluirModal(movId) {
+      const mov = getFinConcMovById(movId);
+      if (!mov) { toast("Movimentação não encontrada"); return; }
+      if (finDash.conc.mesFinalizado) {
+        toast("Mês finalizado · excluir bloqueado");
+        return;
+      }
+      openModal({
+        title: "Excluir movimentação",
+        sub: "",
+        body: `
+          <div class="fin-conc-finalizar-modal">
+            <p class="fin-conc-finalizar-msg">
+              Excluir <strong>${uiSelectEscape(mov.desc)}</strong> (${money(mov.valor)}) da conciliação?
+              Esta ação remove o lançamento da lista.
+            </p>
+          </div>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-outline fin-ofx-danger" id="finConcExcluirConfirm">Excluir</button>`,
+      });
+      prepareFinConcModalChrome();
+      document.getElementById("finConcExcluirConfirm")?.addEventListener("click", () => {
+        const list = ensureFinConcMovs();
+        const idx = list.findIndex((m) => m.id === movId);
+        if (idx < 0) {
+          toast("Movimentação não encontrada");
+          return;
+        }
+        list.splice(idx, 1);
+        delete finDash.conc.categories[movId];
+        if (Array.isArray(finDash.conc.selected)) {
+          finDash.conc.selected = finDash.conc.selected.filter((id) => id !== movId);
+        }
+        if (finDash.conc.catRowId === movId) finDash.conc.catRowId = null;
+        if (finDash.conc.rowMenuId === movId) finDash.conc.rowMenuId = null;
+        closeModal();
+        renderFinModuleDash();
+        toast("Movimentação excluída");
       });
     }
 
@@ -3176,8 +3220,9 @@
         return;
       }
       const bancos = ensureFinConcBancos();
-      const origemId = finDash.conc.bancoId || bancos[0]?.id;
-      const destDefault = bancos.find((b) => b.id !== origemId) || bancos[0];
+      const contaAtualId = finDash.conc.bancoId || bancos[0]?.id;
+      const outraDefault = bancos.find((b) => b.id !== contaAtualId) || bancos[0];
+      const isSaida = mov.tipo !== "credito";
       const leaves = [];
       getFinDreTaxonomy().forEach((g, gi) => {
         (g.children || []).forEach((c, ci) => {
@@ -3203,8 +3248,8 @@
       };
 
       openModal({
-        title: "Transferir entre contas",
-        sub: "A movimentação será baixada na origem e lançada como entrada na conta destino.",
+        title: "Transferir",
+        sub: "Pareia a movimentação entre contas · não gera título a pagar ou a receber.",
         body: `
           <div class="fin-transf-modal">
             <div class="fin-transf-summary">
@@ -3212,17 +3257,23 @@
               <span class="fin-gerar-amt ${mov.tipo === "credito" ? "in" : "out"}">${money(mov.valor)}</span>
               <div class="fin-transf-summary-meta">
                 <span>${uiSelectEscape(mov.data)}</span>
-                <span>Origem: ${uiSelectEscape(finDash.conc.banco || "—")}</span>
+                <span>Conta atual: ${uiSelectEscape(finDash.conc.banco || "—")}</span>
               </div>
+              <span class="fin-ofx-tipo ${mov.tipo}">${mov.tipo === "credito" ? "CREDITO" : "DEBITO"}</span>
             </div>
+            <p class="fin-transf-note" role="note">
+              ${isSaida
+                ? "Saída nesta conta · informe a conta de destino para baixar como transferência."
+                : "Entrada nesta conta · informe a conta de origem para baixar como transferência."}
+            </p>
             <label class="fin-transf-field">
               <span class="fin-transf-lab">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 22h18"/><path d="M6 18V11"/><path d="M10 18V11"/><path d="M14 18V11"/><path d="M18 18V11"/><path d="m12 2 8 5H4z"/></svg>
-                Conta de destino
+                ${isSaida ? "Conta de destino" : "Conta de origem"}
               </span>
-              <select id="finTransfDestino" aria-label="Conta de destino">
-                ${bancos.filter((b) => b.id !== origemId).map((b) => `
-                  <option value="${b.id}"${b.id === destDefault?.id ? " selected" : ""}>${uiSelectEscape(finConcBancoOptionLabel(b))}</option>
+              <select id="finTransfDestino" aria-label="${isSaida ? "Conta de destino" : "Conta de origem"}">
+                ${bancos.filter((b) => b.id !== contaAtualId).map((b) => `
+                  <option value="${b.id}"${b.id === outraDefault?.id ? " selected" : ""}>${uiSelectEscape(finConcBancoOptionLabel(b))}</option>
                 `).join("") || `<option value="">Nenhuma outra conta cadastrada</option>`}
               </select>
             </label>
@@ -3256,20 +3307,24 @@
 
       document.getElementById("finTransfCancel")?.addEventListener("click", () => goBack());
       document.getElementById("finTransfSave")?.addEventListener("click", () => {
-        const destId = document.getElementById("finTransfDestino")?.value || "";
+        const outraId = document.getElementById("finTransfDestino")?.value || "";
         const catId = document.getElementById("finTransfSubplano")?.value || "";
         const desc = (document.getElementById("finTransfDesc")?.value || "").trim() || "Transferência entre contas";
-        if (!destId || destId === origemId) {
-          toast("Selecione uma conta de destino diferente da origem");
+        if (!outraId || outraId === contaAtualId) {
+          toast(isSaida
+            ? "Selecione uma conta de destino diferente da atual"
+            : "Selecione uma conta de origem diferente da atual");
           return;
         }
         if (!catId) {
           toast("Selecione o subplano neutro para DRE");
           return;
         }
-        const dest = bancos.find((b) => b.id === destId);
+        const outra = bancos.find((b) => b.id === outraId);
         const list = ensureFinConcMovs();
         const idx = list.findIndex((m) => m.id === mov.id);
+        const origemId = isSaida ? contaAtualId : outraId;
+        const destId = isSaida ? outraId : contaAtualId;
         if (idx >= 0) {
           list[idx] = {
             ...list[idx],
@@ -3278,6 +3333,7 @@
             desc: list[idx].desc,
             transferido: true,
             transferDestId: destId,
+            transferFromId: origemId,
             ofxPendingValidate: fromOfx ? true : !!list[idx].ofxPendingValidate,
             ofxValidated: fromOfx ? false : !!list[idx].ofxValidated,
           };
@@ -3289,23 +3345,37 @@
           tituloId: String(10450 + list.length + 1),
           data: mov.data,
           desc,
-          tipo: "credito",
+          tipo: isSaida ? "credito" : "debito",
           valor: mov.valor,
           status: fromOfx ? "aberto" : "conciliado",
           catId,
           transferFromId: mov.id,
-          bancoId: destId,
+          transferDestId: destId,
+          bancoId: outraId,
+          transferido: true,
           ofxPendingValidate: !!fromOfx,
           ofxValidated: false,
         });
         finDash.conc.categories[novoId] = catId;
+        pushFinConcHistory(
+          mov.id,
+          fromOfx
+            ? `Transferência conciliada no OFX · ${outra?.nome || "outra conta"} (pendente Importar tudo)`
+            : `Transferência conciliada · ${outra?.nome || "outra conta"}`,
+          "usuario"
+        );
+        pushFinConcHistory(
+          novoId,
+          `Contraparte da transferência · ${finDash.conc.banco || "conta atual"}`,
+          "sistema"
+        );
         if (fromOfx) {
           markFinOfxSessionConciliado(mov.id);
           markFinOfxSessionConciliado(novoId);
         }
         toast(fromOfx
-          ? `Transferência classificada no OFX · confirme em Importar tudo`
-          : `Transferido para ${dest?.nome || "conta destino"} · ${finDreCatLabel(catId)}`);
+          ? `Transferência conciliada no OFX · confirme em Importar tudo · ${outra?.nome || "conta"}`
+          : `Transferência conciliada · ${outra?.nome || "conta destino"} · ${finDreCatLabel(catId)}`);
         goBack();
       });
     }
@@ -4470,7 +4540,7 @@
       if (!movId) return;
       if (!finDash.conc.ofx) {
         finDash.conc.ofx = {
-          q: "", tipo: "", conciliacao: "nao", de: "", ate: "",
+          q: "", tipo: "", valor: "", conciliacao: "nao", de: "", ate: "",
           selected: [], modalOpen: false, expanded: false, sessionConciliados: [],
         };
       }
@@ -4526,11 +4596,17 @@
       const o = finDash.conc.ofx || {};
       const q = normalizeSearchText(o.q || "");
       const tipo = o.tipo || "";
+      const valorQ = normalizeSearchText(o.valor || "");
       const conc = o.conciliacao || "nao";
       return rows.filter((r) => {
         if (tipo && r.tipo !== tipo) return false;
         if (conc === "nao" && r.status === "conciliado") return false;
         if (conc === "sim" && r.status !== "conciliado") return false;
+        if (valorQ) {
+          const raw = normalizeSearchText(String(r.valor));
+          const fmt = normalizeSearchText(money(r.valor));
+          if (!raw.includes(valorQ) && !fmt.includes(valorQ)) return false;
+        }
         if (q && !normalizeSearchText(`${r.desc} ${r.data} ${r.valor}`).includes(q)) return false;
         return true;
       });
@@ -4572,7 +4648,7 @@
       document.getElementById("finOfxPickFile")?.addEventListener("click", () => {
         if (!finDash.conc.ofx) {
           finDash.conc.ofx = {
-            q: "", tipo: "", conciliacao: "nao", de: "", ate: "",
+            q: "", tipo: "", valor: "", conciliacao: "nao", de: "", ate: "",
             selected: [], modalOpen: false, expanded: false, sessionConciliados: [],
           };
         }
@@ -4741,6 +4817,9 @@
             <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input type="search" id="finOfxQ" placeholder="Buscar movimentação…" value="${(o.q || "").replace(/"/g, "&quot;")}" aria-label="Buscar movimentação" />
           </div>
+          <div class="proc-filter field valor tip-bottom" data-tip="Filtrar por valor">
+            <input type="search" id="finOfxValor" placeholder="Valor" value="${(o.valor || "").replace(/"/g, "&quot;")}" aria-label="Filtrar valor" />
+          </div>
           <div class="proc-filter field fin-ofx-tipo">
             <svg class="field-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h6"/><path d="m14 15 3 3 3-3"/></svg>
             <select id="finOfxTipo" aria-label="Tipo">
@@ -4772,7 +4851,7 @@
 
     function openFinConcOfxModal() {
       if (!finDash.conc.ofx) {
-        finDash.conc.ofx = { q: "", tipo: "", conciliacao: "nao", de: "", ate: "", selected: [], modalOpen: false, expanded: false, sessionConciliados: [] };
+        finDash.conc.ofx = { q: "", tipo: "", valor: "", conciliacao: "nao", de: "", ate: "", selected: [], modalOpen: false, expanded: false, sessionConciliados: [] };
       }
       finDash.conc.ofx.modalOpen = true;
       const o = finDash.conc.ofx;
@@ -4796,13 +4875,11 @@
             <div class="fin-ofx-bulk">
               <div class="fin-ofx-bulk-left">
                 ${isExport ? "" : `
-                <button type="button" class="btn-outline" data-fin-ofx-bulk="edit" ${selCount ? "" : "disabled"}>Editar</button>
-                <button type="button" class="btn-outline fin-ofx-danger" data-fin-ofx-bulk="delete" ${selCount ? "" : "disabled"}>Excluir selecionadas</button>`}
-                <div class="fin-ofx-bulk-clear-col">
-                  <button type="button" class="btn-ghost fin-ofx-bulk-clear" data-fin-ofx-bulk="clear">Limpar seleção</button>
-                  <div class="fin-ofx-bulk-meta">Exibindo ${totalVis} de ${all.length}</div>
-                </div>
+                <button type="button" class="btn-outline fin-ofx-bulk-btn" data-fin-ofx-bulk="edit" ${selCount ? "" : "disabled"}>Editar</button>
+                <button type="button" class="cfg-icon-btn danger tip-bottom fin-ofx-bulk-delete" data-fin-ofx-bulk="delete" data-tip="Excluir selecionadas" title="Excluir selecionadas" aria-label="Excluir selecionadas" ${selCount ? "" : "disabled"}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg></button>`}
+                <button type="button" class="btn-ghost fin-ofx-bulk-btn fin-ofx-bulk-clear" data-fin-ofx-bulk="clear" ${selCount ? "" : "disabled"}>Limpar seleção</button>
               </div>
+              <div class="fin-ofx-bulk-meta">Exibindo ${totalVis} de ${all.length}</div>
             </div>
 
             <div class="fin-ofx-table-card">
@@ -4838,7 +4915,7 @@
                             ${isExport ? `
                             <button type="button" class="btn-outline fin-ofx-row-btn" data-fin-ofx-row-act="export-one" data-id="${r.id}">Exportar</button>` : `
                             <button type="button" class="btn-outline fin-ofx-row-btn" data-fin-ofx-row-act="gerar" data-id="${r.id}">Gerar</button>
-                            <button type="button" class="btn-outline fin-ofx-row-btn" data-fin-ofx-row-act="transferir" data-id="${r.id}">
+                            <button type="button" class="btn-outline fin-ofx-row-btn" data-fin-ofx-row-act="transferir" data-id="${r.id}" title="Transferir entre contas">
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 7h12"/><path d="m16 3 4 4-4 4"/><path d="M16 17H4"/><path d="m8 21-4-4 4-4"/></svg>
                               Transferir
                             </button>`}
@@ -4864,10 +4941,17 @@
         if (!el) return;
         el.addEventListener(isSelect ? "change" : "input", () => {
           finDash.conc.ofx[key] = el.value;
+          const pos = isSelect ? null : el.selectionStart;
           refresh();
+          if (isSelect) return;
+          const next = document.getElementById(id);
+          if (!next) return;
+          next.focus();
+          try { if (pos != null) next.setSelectionRange(pos, pos); } catch (_) { /* ignore */ }
         });
       };
       bindFilter("finOfxQ", "q", false);
+      bindFilter("finOfxValor", "valor", false);
       bindFilter("finOfxTipo", "tipo", true);
       bindFilter("finOfxConc", "conciliacao", true);
       bindFilter("finOfxDe", "de", false);
@@ -5115,18 +5199,32 @@
       if (!finDash.conc.regras) {
         finDash.conc.regras = {
           escopo: "todos", automacao: "inativo", tipo: "receber", match: "contem",
-          keyword: "", wild: false, subplano: "", lista: null,
+          keyword: "", wild: false, subplano: "", parceiro: "", lista: null,
         };
       }
+      if (finDash.conc.regras.parceiro == null) finDash.conc.regras.parceiro = "";
       if (!finDash.conc.regras.lista) {
         finDash.conc.regras.lista = [
-          { id: "r1", keyword: "DEP DINHEIRO ATM", match: "contem", subplano: "Venda de Mercadorias", escopo: "todos", ativo: true },
-          { id: "r2", keyword: "PIX RECEBIDO", match: "contem", subplano: "Recebimentos de clientes", escopo: "todos", ativo: true },
-          { id: "r3", keyword: "TARIFA PACOTE", match: "contem", subplano: "Despesas bancárias", escopo: "banco", ativo: true },
-          { id: "r4", keyword: "FOLHA CLT", match: "exato", subplano: "Folha de pagamento", escopo: "todos", ativo: false },
+          { id: "r1", keyword: "DEP DINHEIRO ATM", match: "contem", tipo: "receber", subplano: "Venda de Mercadorias", parceiro: "", escopo: "todos", ativo: true },
+          { id: "r2", keyword: "PIX RECEBIDO", match: "contem", tipo: "receber", subplano: "Recebimentos de clientes", parceiro: "", escopo: "todos", ativo: true },
+          { id: "r3", keyword: "TARIFA PACOTE", match: "contem", tipo: "pagar", subplano: "Despesas bancárias", parceiro: "", escopo: "banco", ativo: true },
+          { id: "r4", keyword: "FOLHA CLT", match: "exato", tipo: "pagar", subplano: "Folha de pagamento", parceiro: "", escopo: "todos", ativo: false },
         ];
       }
       return finDash.conc.regras.lista;
+    }
+
+    function finConcRegrasSubplanoOptions() {
+      const labels = [];
+      getFinDreTaxonomy().forEach((g) => {
+        (g.children || []).forEach((c) => {
+          if (c.label && !labels.includes(c.label)) labels.push(c.label);
+        });
+      });
+      ["Venda de Mercadorias", "Recebimentos de clientes", "Despesas bancárias", "Folha de pagamento"].forEach((lab) => {
+        if (!labels.includes(lab)) labels.push(lab);
+      });
+      return labels;
     }
 
     function renderFinConcRegrasBodyHtml(opts = {}) {
@@ -5134,18 +5232,27 @@
       if (!finDash.conc.regras) {
         finDash.conc.regras = {
           escopo: "todos", automacao: "inativo", tipo: "receber", match: "contem",
-          keyword: "", wild: false, subplano: "", lista: null,
+          keyword: "", wild: false, subplano: "", parceiro: "", lista: null,
         };
       }
+      if (finDash.conc.regras.parceiro == null) finDash.conc.regras.parceiro = "";
       const r = finDash.conc.regras;
       const banco = finDash.conc.banco || "SICREDI";
       const lista = ensureFinConcRegrasLista();
+      const showForm = r.automacao === "ativo" || r.automacao === "semi";
+      const subOpts = finConcRegrasSubplanoOptions();
       const autoLabel = {
         ativo: "Conciliação automática ativada",
-        semi: "Conciliação semiautomática",
+        semi: "Conciliação semiautomática ativada",
         inativo: "Conciliação automática desativada",
       };
+      const autoDesc = {
+        ativo: "Movimentações que casarem com uma regra serão conciliadas automaticamente.",
+        semi: "Movimentações que casarem com uma regra abrem um modal de confirmação antes de gerar o título.",
+        inativo: "Nenhuma regra será aplicada automaticamente até reativar o modo.",
+      };
       const warnText = "Use com cuidado: uma regra muito genérica pode conciliar movimentações erradas automaticamente. \"Contém\" casa qualquer descrição que inclua a palavra-chave; \"Exato\" só concilia quando a descrição inteira é igual à palavra-chave.";
+      const parceiroLab = r.tipo === "pagar" ? "Fornecedor (opcional)" : r.tipo === "transferencia" ? "Conta / contraparte (opcional)" : "Cliente (opcional)";
 
       return `
         <div class="fin-conc-regras${embed ? " is-embed" : ""}">
@@ -5163,10 +5270,13 @@
 
           <div class="fin-conc-auto-card">
             <div class="fin-conc-auto-head">
-              <strong>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                ${autoLabel[r.automacao] || autoLabel.inativo}
-              </strong>
+              <div class="fin-conc-auto-copy">
+                <strong>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  ${autoLabel[r.automacao] || autoLabel.inativo}
+                </strong>
+                <p>${autoDesc[r.automacao] || autoDesc.inativo}</p>
+              </div>
             </div>
             <div class="fin-conc-auto-btns">
               <button type="button" class="fin-conc-auto-btn${r.automacao === "ativo" ? " active" : ""}" data-fin-regra-auto="ativo">
@@ -5189,18 +5299,90 @@
             <div>${warnText}</div>
           </div>
 
+          ${showForm ? `
+          <section class="fin-conc-nova-regra" aria-label="Nova regra">
+            <header class="fin-conc-nova-head">
+              <h5>Nova regra</h5>
+              <p>Defina como casar a movimentação e o que aplicar na conciliação.</p>
+            </header>
+
+            <div class="fin-conc-nova-block">
+              <span class="fin-conc-nova-block-lab">Correspondência</span>
+              <div class="fin-conc-nova-grid is-2">
+                <label class="fin-conc-nova-field">
+                  <span>Tipo</span>
+                  <select id="finRegraTipo" aria-label="Tipo da regra">
+                    <option value="receber" ${r.tipo === "receber" ? "selected" : ""}>A receber</option>
+                    <option value="pagar" ${r.tipo === "pagar" ? "selected" : ""}>A pagar</option>
+                    <option value="transferencia" ${r.tipo === "transferencia" ? "selected" : ""}>Transferência entre contas</option>
+                  </select>
+                </label>
+                <label class="fin-conc-nova-field">
+                  <span>Modo</span>
+                  <select id="finRegraMatch" aria-label="Correspondência" ${r.wild ? "disabled" : ""}>
+                    <option value="contem" ${r.match === "contem" ? "selected" : ""}>Contém</option>
+                    <option value="exato" ${r.match === "exato" ? "selected" : ""}>Exato</option>
+                  </select>
+                </label>
+              </div>
+              <label class="fin-conc-nova-field">
+                <span>Palavra-chave</span>
+                <input type="search" id="finRegraKeyword" placeholder="Ex.: PIX RECEBIDO" value="${(r.keyword || "").replace(/"/g, "&quot;")}" ${r.wild ? "disabled" : ""} aria-label="Palavra-chave" />
+              </label>
+              <label class="fin-conc-nova-wild">
+                <input type="checkbox" id="finRegraWild" ${r.wild ? "checked" : ""} />
+                <span>
+                  <strong>Não usar palavra-chave (regra coringa)</strong>
+                  <small>Aplica o subplano a qualquer movimentação do tipo escolhido.</small>
+                </span>
+              </label>
+            </div>
+
+            <div class="fin-conc-nova-block">
+              <span class="fin-conc-nova-block-lab">Classificação</span>
+              <div class="fin-conc-nova-class">
+                <label class="fin-conc-nova-field fin-conc-nova-subplano">
+                  <span>Subplano de contas *</span>
+                  <select id="finRegraSubplano" aria-label="Subplano de contas" required>
+                    <option value="">Selecione…</option>
+                    ${subOpts.map((lab) => `<option value="${uiSelectEscape(lab)}"${r.subplano === lab ? " selected" : ""}>${uiSelectEscape(lab)}</option>`).join("")}
+                  </select>
+                </label>
+                ${r.tipo === "transferencia" ? `
+                <input type="hidden" id="finRegraParceiro" value="" />` : `
+                <label class="fin-conc-nova-field fin-conc-nova-parceiro">
+                  <span>${parceiroLab}</span>
+                  <input type="search" id="finRegraParceiro" placeholder="${parceiroLab.replace(" (opcional)", "")}" value="${(r.parceiro || "").replace(/"/g, "&quot;")}" aria-label="${parceiroLab}" />
+                </label>`}
+                <div class="fin-conc-nova-actions">
+                  <button type="button" class="btn-primary" id="finRegraAdd">+ Adicionar regra</button>
+                </div>
+              </div>
+            </div>
+          </section>` : `
+          <div class="fin-conc-regras-inactive-hint" role="status">
+            Ative <strong>Ativo</strong> ou <strong>Semiautomático</strong> para cadastrar novas regras por palavra-chave.
+          </div>`}
+
           <div class="fin-conc-regras-list-wrap">
             <h5>Regras cadastradas (${lista.length})</h5>
             <div class="fin-conc-regras-list">
-              ${lista.map((item) => `
+              ${lista.length ? lista.map((item) => `
                 <article class="fin-conc-regra-row" data-regra-id="${item.id}">
+                  <span class="fin-conc-regra-tipo is-${item.tipo || "receber"}" aria-hidden="true">
+                    ${item.tipo === "pagar"
+                      ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>`
+                      : item.tipo === "transferencia"
+                        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 7h12"/><path d="m16 3 4 4-4 4"/><path d="M16 17H4"/><path d="m8 21-4-4 4-4"/></svg>`
+                        : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>`}
+                  </span>
                   <div class="fin-conc-regra-main">
-                    <strong>${uiSelectEscape(item.keyword)}</strong>
+                    <strong>${uiSelectEscape(item.wild ? "Regra coringa" : item.keyword)}</strong>
                     <span class="fin-conc-regra-badge">${item.escopo === "todos" ? "todos os bancos" : uiSelectEscape(banco)}</span>
-                    <span class="fin-conc-regra-sub">${uiSelectEscape(item.subplano)}</span>
+                    <span class="fin-conc-regra-sub">${uiSelectEscape(item.subplano)}${item.parceiro ? ` · ${uiSelectEscape(item.parceiro)}` : ""}</span>
                   </div>
                   <div class="fin-conc-regra-controls">
-                    <select data-fin-regra-match="${item.id}" aria-label="Correspondência">
+                    <select data-fin-regra-match="${item.id}" aria-label="Correspondência" ${item.wild ? "disabled" : ""}>
                       <option value="contem" ${item.match === "contem" ? "selected" : ""}>Contém</option>
                       <option value="exato" ${item.match === "exato" ? "selected" : ""}>Exato</option>
                     </select>
@@ -5211,7 +5393,7 @@
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
-                </article>`).join("")}
+                </article>`).join("") : `<div class="fin-conc-regras-empty">Nenhuma regra cadastrada ainda.</div>`}
             </div>
           </div>
         </div>`;
@@ -5229,6 +5411,65 @@
           finDash.conc.regras.automacao = btn.dataset.finRegraAuto;
           onRefresh();
         });
+      });
+      const syncDraft = () => {
+        const r = finDash.conc.regras;
+        if (!r) return;
+        const tipoEl = document.getElementById("finRegraTipo");
+        const matchEl = document.getElementById("finRegraMatch");
+        const keyEl = document.getElementById("finRegraKeyword");
+        const wildEl = document.getElementById("finRegraWild");
+        const subEl = document.getElementById("finRegraSubplano");
+        const parcEl = document.getElementById("finRegraParceiro");
+        if (tipoEl) r.tipo = tipoEl.value || "receber";
+        if (matchEl) r.match = matchEl.value || "contem";
+        if (keyEl) r.keyword = keyEl.value || "";
+        if (wildEl) r.wild = !!wildEl.checked;
+        if (subEl) r.subplano = subEl.value || "";
+        if (parcEl) r.parceiro = parcEl.value || "";
+      };
+      ["finRegraTipo", "finRegraMatch", "finRegraSubplano"].forEach((id) => {
+        document.getElementById(id)?.addEventListener("change", () => {
+          syncDraft();
+          if (id === "finRegraTipo") onRefresh();
+        });
+      });
+      document.getElementById("finRegraKeyword")?.addEventListener("input", syncDraft);
+      document.getElementById("finRegraParceiro")?.addEventListener("input", syncDraft);
+      document.getElementById("finRegraWild")?.addEventListener("change", () => {
+        syncDraft();
+        onRefresh();
+      });
+      document.getElementById("finRegraAdd")?.addEventListener("click", () => {
+        syncDraft();
+        const r = finDash.conc.regras;
+        const keyword = (r.keyword || "").trim();
+        if (!r.wild && !keyword) {
+          toast("Informe a palavra-chave ou marque a regra coringa");
+          return;
+        }
+        if (!(r.subplano || "").trim()) {
+          toast("Selecione o subplano de contas");
+          return;
+        }
+        const lista = ensureFinConcRegrasLista();
+        lista.unshift({
+          id: `r${Date.now()}`,
+          keyword: r.wild ? "" : keyword,
+          wild: !!r.wild,
+          match: r.match || "contem",
+          tipo: r.tipo || "receber",
+          subplano: r.subplano,
+          parceiro: (r.parceiro || "").trim(),
+          escopo: r.escopo || "todos",
+          ativo: true,
+        });
+        r.keyword = "";
+        r.wild = false;
+        r.subplano = "";
+        r.parceiro = "";
+        toast("Regra adicionada");
+        onRefresh();
       });
       modalBody.querySelectorAll("[data-fin-regra-match]").forEach((sel) => {
         sel.addEventListener("change", () => {
@@ -5265,6 +5506,7 @@
         foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
       });
       prepareFinConcModalChrome();
+      enhanceUiSelects(modalBody);
       bindFinConcRegrasEvents(() => openFinConcRegrasModal());
     }
 
@@ -5591,16 +5833,6 @@
         wide: true,
         body: `
           <div class="fin-conc-contexto">
-            <div class="fin-conc-contexto-actions">
-              <button type="button" class="btn-ghost" data-fin-ctx-act="dre">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                Gerar DRE
-              </button>
-              <button type="button" class="btn-primary" data-fin-ctx-act="banco">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 7h12"/><path d="m16 3 4 4-4 4"/><path d="M16 17H4"/><path d="m8 21-4-4 4-4"/></svg>
-                Trocar Banco
-              </button>
-            </div>
             <div class="fin-conc-contexto-cards">
               <article class="fin-conc-ctx-card empresa">
                 <strong>${uiSelectEscape(nome)}</strong>
@@ -5616,17 +5848,28 @@
                   <span>Conta: ${uiSelectEscape(meta.conta)}</span>
                 </div>
                 <div class="fin-conc-banco-saldo">Saldo inicial: ${money(d.saldoInicial)}</div>
+                <div class="fin-conc-ctx-card-act">
+                  <button type="button" class="btn-outline fin-conc-ctx-banco-btn" data-fin-ctx-act="banco">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 7h12"/><path d="m16 3 4 4-4 4"/><path d="M16 17H4"/><path d="m8 21-4-4 4-4"/></svg>
+                    Trocar Banco
+                  </button>
+                </div>
               </article>
             </div>
             <div class="fin-conc-contexto-extra">
               ${renderFinConcRegrasBodyHtml({ embed: true })}
             </div>
           </div>`,
-        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Fechar</button>
+          <button type="button" class="btn-outline" data-fin-ctx-act="dre">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Gerar DRE
+          </button>`,
       });
       prepareFinConcModalChrome();
 
-      modalBody.querySelector("[data-fin-ctx-act='dre']")?.addEventListener("click", () => {
+      modalFoot.querySelector("[data-fin-ctx-act='dre']")?.addEventListener("click", () => {
         toast("Gerando DRE do contexto (protótipo)");
       });
       modalBody.querySelector("[data-fin-ctx-act='banco']")?.addEventListener("click", () => {
@@ -5634,6 +5877,7 @@
         finDash.conc.bancoPickPadrao = finDash.conc.bancoPadraoId === finDash.conc.bancoPickId;
         openFinConcSelecionarBancoModal({ returnToContexto: true });
       });
+      enhanceUiSelects(modalBody);
       bindFinConcRegrasEvents(() => openFinConcContextoModal());
     }
 
@@ -6836,6 +7080,7 @@
       const prefix = finDash.planoMap.prefixo || "";
       return [...FIN_PLANO_CONTABIL_SEED, ...(finDash.planoMap.contabilExtra || [])].map((x) => ({
         ...x,
+        tipo: x.tipo === "sintetico" ? "sintetico" : "analitico",
         codigoExib: prefix ? `${prefix}${x.codigo}` : x.codigo,
       }));
     }
@@ -6885,11 +7130,14 @@
 
       const rowCont = (a) => {
         const n = finPlanoContabilMapCount(a.id);
+        const tipo = a.tipo === "sintetico" ? "sintetico" : "analitico";
+        const tipoLab = tipo === "sintetico" ? "Sintética" : "Analítica";
         return `
           <article class="fin-pmap-item${n ? " is-mapped" : ""}" data-fin-pmap-cont="${a.id}">
             <div class="fin-pmap-item-main">
               <strong>${uiSelectEscape(a.codigoExib)} - ${uiSelectEscape(a.nome)}</strong>
               <span class="fin-pmap-id">ID: ${uiSelectEscape(a.id)}</span>
+              <span class="fin-plano-tag tipo-${tipo}">${tipoLab}</span>
             </div>
             <div class="fin-pmap-item-acts">
               ${n ? `<span class="fin-pmap-link-count" title="Vínculos"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><i>${n}</i></span>` : ""}
@@ -7077,12 +7325,20 @@
               <span>Nome</span>
               <input type="text" id="finPmapNovoNome" placeholder="Nome da conta contábil" />
             </label>
+            <label class="fin-field">
+              <span>Tipo</span>
+              <select id="finPmapNovoTipo" aria-label="Tipo da conta">
+                <option value="analitico" selected>Analítica</option>
+                <option value="sintetico">Sintética</option>
+              </select>
+            </label>
           </div>`,
         foot: `
           <button type="button" class="btn-ghost" id="finPmapNovoCancel">Cancelar</button>
           <button type="button" class="btn-primary" id="finPmapNovoSave">Criar plano</button>`,
       });
       prepareFinConcModalChrome();
+      enhanceUiSelects(modalBody);
 
       const goBack = () => {
         if (returnTo === "associar" && finId) openFinPlanoAssociarModal(finId);
@@ -7097,7 +7353,8 @@
           return;
         }
         const id = String(500 + (ensureFinPlanoMapState().contabilExtra.length || 0) + Date.now() % 1000);
-        ensureFinPlanoMapState().contabilExtra.push({ id, codigo, nome, origem: "manual" });
+        const tipo = document.getElementById("finPmapNovoTipo")?.value === "sintetico" ? "sintetico" : "analitico";
+        ensureFinPlanoMapState().contabilExtra.push({ id, codigo, nome, origem: "manual", tipo });
         toast("Plano contábil criado");
         goBack();
       });

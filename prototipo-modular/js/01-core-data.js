@@ -877,6 +877,7 @@
         ofx: {
           q: "",
           tipo: "",
+          valor: "",
           conciliacao: "nao",
           de: "",
           ate: "",
@@ -893,6 +894,7 @@
           keyword: "",
           wild: false,
           subplano: "",
+          parceiro: "",
           lista: null,
         },
       },
@@ -1023,20 +1025,23 @@
 
     /** Planos Contábeis (podem vir de outro sistema) — lado direito */
     const FIN_PLANO_CONTABIL_SEED = [
-      { id: "57", codigo: "10", nome: "APLICAÇÕES FINANCEIRAS LIQUIDEZ", origem: "import" },
-      { id: "83", codigo: "100", nome: "IMÓVEIS NÃO DESTINADOS AO USO", origem: "import" },
-      { id: "84", codigo: "101", nome: "OUTROS INVESTIMENTOS", origem: "import" },
-      { id: "249", codigo: "102", nome: "PARTICIPAÇÕES EM OUTRAS EMPRESAS", origem: "import" },
-      { id: "250", codigo: "103", nome: "CAUÇÕES PERMANENTES", origem: "import" },
-      { id: "85", codigo: "104", nome: "(-) PROVISÃO PARA PERDAS", origem: "import" },
-      { id: "301", codigo: "3.1.01", nome: "Receita de Serviços Contábeis", origem: "import" },
-      { id: "302", codigo: "3.1.02", nome: "Receita de Venda de Mercadorias", origem: "import" },
-      { id: "303", codigo: "3.1.03", nome: "Receita de Revenda", origem: "import" },
-      { id: "310", codigo: "1.1.05", nome: "Clientes Diversos", origem: "import" },
-      { id: "320", codigo: "4.1.01", nome: "Despesas com Pessoal", origem: "import" },
-      { id: "321", codigo: "4.2.01", nome: "Aluguéis e Condomínio", origem: "import" },
-      { id: "322", codigo: "4.3.01", nome: "Serviços de TI / Cloud", origem: "import" },
-      { id: "330", codigo: "1.8", nome: "Adiantamento de Cliente - Dinheiro", origem: "import" },
+      { id: "57", codigo: "10", nome: "APLICAÇÕES FINANCEIRAS LIQUIDEZ", origem: "import", tipo: "analitico" },
+      { id: "83", codigo: "100", nome: "IMÓVEIS NÃO DESTINADOS AO USO", origem: "import", tipo: "analitico" },
+      { id: "84", codigo: "101", nome: "OUTROS INVESTIMENTOS", origem: "import", tipo: "analitico" },
+      { id: "249", codigo: "102", nome: "PARTICIPAÇÕES EM OUTRAS EMPRESAS", origem: "import", tipo: "analitico" },
+      { id: "250", codigo: "103", nome: "CAUÇÕES PERMANENTES", origem: "import", tipo: "analitico" },
+      { id: "85", codigo: "104", nome: "(-) PROVISÃO PARA PERDAS", origem: "import", tipo: "analitico" },
+      { id: "40", codigo: "1", nome: "ATIVO", origem: "import", tipo: "sintetico" },
+      { id: "41", codigo: "3", nome: "RECEITAS", origem: "import", tipo: "sintetico" },
+      { id: "42", codigo: "4", nome: "DESPESAS", origem: "import", tipo: "sintetico" },
+      { id: "301", codigo: "3.1.01", nome: "Receita de Serviços Contábeis", origem: "import", tipo: "analitico" },
+      { id: "302", codigo: "3.1.02", nome: "Receita de Venda de Mercadorias", origem: "import", tipo: "analitico" },
+      { id: "303", codigo: "3.1.03", nome: "Receita de Revenda", origem: "import", tipo: "analitico" },
+      { id: "310", codigo: "1.1.05", nome: "Clientes Diversos", origem: "import", tipo: "analitico" },
+      { id: "320", codigo: "4.1.01", nome: "Despesas com Pessoal", origem: "import", tipo: "analitico" },
+      { id: "321", codigo: "4.2.01", nome: "Aluguéis e Condomínio", origem: "import", tipo: "analitico" },
+      { id: "322", codigo: "4.3.01", nome: "Serviços de TI / Cloud", origem: "import", tipo: "analitico" },
+      { id: "330", codigo: "1.8", nome: "Adiantamento de Cliente - Dinheiro", origem: "import", tipo: "analitico" },
     ];
 
     const FIN_PLANO_MAP_SEED = {
