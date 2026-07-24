@@ -22702,6 +22702,14 @@
       animation: fatBarIn .55s var(--ease) forwards;
     }
 
+    .dash-fat .bar-chart .bar-imposto-ant {
+      fill: #e8a0a8;
+      opacity: 0;
+      rx: 3;
+      ry: 3;
+      animation: fatBarIn .55s var(--ease) forwards;
+    }
+
     .dash-fat .bar-chart .bar-hit {
       fill: transparent;
       cursor: pointer;
@@ -22713,7 +22721,8 @@
       filter: brightness(1.08);
     }
 
-    .dash-fat .bar-chart g:hover .bar-imposto {
+    .dash-fat .bar-chart g:hover .bar-imposto,
+    .dash-fat .bar-chart g:hover .bar-imposto-ant {
       filter: brightness(1.08);
     }
 
@@ -22733,6 +22742,13 @@
     .line-chart-legend .imposto::before {
       --leg: #b33a4a;
       background: #b33a4a !important;
+      height: 8px !important;
+      width: 8px !important;
+      border-radius: 2px;
+    }
+    .line-chart-legend .imposto-ant::before {
+      --leg: #e8a0a8;
+      background: #e8a0a8 !important;
       height: 8px !important;
       width: 8px !important;
       border-radius: 2px;
@@ -22843,6 +22859,13 @@
     .line-chart-legend .imposto::before {
       --leg: #b33a4a;
       background: #b33a4a;
+      height: 8px;
+      width: 8px;
+      border-radius: 2px;
+    }
+    .line-chart-legend .imposto-ant::before {
+      --leg: #e8a0a8;
+      background: #e8a0a8;
       height: 8px;
       width: 8px;
       border-radius: 2px;

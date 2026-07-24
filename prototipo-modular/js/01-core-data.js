@@ -177,6 +177,7 @@
       const scale = Math.max(0.12, c.faturamento / 482300);
       const aberto = Math.round(c.status === "Inativo" ? 0 : 400 + scale * 700);
       const imposto = Math.round(600 + scale * 1800);
+      const impostoAnoAnt = Math.round(imposto * 0.88);
       const mesesBase = [
         { m: "Fev", atual: 38, ant: 32 }, { m: "Mar", atual: 41, ant: 35 }, { m: "Abr", atual: 36, ant: 39 },
         { m: "Mai", atual: 44, ant: 37 }, { m: "Jun", atual: 48, ant: 40 }, { m: "Jul", atual: 42, ant: 38 },
@@ -199,8 +200,9 @@
           m: row.m,
           atual: Math.max(4, Math.round(row.atual * scale)),
           ant: Math.max(3, Math.round(row.ant * scale)),
-          /* mesma unidade do gráfico (milhares); parcela do imposto do mês */
+          /* mesma unidade do gráfico (milhares) */
           imp: Math.max(1, Math.round((imposto / 1000) * (row.atual / 42) * 10) / 10),
+          impAnt: Math.max(0.8, Math.round((impostoAnoAnt / 1000) * (row.ant / 42) * 10) / 10),
         })),
         impostosDetalhe: [
           { nome: c.regime.includes("Lucro") ? "IRPJ/CSLL" : "DAS", valor: Math.round(imposto * 0.62), pct: 62 },
@@ -3267,6 +3269,7 @@
         atual: ids.reduce((acc, id) => acc + empresaMetrics[id].faturamentoMensal[i].atual, 0),
         ant: ids.reduce((acc, id) => acc + empresaMetrics[id].faturamentoMensal[i].ant, 0),
         imp: ids.reduce((acc, id) => acc + (empresaMetrics[id].faturamentoMensal[i].imp || 0), 0),
+        impAnt: ids.reduce((acc, id) => acc + (empresaMetrics[id].faturamentoMensal[i].impAnt || 0), 0),
       }));
 
       return {
@@ -3813,17 +3816,17 @@
       const months = data.faturamentoMensal || [];
       const lineHost = document.getElementById("dashLineChart");
       if (lineHost && months.length) {
-        /* Barras: atual · anterior · imposto pago */
+        /* Barras: faturamento atual/anterior · imposto mês atual · imposto mesmo mês/ano anterior */
         const w = 640;
         const h = 130;
         const pad = { t: 22, r: 8, b: 20, l: 8 };
         const plotW = w - pad.l - pad.r;
         const plotH = h - pad.t - pad.b;
-        const maxY = Math.max(...months.flatMap((m) => [m.atual, m.ant, m.imp || 0]), 1) * 1.12;
+        const maxY = Math.max(...months.flatMap((m) => [m.atual, m.ant, m.imp || 0, m.impAnt || 0]), 1) * 1.12;
         const n = months.length;
         const groupW = plotW / n;
-        const barW = Math.min(12, groupW * 0.2);
-        const gap = 2.5;
+        const barW = Math.min(10, groupW * 0.16);
+        const gap = 2;
         const fmtMes = (v) => {
           const nVal = Number(v) || 0;
           const reais = nVal < 1000 ? nVal * 1000 : nVal;
@@ -3839,16 +3842,19 @@
 
         const bars = months.map((m, i) => {
           const cx = pad.l + groupW * i + groupW / 2;
-          const totalBarsW = barW * 3 + gap * 2;
+          const totalBarsW = barW * 4 + gap * 3;
           const x0 = cx - totalBarsW / 2;
           const xAnt = x0;
           const xAtual = x0 + barW + gap;
-          const xImp = x0 + (barW + gap) * 2;
+          const xImpAnt = x0 + (barW + gap) * 2;
+          const xImp = x0 + (barW + gap) * 3;
           const yAnt = yAt(m.ant);
           const yAtual = yAt(m.atual);
+          const yImpAnt = yAt(m.impAnt || 0);
           const yImp = yAt(m.imp || 0);
           const hAnt = pad.t + plotH - yAnt;
           const hAtual = pad.t + plotH - yAtual;
+          const hImpAnt = pad.t + plotH - yImpAnt;
           const hImp = pad.t + plotH - yImp;
           const delay = 0.05 + i * 0.06;
           return `
@@ -3856,7 +3862,8 @@
               <rect class="bar-hit" x="${(cx - groupW / 2).toFixed(1)}" y="${pad.t}" width="${groupW.toFixed(1)}" height="${plotH}" data-fat-i="${i}" />
               <rect class="bar-anterior" x="${xAnt.toFixed(1)}" y="${yAnt.toFixed(1)}" width="${barW}" height="${Math.max(2, hAnt).toFixed(1)}" style="animation-delay:${delay}s" data-fat-i="${i}" />
               <rect class="bar-atual" x="${xAtual.toFixed(1)}" y="${yAtual.toFixed(1)}" width="${barW}" height="${Math.max(2, hAtual).toFixed(1)}" style="animation-delay:${delay + 0.05}s" data-fat-i="${i}" />
-              <rect class="bar-imposto" x="${xImp.toFixed(1)}" y="${yImp.toFixed(1)}" width="${barW}" height="${Math.max(2, hImp).toFixed(1)}" style="animation-delay:${delay + 0.1}s" data-fat-i="${i}" />
+              <rect class="bar-imposto-ant" x="${xImpAnt.toFixed(1)}" y="${yImpAnt.toFixed(1)}" width="${barW}" height="${Math.max(2, hImpAnt).toFixed(1)}" style="animation-delay:${delay + 0.08}s" data-fat-i="${i}" />
+              <rect class="bar-imposto" x="${xImp.toFixed(1)}" y="${yImp.toFixed(1)}" width="${barW}" height="${Math.max(2, hImp).toFixed(1)}" style="animation-delay:${delay + 0.12}s" data-fat-i="${i}" />
               <text class="val" x="${cx.toFixed(1)}" y="${(yAtual - 6).toFixed(1)}" text-anchor="middle">${fmtMes(m.atual)}</text>
               <text class="lbl" x="${cx.toFixed(1)}" y="${h - 6}">${m.m}</text>
             </g>`;
@@ -3866,10 +3873,11 @@
           <div class="line-chart-legend">
             <span class="atual">Atual</span>
             <span class="anterior">Período anterior</span>
-            <span class="imposto">Imposto pago</span>
+            <span class="imposto">Imposto mês atual</span>
+            <span class="imposto-ant">Imposto ano anterior</span>
           </div>
           <div class="line-chart-tooltip" id="dashFatTooltip" hidden></div>
-          <svg class="line-chart bar-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Gráfico de barras do faturamento e imposto">
+          <svg class="line-chart bar-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Gráfico de barras do faturamento e impostos">
             <g class="line-chart-grid">${gridYs}</g>
             ${bars}
           </svg>`;
@@ -3883,7 +3891,8 @@
           tip.innerHTML = `<strong>${m.m}</strong>
             <div class="row"><span>Atual</span><b>${fmtMes(m.atual)}</b></div>
             <div class="row"><span>Anterior</span><b>${fmtMes(m.ant)}</b></div>
-            <div class="row"><span>Imposto pago</span><b>${fmtMes(m.imp || 0)}</b></div>`;
+            <div class="row"><span>Imposto mês atual</span><b>${fmtMes(m.imp || 0)}</b></div>
+            <div class="row"><span>Imposto ano anterior</span><b>${fmtMes(m.impAnt || 0)}</b></div>`;
           const svg = lineHost.querySelector(".line-chart");
           const rect = svg.getBoundingClientRect();
           const hostRect = lineHost.getBoundingClientRect();
