@@ -39,6 +39,12 @@
                       </button>
                     </div>
                     <div class="empresa-empty" id="empresaEmpty">Nenhuma empresa encontrada</div>
+                    <div class="empresa-menu-foot">
+                      <button type="button" class="empresa-add-btn" data-empresa-add>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        Adicionar empresa
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="header-actions">
@@ -102,6 +108,7 @@
                   <span>Regerar</span>
                 </button>
               </div>
+              <div class="proc-filters" id="procFilters" hidden></div>
               <div class="dash-period" id="dashPeriodWrap" hidden>
                 <div class="dash-period-select-wrap">
                   <select class="dash-period-select" id="dashPeriod" aria-label="Filtrar período do dashboard">
@@ -148,7 +155,6 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
                 </button>
               </div>
-              <div class="proc-filters" id="procFilters" hidden></div>
               <button type="button" class="btn-expand tip-bottom" id="expandBtn" data-tip="Expandir para tela toda" aria-label="Expandir">
                 <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
                 <svg class="icon-collapse" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" hidden><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>

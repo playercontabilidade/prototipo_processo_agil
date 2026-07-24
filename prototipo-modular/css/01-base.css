@@ -682,6 +682,7 @@
       top: calc(100% + 6px);
       left: 0;
       min-width: 340px;
+      max-height: min(420px, 70vh);
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -689,14 +690,15 @@
       padding: 6px;
       z-index: 100;
       display: none;
+      flex-direction: column;
+      overflow: hidden;
     }
 
-    .empresa-wrap.open .empresa-menu { display: block; }
+    .empresa-wrap.open .empresa-menu { display: flex; }
 
     .empresa-search {
       padding: 4px 4px 8px;
-      position: sticky;
-      top: 0;
+      flex-shrink: 0;
       background: var(--surface);
       z-index: 1;
     }
@@ -723,7 +725,9 @@
     }
 
     .empresa-options {
-      max-height: 280px;
+      flex: 1 1 auto;
+      min-height: 0;
+      max-height: none;
       overflow-y: auto;
     }
 
@@ -777,9 +781,49 @@
       font-size: .82rem;
       color: var(--muted);
       text-align: center;
+      flex-shrink: 0;
     }
 
     .empresa-empty.show { display: block; }
+
+    .empresa-menu-foot {
+      flex-shrink: 0;
+      margin-top: 4px;
+      padding: 8px 4px 2px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .empresa-add-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      height: 36px;
+      padding: 0 12px;
+      box-sizing: border-box;
+      border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+      color: var(--accent);
+      font-family: inherit;
+      font-size: .78rem;
+      font-weight: 650;
+      line-height: 1;
+      cursor: pointer;
+      transition: background .15s var(--ease), border-color .15s var(--ease);
+    }
+
+    .empresa-add-btn:hover {
+      background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+      border-color: var(--accent);
+    }
+
+    .empresa-add-btn:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+      outline-offset: 2px;
+    }
 
     .info-chips {
       display: inline-flex;
@@ -1691,6 +1735,12 @@
     .module-empresa-picker .empresa-menu {
       min-width: min(340px, 92vw);
       width: max(100%, 300px);
+      max-height: min(420px, 70vh);
+    }
+
+    .fin-client-picker .empresa-menu,
+    .fin-global-header .empresa-menu {
+      max-height: min(420px, 70vh);
     }
 
     @media (max-width: 640px) {
@@ -2193,10 +2243,10 @@
 
     .panel-body:has(.fake-list.show .cfg-shell) .cfg-shell,
     .panel-body:has(.fake-list.show .sec-monitor) .sec-monitor {
-      flex: 0 1 auto;
+      flex: 1 1 auto;
       max-height: none;
       min-height: 0;
-      overflow: visible;
+      overflow: hidden;
     }
 
     .actions {

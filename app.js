@@ -281,61 +281,61 @@
       { id: "clientes", label: "Gestão de Clientes", tip: "Gestão de clientes", empty: "Nenhum cliente cadastrado", desc: "Cadastre ou selecione um cliente para começar.", clientes: true, items: CLIENTES },
       { id: "financeiro", label: "Módulo Contábil", tip: "Módulo contábil", empty: "Sem lançamentos financeiros", desc: "Dashboard de análise financeira.", financeiroDash: true, items: [] },
       { id: "processos", label: "Gestão de Operações e Processos", tip: "Operações e processos", empty: "Nenhum processo encontrado", desc: "Adicione um processo usando o botão +", actions: false, processos: true, items: [
-        { id: 1042, title: "Abertura de filial", status: "em-andamento", sucesso: null, dept: "Implantação", clienteId: "farmelhor", cliente: "Farmelhor Taquaralto", responsavel: "Ana Costa", criado: "2026-06-12", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1042, title: "Abertura de filial", status: "em-andamento", sucesso: null, dept: "Implantação", clienteId: "farmelhor", cliente: "Farmelhor Taquaralto", responsavel: "Ana Costa", criado: "2026-06-12", inicio: "2026-06-12", fim: null, previsaoFim: "2026-07-31", competencia: "2026-06", arquivado: false, etapas: [
           { id: 1, nome: "Coleta de documentos", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 2, nome: "Protocolo Junta Comercial", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 3, nome: "Inscrição Estadual", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 4, nome: "Atualizar cadastro interno", status: "pendente", ordem: 4, obrigatorio: false, responsavel: "Juliana Reis" },
         ]},
-        { id: 998, title: "Alteração contratual", status: "no-prazo", sucesso: null, dept: "Paralegal", clienteId: "centro", cliente: "Farmácia Centro", responsavel: "Juliana Reis", criado: "2026-05-20", competencia: "2026-05", arquivado: false, etapas: [
+        { id: 998, title: "Alteração contratual", status: "no-prazo", sucesso: null, dept: "Paralegal", clienteId: "centro", cliente: "Farmácia Centro", responsavel: "Juliana Reis", criado: "2026-05-20", inicio: "2026-05-22", fim: null, previsaoFim: "2026-07-20", competencia: "2026-05", arquivado: false, etapas: [
           { id: 5, nome: "Análise do contrato", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 6, nome: "Elaborar minuta", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 7, nome: "Assinatura sócios", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
         ]},
-        { id: 875, title: "Baixa de inscrição municipal", status: "entregue", sucesso: true, dept: "Comercial", clienteId: "norte", cliente: "Drogaria Norte", responsavel: "Marcos Lima", criado: "2026-03-08", competencia: "2026-03", arquivado: false, etapas: [
+        { id: 875, title: "Baixa de inscrição municipal", status: "entregue", sucesso: true, dept: "Comercial", clienteId: "norte", cliente: "Drogaria Norte", responsavel: "Marcos Lima", criado: "2026-03-08", inicio: "2026-03-08", fim: "2026-04-15", previsaoFim: "2026-04-20", competencia: "2026-03", arquivado: false, etapas: [
           { id: 8, nome: "Requerimento", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 9, nome: "Protocolo prefeitura", status: "concluido", ordem: 2, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 10, nome: "Arquivar comprovantes", status: "concluido", ordem: 3, obrigatorio: false, responsavel: "Juliana Reis" },
         ]},
-        { id: 712, title: "Regularização eSocial", status: "atrasada", sucesso: false, dept: "Pessoal", clienteId: "farmelhor", cliente: "Farmelhor Taquaralto", responsavel: "Marcos Lima", criado: "2026-04-02", competencia: "2026-04", arquivado: false, etapas: [
+        { id: 712, title: "Regularização eSocial", status: "atrasada", sucesso: false, dept: "Pessoal", clienteId: "farmelhor", cliente: "Farmelhor Taquaralto", responsavel: "Marcos Lima", criado: "2026-04-02", inicio: "2026-04-02", fim: null, previsaoFim: "2026-06-30", competencia: "2026-04", arquivado: false, etapas: [
           { id: 11, nome: "Diagnóstico", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 12, nome: "Envio eventos", status: "dispensado", ordem: 2, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 13, nome: "Retorno gov", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
         ]},
-        { id: 640, title: "Encerramento 2025", status: "concluida", sucesso: true, dept: "Gestão de Processos", clienteId: "centro", cliente: "Farmácia Centro", responsavel: "Juliana Reis", criado: "2025-12-10", competencia: "2025-12", arquivado: true, etapas: [
+        { id: 640, title: "Encerramento 2025", status: "concluida", sucesso: true, dept: "Gestão de Processos", clienteId: "centro", cliente: "Farmácia Centro", responsavel: "Juliana Reis", criado: "2025-12-10", inicio: "2025-12-10", fim: "2026-01-20", previsaoFim: "2026-01-31", competencia: "2025-12", arquivado: true, etapas: [
           { id: 14, nome: "Fechamento contábil", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 15, nome: "Entrega obrigatória", status: "concluido", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
         ]},
-        { id: 1180, title: "Apuração Lucro Real — 2º tri", status: "pendente", sucesso: null, dept: "Gestão de Processos", clienteId: "sul", cliente: "Farmácia Sul", responsavel: "Ana Costa", criado: "2026-06-28", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1180, title: "Apuração Lucro Real — 2º tri", status: "pendente", sucesso: null, dept: "Gestão de Processos", clienteId: "sul", cliente: "Farmácia Sul", responsavel: "Ana Costa", criado: "2026-06-28", inicio: "2026-07-01", fim: null, previsaoFim: "2026-07-31", competencia: "2026-06", arquivado: false, etapas: [
           { id: 16, nome: "Levantamento de balancete", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 17, nome: "Apuração IRPJ/CSLL", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 18, nome: "Geração DARFs", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
         ]},
-        { id: 1192, title: "Cadastro MEI — atualização", status: "justificado", sucesso: null, dept: "Comercial", clienteId: "leste", cliente: "Drogaria Leste", responsavel: "Juliana Reis", criado: "2026-07-01", competencia: "2026-07", arquivado: false, etapas: [
+        { id: 1192, title: "Cadastro MEI — atualização", status: "justificado", sucesso: null, dept: "Comercial", clienteId: "leste", cliente: "Drogaria Leste", responsavel: "Juliana Reis", criado: "2026-07-01", inicio: "2026-07-01", fim: null, previsaoFim: "2026-07-25", competencia: "2026-07", arquivado: false, etapas: [
           { id: 19, nome: "Conferir dados PGMEI", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 20, nome: "Atualizar enquadramento", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 21, nome: "Validar DAS", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
         ]},
-        { id: 1205, title: "Imunidade ISS — renovação", status: "em-andamento", sucesso: null, dept: "Paralegal", clienteId: "oeste", cliente: "Clínica Oeste", responsavel: "Marcos Lima", criado: "2026-06-18", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1205, title: "Imunidade ISS — renovação", status: "em-andamento", sucesso: null, dept: "Paralegal", clienteId: "oeste", cliente: "Clínica Oeste", responsavel: "Marcos Lima", criado: "2026-06-18", inicio: "2026-06-18", fim: null, previsaoFim: "2026-08-10", competencia: "2026-06", arquivado: false, etapas: [
           { id: 22, nome: "Coleta de certificados", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 23, nome: "Protocolo prefeitura", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 24, nome: "Arquivo definitivo", status: "pendente", ordem: 3, obrigatorio: false, responsavel: "Juliana Reis" },
         ]},
-        { id: 905, title: "Encerramento de atividades", status: "ent-atrasada", sucesso: false, dept: "Diretoria", clienteId: "alpha", cliente: "Alpha Contábil ME", responsavel: "Juliana Reis", criado: "2026-05-05", competencia: "2026-05", arquivado: false, etapas: [
+        { id: 905, title: "Encerramento de atividades", status: "ent-atrasada", sucesso: false, dept: "Diretoria", clienteId: "alpha", cliente: "Alpha Contábil ME", responsavel: "Juliana Reis", criado: "2026-05-05", inicio: "2026-05-05", fim: "2026-07-10", previsaoFim: "2026-06-20", competencia: "2026-05", arquivado: false, etapas: [
           { id: 25, nome: "Inventário patrimonial", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 26, nome: "Protocolo baixa", status: "dispensado", ordem: 2, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 27, nome: "Baixa CNPJ", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Marcos Lima" },
         ]},
-        { id: 1218, title: "Migração Lucro Presumido", status: "ent-antecipada", sucesso: true, dept: "Comercial", clienteId: "beta", cliente: "Beta Farmacêutica", responsavel: "Ana Costa", criado: "2026-07-02", competencia: "2026-07", arquivado: false, etapas: [
+        { id: 1218, title: "Migração Lucro Presumido", status: "ent-antecipada", sucesso: true, dept: "Comercial", clienteId: "beta", cliente: "Beta Farmacêutica", responsavel: "Ana Costa", criado: "2026-07-02", inicio: "2026-07-02", fim: "2026-07-14", previsaoFim: "2026-07-20", competencia: "2026-07", arquivado: false, etapas: [
           { id: 28, nome: "Simulação tributária", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 29, nome: "Ajustes de plano de contas", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 30, nome: "Parametrizar obrigações", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Marcos Lima" },
         ]},
-        { id: 1224, title: "Folha MEI — autenticação", status: "dispensada", sucesso: true, dept: "Pessoal", clienteId: "gamma", cliente: "Gamma Serviços", responsavel: "Marcos Lima", criado: "2026-06-10", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1224, title: "Folha MEI — autenticação", status: "dispensada", sucesso: true, dept: "Pessoal", clienteId: "gamma", cliente: "Gamma Serviços", responsavel: "Marcos Lima", criado: "2026-06-10", inicio: "2026-06-10", fim: "2026-06-28", previsaoFim: "2026-06-30", competencia: "2026-06", arquivado: false, etapas: [
           { id: 31, nome: "Conferir colaboradores", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 32, nome: "Gerar guias", status: "concluido", ordem: 2, obrigatorio: true, responsavel: "Marcos Lima" },
         ]},
-        { id: 1231, title: "SPED ECD — revisão", status: "justificativa-atrasada", sucesso: false, dept: "Gestão de Processos", clienteId: "delta", cliente: "Delta Comércio LTDA", responsavel: "Juliana Reis", criado: "2026-06-25", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1231, title: "SPED ECD — revisão", status: "justificativa-atrasada", sucesso: false, dept: "Gestão de Processos", clienteId: "delta", cliente: "Delta Comércio LTDA", responsavel: "Juliana Reis", criado: "2026-06-25", inicio: "2026-06-25", fim: null, previsaoFim: "2026-07-31", competencia: "2026-06", arquivado: false, etapas: [
           { id: 33, nome: "Importar balancete", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 34, nome: "Validar inconsistências", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 35, nome: "Assinatura e transmissão", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
@@ -411,6 +411,15 @@
       if (!isClientePortal()) return agendaTasks;
       return agendaTasks.filter((t) => t.clienteId === portalClienteId);
     }
+
+    /* Meses fechados de entregas (o mês corrente vem de agendaTasks). */
+    const ENTREGAS_HISTORICO = {
+      "2026-02": { total: 21, entregues: 15 },
+      "2026-03": { total: 24, entregues: 18 },
+      "2026-04": { total: 23, entregues: 18 },
+      "2026-05": { total: 26, entregues: 21 },
+      "2026-06": { total: 27, entregues: 23 },
+    };
 
     function agendaTasksForModule() {
       let tasks = agendaTasksScoped();
@@ -533,7 +542,54 @@
         clienteId: "leste", razaoSocial: "DROGARIA LESTE LTDA", cnpj: "44.444.444/0001-44",
         endereco: "Rua da Bahia, 210 — Salvador/BA", responsavel: "Ana Costa", prazoLegal: "20/07/2026",
       },
+      {
+        id: 23, date: "2026-07-14", nome: "2ª via do balancete", status: "pendente", competencia: "Jun/2026",
+        clienteId: "farmelhor", razaoSocial: "DROGARIA FARMELHOR TAQUARALTO LTDA", cnpj: "00.000.000/0001-00",
+        endereco: "Av. Tocantins, 1200 — Taquaralto, Palmas/TO", responsavel: "Ana Costa", prazoLegal: "18/07/2026",
+        origem: "solicitacao",
+      },
+      {
+        id: 24, date: "2026-07-16", nome: "Esclarecimento fiscal avulso", status: "em-andamento", competencia: "Jul/2026",
+        clienteId: "farmelhor", razaoSocial: "DROGARIA FARMELHOR TAQUARALTO LTDA", cnpj: "00.000.000/0001-00",
+        endereco: "Av. Tocantins, 1200 — Taquaralto, Palmas/TO", responsavel: "Juliana Reis", prazoLegal: "22/07/2026",
+        origem: "solicitacao",
+      },
+      {
+        id: 25, date: "2026-07-15", nome: "Cópia de contrato social", status: "pendente", competencia: "Jul/2026",
+        clienteId: "centro", razaoSocial: "FARMACIA CENTRO LTDA", cnpj: "11.111.111/0001-11",
+        endereco: "Rua Goiás, 450 — Centro, Goiânia/GO", responsavel: "Juliana Reis", prazoLegal: "19/07/2026",
+        origem: "solicitacao",
+      },
     ];
+
+    /** Solicitações externas (demandas avulsas do cliente); demais = entregas internas programadas. */
+    const ENTREGA_SOLICITACAO_IDS = new Set([6, 9, 11, 13, 16, 20, 23, 24, 25]);
+    agendaTasks.forEach((t) => {
+      if (!t.origem) t.origem = ENTREGA_SOLICITACAO_IDS.has(t.id) ? "solicitacao" : "interna";
+    });
+
+    function getEntregaOrigem(t) {
+      return t?.origem === "solicitacao" ? "solicitacao" : "interna";
+    }
+
+    function matchesCliEntregaOrigem(t) {
+      if (!cliEntregaOrigem) return true;
+      return getEntregaOrigem(t) === cliEntregaOrigem;
+    }
+
+    function renderCliEntregaOrigemToggle() {
+      const opts = [
+        { id: "", label: "Todas" },
+        { id: "interna", label: "Internas" },
+        { id: "solicitacao", label: "Solicitações externas" },
+      ];
+      return `
+        <div class="fin-side-toggles" role="group" aria-label="Tipo de entrega">
+          ${opts.map((o) => `
+            <button type="button" class="${cliEntregaOrigem === o.id ? "active" : ""}" data-cli-ent-origem="${o.id}" aria-pressed="${cliEntregaOrigem === o.id}">${o.label}</button>
+          `).join("")}
+        </div>`;
+    }
 
     function isoDate(y, m, d) {
       return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -1354,6 +1410,8 @@
     let cliEntregaStatus = "";
     let cliEntregaKpiFilter = null;
     let cliEntregaResp = "";
+    /** Filtro da aba Entregas: "" | "interna" | "solicitacao" */
+    let cliEntregaOrigem = "";
     /** Accordion do Quadro de Entregas (portal) · seções abertas por padrão */
     let cliEntregaAccord = { atrasadas: true, abertas: true, prazo: true };
     let cliEntregaMonth = new Date(2026, 6, 1);
@@ -1498,6 +1556,8 @@
     };
     let cliFeedFilter = "todos"; // todos | geral | privado | contatos | fiscal | financeiro | operacional | preferencias
     let cliFeedByClient = {};
+    /** Senhas do cliente (origem / login / senha) · aba Notas e senhas */
+    let cliSenhasByClient = {};
     const CLI_FEED_ME = { nome: "Ana Costa", cargo: "Fiscal", initials: "AC" };
     const CLI_FEED_TEMAS = [
       { id: "contatos", label: "Contatos" },
@@ -1559,7 +1619,7 @@
       { id: "processos", label: "Processos" },
       { id: "funcionarios", label: "Funcionários" },
       { id: "documentos", label: "Documentos" },
-      { id: "comentarios", label: "Comentários" },
+      { id: "comentarios", label: "Notas e senhas" },
       { id: "entregas", label: "Entregas" },
       { id: "xml", label: "XML" },
       { id: "financeiro", label: "Financeiro" },
@@ -2882,6 +2942,7 @@
     const agendaCal = document.getElementById("agendaCal");
     const agendaFeed = document.getElementById("agendaFeed");
     const procKpis = document.getElementById("procKpis");
+    const procEvolucao = document.getElementById("procEvolucao");
     const procFilters = document.getElementById("procFilters");
     const procGrid = document.getElementById("procGrid");
     const dashboard = document.getElementById("dashboard");
@@ -3125,6 +3186,12 @@
                 ${options}
               </div>
               <div class="empresa-empty" id="modEmpresaEmpty-${sc}" hidden>Nenhuma empresa encontrada</div>
+              <div class="empresa-menu-foot">
+                <button type="button" class="empresa-add-btn" data-empresa-add>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                  Adicionar empresa
+                </button>
+              </div>
             </div>
           </div>
         </div>`;
@@ -4659,6 +4726,104 @@
       return { done, total: etapas.length, pct: Math.round((done / etapas.length) * 100) };
     }
 
+    function etapaStatusLabel(status) {
+      const map = {
+        concluido: "Concluída",
+        em_andamento: "Em andamento",
+        pendente: "Pendente",
+        dispensado: "Dispensada",
+      };
+      return map[status] || status || "—";
+    }
+
+    function escProcTip(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    /** Etapa mais recente + pendências (hover do processo). */
+    function procEtapaResumo(p) {
+      const etapas = [...(p.etapas || [])].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+      const pendentes = etapas.filter((e) => e.status === "pendente");
+      const emAndamento = etapas.find((e) => e.status === "em_andamento");
+      const latest = emAndamento
+        || [...etapas].reverse().find((e) => e.status === "concluido" || e.status === "dispensado")
+        || etapas[0]
+        || null;
+      const pendTxt = pendentes.length
+        ? `${pendentes.length} pendência${pendentes.length === 1 ? "" : "s"}`
+        : "Sem pendências";
+      const per = procPeriodo(p);
+      const tip = [
+        latest ? `Etapa atual: ${latest.nome} (${etapaStatusLabel(latest.status)})` : "Sem etapas",
+        pendTxt,
+        `Início ${per.inicioLabel} · Fim ${per.fimLabel}${per.atrasado ? " (atrasado)" : ""}`,
+      ].join(" · ");
+      return {
+        latest,
+        pendentes: pendentes.length,
+        latestLabel: latest ? latest.nome : "—",
+        latestStatus: latest ? etapaStatusLabel(latest.status) : "—",
+        tip,
+        tipAttr: escProcTip(tip),
+      };
+    }
+
+    function fmtProcCompetencia(comp) {
+      if (!comp) return "—";
+      const m = String(comp).match(/^(\d{4})-(\d{2})$/);
+      if (m) return `${m[2]}/${m[1]}`;
+      return String(comp);
+    }
+
+    function fmtProcDataCurta(iso) {
+      if (!iso) return "—";
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}` : String(iso);
+    }
+
+    function isoHojeApp() {
+      const y = APP_TODAY.getFullYear();
+      const m = String(APP_TODAY.getMonth() + 1).padStart(2, "0");
+      const d = String(APP_TODAY.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function diasEntreIso(a, b) {
+      if (!a || !b) return null;
+      const da = new Date(`${a}T00:00:00`);
+      const db = new Date(`${b}T00:00:00`);
+      if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return null;
+      return Math.round((db - da) / 86400000);
+    }
+
+    /** Início / fim (ou previsão) do processo. */
+    function procPeriodo(p) {
+      const inicio = p.inicio || p.criado || "";
+      const fim = p.fim || "";
+      const previsao = p.previsaoFim || "";
+      const concluido = !!fim;
+      const atrasado = !concluido && !!previsao && previsao < isoHojeApp();
+      const fimLabel = concluido
+        ? fmtProcDataCurta(fim)
+        : previsao
+          ? `Prev. ${fmtProcDataCurta(previsao)}`
+          : "Em aberto";
+      return {
+        inicio,
+        fim,
+        previsao,
+        concluido,
+        atrasado,
+        inicioLabel: fmtProcDataCurta(inicio),
+        fimLabel,
+        duracao: concluido ? diasEntreIso(inicio, fim) : null,
+      };
+    }
+
     function getEntregasFiltradasProcessos() {
       let tasks = agendaTasksScoped().filter((t) => !t.arquivada);
       if (procEmpresaFilter && procEmpresaFilter !== "all") {
@@ -4803,8 +4968,9 @@
     function renderEmpresaBoardItemProc(p, idAttr) {
       const st = procStatusMeta(p.status);
       const prog = typeof procProgress === "function" ? procProgress(p.etapas) : { pct: 0, done: 0, total: 0 };
+      const etapa = typeof procEtapaResumo === "function" ? procEtapaResumo(p) : { tipAttr: "Abrir kanban de etapas" };
       return `
-        <div class="empresa-board-item status-${st.badge}" ${idAttr} role="button" tabindex="0">
+        <div class="empresa-board-item status-${st.badge} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" ${idAttr} role="button" tabindex="0">
           <div class="item-top">
             <strong>${p.title}</strong>
             <div class="item-top-actions">
@@ -4814,13 +4980,14 @@
               </button>
             </div>
           </div>
-          <div class="item-meta">#${p.id} · ${p.dept || "—"} · ${p.responsavel || "—"}</div>
+          <div class="item-meta">#${p.id} · ${p.dept || "—"} · ${p.responsavel || "—"} · Comp. ${fmtProcCompetencia(p.competencia)}</div>
+          <div class="item-meta item-etapa">Etapa: ${etapa.latestLabel || "—"} · ${etapa.pendentes ? `${etapa.pendentes} pend.` : "Sem pend."}</div>
           <div class="item-foot">
             <div class="proc-progress" style="flex:1">
               <div class="proc-progress-bar"><i style="width:${prog.pct || 0}%"></i></div>
-              <span style="font-size:.68rem;color:var(--muted)">${prog.done || 0}/${prog.total || 0}</span>
+              <span style="font-size:.68rem;color:var(--muted)">${prog.pct || 0}%</span>
             </div>
-            <span class="item-meta">${fmtOpsDate(p.criado)}</span>
+            <span class="item-meta">${procPeriodo(p).inicioLabel} › ${procPeriodo(p).fimLabel}</span>
           </div>
         </div>`;
     }
@@ -4950,10 +5117,13 @@
           <div class="proc-list-head">
             <span>Processo</span>
             <span>Status</span>
+            <span>Empresa</span>
             <span>Depto</span>
             <span>Progresso</span>
             <span>Responsável</span>
-            <span>Criado</span>
+            <span>Competência</span>
+            <span>Início</span>
+            <span>Fim</span>
             <span></span>
           </div>`;
 
@@ -4972,23 +5142,28 @@
         procGrid.innerHTML = head + addRow + list.map((p) => {
           const st = procStatusLabel(p);
           const prog = procProgress(p.etapas);
-          const criadoFmt = p.criado ? p.criado.split("-").reverse().join("/") : "—";
+          const etapa = procEtapaResumo(p);
+          const per = procPeriodo(p);
+          const empresa = p.cliente || resolveClienteForOps?.(p)?.fantasia || resolveClienteForOps?.(p)?.nome || "—";
           return `
-            <div class="proc-list-row status-${st.cls} tip-bottom" data-tip="Abrir kanban de etapas" data-proc-id="${p.id}" role="button" tabindex="0">
+            <div class="proc-list-row status-${st.cls} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" data-proc-id="${p.id}" role="button" tabindex="0">
               <div class="title-cell">
                 <strong>${p.title}</strong>
                 <span class="pid">#${p.id}</span>
               </div>
               <div class="cell cell-status"><span class="proc-badge ${st.cls}">${st.text}</span></div>
-              <div class="cell cell-dept muted">${p.dept}</div>
+              <div class="cell cell-empresa muted" title="${empresa}">${empresa}</div>
+              <div class="cell cell-dept muted">${p.dept || "—"}</div>
               <div class="cell cell-prog">
                 <div class="proc-progress">
                   <div class="proc-progress-bar"><i style="width:${prog.pct}%"></i></div>
-                  <span>${prog.done}/${prog.total}</span>
+                  <span>${prog.pct}%</span>
                 </div>
               </div>
-              <div class="cell cell-resp">${p.responsavel}</div>
-              <div class="cell cell-date muted">${criadoFmt}</div>
+              <div class="cell cell-resp">${p.responsavel || "—"}</div>
+              <div class="cell cell-comp muted">${fmtProcCompetencia(p.competencia)}</div>
+              <div class="cell cell-inicio muted">${per.inicioLabel}</div>
+              <div class="cell cell-fim${per.concluido ? " is-done" : per.atrasado ? " is-late" : " muted"}">${per.fimLabel}</div>
               <div class="cell cell-actions">
                 <button type="button" class="agenda-edit-btn tip-bottom" data-proc-edit="${p.id}" data-tip="Editar processo" aria-label="Editar processo">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -5021,9 +5196,11 @@
       procGrid.innerHTML = addCard + list.map((p) => {
         const st = procStatusLabel(p);
         const prog = procProgress(p.etapas);
-        const criadoFmt = p.criado ? p.criado.split("-").reverse().join("/") : "—";
+        const etapa = procEtapaResumo(p);
+        const per = procPeriodo(p);
+        const empresa = p.cliente || "—";
         return `
-          <div class="proc-card status-${st.cls} tip-bottom" data-tip="Abrir kanban de etapas" data-proc-id="${p.id}" role="button" tabindex="0">
+          <div class="proc-card status-${st.cls} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" data-proc-id="${p.id}" role="button" tabindex="0">
             <div class="proc-card-head">
               <strong>${p.title}</strong>
               <div class="proc-card-head-actions">
@@ -5037,20 +5214,148 @@
               <span class="proc-badge ${st.cls}">${st.text}</span>
               <span class="proc-badge dept">${p.dept}</span>
             </div>
+            <div class="proc-card-attrs">
+              <span><b>Empresa</b> ${empresa}</span>
+              <span><b>Competência</b> ${fmtProcCompetencia(p.competencia)}</span>
+              <span><b>Etapa</b> ${etapa.latestLabel}</span>
+              <span><b>Início</b> ${per.inicioLabel} <b>· Fim</b> ${per.fimLabel}</span>
+            </div>
             <div class="proc-card-foot">
               <div class="proc-progress">
                 <div class="proc-progress-bar"><i style="width:${prog.pct}%"></i></div>
-                <span>${prog.done}/${prog.total}</span>
+                <span>${prog.pct}%</span>
               </div>
-              <span>${p.responsavel} · ${criadoFmt}</span>
+              <span>${p.responsavel}</span>
             </div>
           </div>`;
       }).join("");
     }
 
+    function getEntregasEvolucaoBase() {
+      let tasks = agendaTasksScoped().filter((t) => !t.arquivada);
+      if (procEmpresaFilter && procEmpresaFilter !== "all") {
+        tasks = tasks.filter((t) => t.clienteId === procEmpresaFilter);
+      }
+      if (procFiltros.responsavel) {
+        tasks = tasks.filter((t) => t.responsavel === procFiltros.responsavel);
+      }
+      return tasks;
+    }
+
+    /** Evolução das entregas nos últimos 6 meses + ciclo dos processos. */
+    function renderProcessosEvolucao(list) {
+      if (!procEvolucao) return;
+      const abrev = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+      const base = getEntregasEvolucaoBase();
+      const universo = agendaTasksScoped().filter((t) => !t.arquivada).length;
+      const fator = universo ? base.length / universo : 1;
+      const mesCorrente = `${APP_TODAY.getFullYear()}-${String(APP_TODAY.getMonth() + 1).padStart(2, "0")}`;
+
+      const meses = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(APP_TODAY.getFullYear(), APP_TODAY.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const hist = ENTREGAS_HISTORICO[key];
+        meses.push({
+          key,
+          label: abrev[d.getMonth()],
+          parcial: key === mesCorrente,
+          total: hist ? Math.round(hist.total * fator) : 0,
+          entregues: hist ? Math.round(hist.entregues * fator) : 0,
+        });
+      }
+      const porMes = new Map(meses.map((m) => [m.key, m]));
+      base.forEach((t) => {
+        const mes = porMes.get(String(t.date || "").slice(0, 7));
+        if (!mes || !mes.parcial) return;
+        mes.total += 1;
+        if (procStatusMeta(t.status).sucesso === true) mes.entregues += 1;
+      });
+
+      const pctMes = (m) => (m.total ? Math.round((m.entregues / m.total) * 100) : 0);
+      const fechados = meses.filter((m) => !m.parcial);
+      const totalFechado = fechados.reduce((acc, m) => acc + m.total, 0);
+      const entreguesFechado = fechados.reduce((acc, m) => acc + m.entregues, 0);
+      const taxa = totalFechado ? Math.round((entreguesFechado / totalFechado) * 100) : 0;
+      const maxVal = Math.max(1, ...meses.map((m) => m.total));
+      const atual = meses[meses.length - 1];
+      const ultimoFechado = fechados[fechados.length - 1];
+      const penultimoFechado = fechados[fechados.length - 2];
+      const delta = ultimoFechado && penultimoFechado ? pctMes(ultimoFechado) - pctMes(penultimoFechado) : 0;
+      const deltaCls = delta > 0 ? "is-up" : delta < 0 ? "is-down" : "";
+      const deltaTxt = atual
+        ? `${abrev[APP_TODAY.getMonth()]} em curso: ${pctMes(atual)}% · ${delta === 0 ? "estável" : `${delta > 0 ? "+" : ""}${delta} p.p.`} no mês anterior`
+        : "";
+
+      const procs = list || [];
+      const periodos = procs.map((p) => procPeriodo(p));
+      const concluidos = periodos.filter((per) => per.concluido);
+      const duracoes = concluidos.map((per) => per.duracao).filter((n) => typeof n === "number" && n >= 0);
+      const tempoMedio = duracoes.length ? Math.round(duracoes.reduce((a, b) => a + b, 0) / duracoes.length) : null;
+      const emAberto = periodos.filter((per) => !per.concluido);
+      const atrasados = emAberto.filter((per) => per.atrasado).length;
+
+      const colunas = meses.map((m) => {
+        const hTotal = Math.max(4, Math.round((m.total / maxVal) * 100));
+        const hEnt = Math.max(4, Math.round((m.entregues / maxVal) * 100));
+        const tip = escProcTip(`${m.label}${m.parcial ? " (mês em curso)" : ""}: ${m.entregues} de ${m.total} entregues (${pctMes(m)}%)`);
+        return `
+          <div class="chart-col tip-bottom${m.parcial ? " is-parcial" : ""}" data-tip="${tip}">
+            <div class="bars">
+              <i class="bar ant" style="height:${hTotal}%"></i>
+              <i class="bar atual" style="height:${hEnt}%"></i>
+            </div>
+            <span class="lbl">${m.label}${m.parcial ? "*" : ""}</span>
+          </div>`;
+      }).join("");
+
+      procEvolucao.innerHTML = `
+        <div class="dash-panel">
+          <div class="dash-panel-head">
+            <div>
+              <h4>Evolução das entregas</h4>
+              <span class="sub">Últimos 6 meses · entregues sobre o total do mês (*mês em curso)</span>
+            </div>
+            <span class="proc-evo-taxa ${deltaCls}">${taxa}%<small>${deltaTxt}</small></span>
+          </div>
+          <div class="chart-bars">${colunas}</div>
+          <div class="legend">
+            <span><i style="background:var(--accent)"></i>Entregues</span>
+            <span><i style="background:color-mix(in srgb, var(--accent) 22%, var(--border))"></i>Total previsto</span>
+          </div>
+        </div>
+        <div class="dash-panel proc-evo-side">
+          <div class="dash-panel-head">
+            <div>
+              <h4>Ciclo dos processos</h4>
+              <span class="sub">Com base em início e fim</span>
+            </div>
+          </div>
+          <div class="proc-evo-stats">
+            <div class="proc-evo-stat">
+              <span class="k">Concluídos</span>
+              <span class="v">${concluidos.length}<small>de ${procs.length}</small></span>
+            </div>
+            <div class="proc-evo-stat">
+              <span class="k">Tempo médio</span>
+              <span class="v">${tempoMedio === null ? "—" : tempoMedio}<small>${tempoMedio === null ? "sem dados" : "dias"}</small></span>
+            </div>
+            <div class="proc-evo-stat">
+              <span class="k">Em aberto</span>
+              <span class="v">${emAberto.length}<small>em execução</small></span>
+            </div>
+            <div class="proc-evo-stat${atrasados ? " is-late" : ""}">
+              <span class="k">Previsão vencida</span>
+              <span class="v">${atrasados}<small>${atrasados === 1 ? "processo" : "processos"}</small></span>
+            </div>
+          </div>
+        </div>`;
+    }
+
     function renderProcessos() {
       const list = getProcessosFiltrados();
       renderProcessosQuantidade(list);
+      renderProcessosEvolucao(list);
       renderProcessosFilters();
       renderProcessosGrid(list);
     }
@@ -5879,7 +6184,6 @@
               ${REGIME_OPTIONS.map((r) => `<option value="${r}" ${cliRegimeFilter === r ? "selected" : ""}>${r}</option>`).join("")}
             </select>
           </div>
-          <span class="cli-count">${rowsMeta.length} empresa${rowsMeta.length === 1 ? "" : "s"} no filtro</span>
           <button type="button" class="btn-primary cli-add-btn" data-cli-add-empresa>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             Nova empresa
@@ -6094,25 +6398,30 @@
         return `${kpis}${toolbar}
           <div class="proc-grid is-list" style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
             <div class="proc-list-head">
-              <span>Processo</span><span>Status</span><span>Depto</span><span>Progresso</span><span>Responsável</span><span>Criado</span><span></span>
+              <span>Processo</span><span>Status</span><span>Empresa</span><span>Depto</span><span>Progresso</span><span>Responsável</span><span>Competência</span><span>Início</span><span>Fim</span><span></span>
             </div>
             ${procs.map((p) => {
               const st = procStatusLabel(p);
               const prog = procProgress(p.etapas);
-              const criadoFmt = p.criado ? p.criado.split("-").reverse().join("/") : "—";
+              const etapa = procEtapaResumo(p);
+              const per = procPeriodo(p);
+              const empresa = p.cliente || "—";
               return `
-                <div class="proc-list-row status-${st.cls}" data-cli-proc-id="${p.id}" role="button" tabindex="0">
+                <div class="proc-list-row status-${st.cls} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" data-cli-proc-id="${p.id}" role="button" tabindex="0">
                   <div class="title-cell"><strong>${p.title}</strong><span class="pid">#${p.id}</span></div>
                   <div class="cell cell-status"><span class="proc-badge ${st.cls}">${st.text}</span></div>
-                  <div class="cell cell-dept muted">${p.dept}</div>
+                  <div class="cell cell-empresa muted" title="${empresa}">${empresa}</div>
+                  <div class="cell cell-dept muted">${p.dept || "—"}</div>
                   <div class="cell cell-prog">
                     <div class="proc-progress">
                       <div class="proc-progress-bar"><i style="width:${prog.pct}%"></i></div>
-                      <span>${prog.done}/${prog.total}</span>
+                      <span>${prog.pct}%</span>
                     </div>
                   </div>
-                  <div class="cell cell-resp">${p.responsavel}</div>
-                  <div class="cell cell-date muted">${criadoFmt}</div>
+                  <div class="cell cell-resp">${p.responsavel || "—"}</div>
+                  <div class="cell cell-comp muted">${fmtProcCompetencia(p.competencia)}</div>
+                  <div class="cell cell-inicio muted">${per.inicioLabel}</div>
+                  <div class="cell cell-fim${per.concluido ? " is-done" : per.atrasado ? " is-late" : " muted"}">${per.fimLabel}</div>
                   <div class="cell cell-actions">
                     <button type="button" class="agenda-edit-btn tip-bottom" data-cli-proc-edit="${p.id}" data-tip="Editar processo" aria-label="Editar">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -6128,9 +6437,11 @@
           ${procs.map((p) => {
             const st = procStatusLabel(p);
             const prog = procProgress(p.etapas);
-            const criadoFmt = p.criado ? p.criado.split("-").reverse().join("/") : "—";
+            const etapa = procEtapaResumo(p);
+            const per = procPeriodo(p);
+            const empresa = p.cliente || "—";
             return `
-              <div class="proc-card status-${st.cls}" data-cli-proc-id="${p.id}" role="button" tabindex="0">
+              <div class="proc-card status-${st.cls} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" data-cli-proc-id="${p.id}" role="button" tabindex="0">
                 <div class="proc-card-head">
                   <strong>${p.title}</strong>
                   <div class="proc-card-head-actions">
@@ -6144,12 +6455,18 @@
                   <span class="proc-badge ${st.cls}">${st.text}</span>
                   <span class="proc-badge dept">${p.dept}</span>
                 </div>
+                <div class="proc-card-attrs">
+                  <span><b>Empresa</b> ${empresa}</span>
+                  <span><b>Competência</b> ${fmtProcCompetencia(p.competencia)}</span>
+                  <span><b>Etapa</b> ${etapa.latestLabel}</span>
+                  <span><b>Início</b> ${per.inicioLabel} <b>· Fim</b> ${per.fimLabel}</span>
+                </div>
                 <div class="proc-card-foot">
                   <div class="proc-progress">
                     <div class="proc-progress-bar"><i style="width:${prog.pct}%"></i></div>
-                    <span>${prog.done}/${prog.total}</span>
+                    <span>${prog.pct}%</span>
                   </div>
-                  <span>${p.responsavel} · ${criadoFmt}</span>
+                  <span>${p.responsavel}</span>
                 </div>
               </div>`;
           }).join("")}
@@ -6236,6 +6553,18 @@
           utilMe: true,
         },
         {
+          id: `${c.id}-f1b`,
+          autor: "Marcos Lima",
+          cargo: "Contábil",
+          visibilidade: "geral",
+          tema: "operacional",
+          texto: "Acesso e rotina\n• Senha do e-CAC renovada em jun/2026\n• Conferir certificado antes de qualquer entrega fiscal",
+          at: new Date(2026, 6, 11, 8, 30),
+          pinned: true,
+          uteis: 2,
+          utilMe: false,
+        },
+        {
           id: `${c.id}-f2`,
           autor: "Juliana Reis",
           cargo: "Pessoal",
@@ -6291,6 +6620,25 @@
       return cliFeedByClient[c.id];
     }
 
+    function seedCliSenhas(c) {
+      const slug = String(c.fantasia || c.nome || "empresa")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "")
+        .slice(0, 12) || "empresa";
+      return [
+        { id: `${c.id}-s1`, origem: "e-CAC / Gov.br", login: `${slug}@gov.br`, senha: "Ecac2026!", revealed: false },
+        { id: `${c.id}-s2`, origem: "Portal NF-e", login: `nfe.${slug}`, senha: "NFe#jul26", revealed: false },
+        { id: `${c.id}-s3`, origem: "Internet Banking", login: "004812.0", senha: "Bk*91402", revealed: false },
+      ];
+    }
+
+    function ensureCliSenhas(c) {
+      if (!cliSenhasByClient[c.id]) cliSenhasByClient[c.id] = seedCliSenhas(c);
+      return cliSenhasByClient[c.id];
+    }
+
     function cliFeedVisLabel(vis) {
       if (vis === "privado") return "Privado";
       return "Geral";
@@ -6310,10 +6658,88 @@
       return filtered;
     }
 
+    function renderCliFeedPostHtml(p, { compact = false } = {}) {
+      const temaMeta = CLI_FEED_TEMAS.find((t) => t.id === p.tema);
+      const when = cliFeedWhenLabel(p.at);
+      const iso = p.at instanceof Date ? p.at.toISOString() : String(p.at);
+      return `
+        <article class="cli-feed-post${p.pinned ? " is-pinned" : ""}${compact ? " is-compact" : ""}" data-cli-feed-id="${p.id}">
+          <div class="cli-feed-avatar tone-${cliFeedTone(p.autor)}" aria-hidden="true">${cliFeedEsc(cliFeedInitials(p.autor))}</div>
+          <div class="cli-feed-post-body">
+            <div class="cli-feed-post-head">
+              <div class="cli-feed-who">
+                <span class="cli-feed-name">${cliFeedEsc(p.autor)}</span>
+                <span class="cli-feed-sep" aria-hidden="true">·</span>
+                <span class="cli-feed-role">${cliFeedEsc(p.cargo || "")}</span>
+              </div>
+              <time class="cli-feed-when" datetime="${iso}" title="${cliFeedEsc(when)}">${cliFeedEsc(when)}</time>
+            </div>
+            <div class="cli-feed-tags">
+              ${p.pinned ? `<span class="cli-feed-tag pin">Fixado</span>` : ""}
+              <span class="cli-feed-tag vis-${p.visibilidade}">${cliFeedVisLabel(p.visibilidade)}</span>
+              <span class="cli-feed-tag tema-${p.tema}">${cliFeedEsc(temaMeta?.label || p.tema)}</span>
+            </div>
+            ${renderCliFeedTextHtml(p.texto)}
+            ${compact ? "" : `
+            <div class="cli-feed-foot">
+              <button type="button" class="cli-feed-util${p.utilMe ? " is-on" : ""}" data-cli-feed-util="${p.id}" aria-pressed="${p.utilMe ? "true" : "false"}">
+                Útil · ${p.uteis || 0}
+              </button>
+            </div>`}
+          </div>
+        </article>`;
+    }
+
+    function renderCliSenhasPanel(c) {
+      const items = ensureCliSenhas(c);
+      const list = items.length
+        ? items.map((s) => `
+            <article class="cli-senha-card" data-cli-senha-id="${s.id}">
+              <div class="cli-senha-card-head">
+                <strong>${cliFeedEsc(s.origem)}</strong>
+                <button type="button" class="btn-ghost sm" data-cli-senha-toggle="${s.id}" aria-pressed="${s.revealed ? "true" : "false"}" title="${s.revealed ? "Ocultar senha" : "Mostrar senha"}">
+                  ${s.revealed ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
+              <div class="cli-senha-meta">
+                <div><span class="k">Login</span><span class="v">${cliFeedEsc(s.login)}</span></div>
+                <div><span class="k">Senha</span><span class="v mono">${s.revealed ? cliFeedEsc(s.senha) : "••••••••"}</span></div>
+              </div>
+            </article>`).join("")
+        : `<div class="cli-feed-empty sm">Nenhuma senha cadastrada.</div>`;
+      return `
+        <section class="cli-feed-side-card" aria-label="Senhas do cliente">
+          <header class="cli-feed-side-head">
+            <h4>Senhas</h4>
+            <span class="sub">${items.length} cadastrada${items.length === 1 ? "" : "s"}</span>
+          </header>
+          <div class="cli-senha-form">
+            <label>
+              <span>Origem</span>
+              <input type="text" id="cliSenhaOrigem" placeholder="Ex.: e-CAC, Portal NF-e" autocomplete="off" />
+            </label>
+            <label>
+              <span>Login</span>
+              <input type="text" id="cliSenhaLogin" placeholder="Usuário ou e-mail" autocomplete="off" />
+            </label>
+            <label>
+              <span>Senha</span>
+              <input type="password" id="cliSenhaValor" placeholder="••••••••" autocomplete="new-password" />
+            </label>
+            <button type="button" class="btn-primary" data-cli-senha-add>Adicionar</button>
+          </div>
+          <div class="cli-senha-list">${list}</div>
+        </section>`;
+    }
+
     function renderCliFeed(c) {
       const me = CLI_FEED_ME;
       if (cliFeedFilter === "mim") cliFeedFilter = "todos";
       const posts = getCliFeedPosts(c);
+      const pinned = ensureCliFeed(c)
+        .filter((p) => p.pinned)
+        .sort((a, b) => new Date(b.at) - new Date(a.at));
+      const feedPosts = posts.filter((p) => !p.pinned);
       const filters = [
         { id: "todos", label: "Todos" },
         { id: "geral", label: "Gerais" },
@@ -6321,64 +6747,52 @@
         ...CLI_FEED_TEMAS,
       ];
       const temaOpts = CLI_FEED_TEMAS.map((t) => `<option value="${t.id}">${t.label}</option>`).join("");
-      const list = posts.length
-        ? posts.map((p) => {
-            const temaMeta = CLI_FEED_TEMAS.find((t) => t.id === p.tema);
-            const when = cliFeedWhenLabel(p.at);
-            const iso = p.at instanceof Date ? p.at.toISOString() : String(p.at);
-            return `
-            <article class="cli-feed-post${p.pinned ? " is-pinned" : ""}" data-cli-feed-id="${p.id}">
-              <div class="cli-feed-avatar tone-${cliFeedTone(p.autor)}" aria-hidden="true">${cliFeedEsc(cliFeedInitials(p.autor))}</div>
-              <div class="cli-feed-post-body">
-                <div class="cli-feed-post-head">
-                  <div class="cli-feed-who">
-                    <span class="cli-feed-name">${cliFeedEsc(p.autor)}</span>
-                    <span class="cli-feed-sep" aria-hidden="true">·</span>
-                    <span class="cli-feed-role">${cliFeedEsc(p.cargo || "")}</span>
-                  </div>
-                  <time class="cli-feed-when" datetime="${iso}" title="${cliFeedEsc(when)}">${cliFeedEsc(when)}</time>
-                </div>
-                <div class="cli-feed-tags">
-                  ${p.pinned ? `<span class="cli-feed-tag pin">Fixado</span>` : ""}
-                  <span class="cli-feed-tag vis-${p.visibilidade}">${cliFeedVisLabel(p.visibilidade)}</span>
-                  <span class="cli-feed-tag tema-${p.tema}">${cliFeedEsc(temaMeta?.label || p.tema)}</span>
-                </div>
-                ${renderCliFeedTextHtml(p.texto)}
-                <div class="cli-feed-foot">
-                  <button type="button" class="cli-feed-util${p.utilMe ? " is-on" : ""}" data-cli-feed-util="${p.id}" aria-pressed="${p.utilMe ? "true" : "false"}">
-                    Útil · ${p.uteis || 0}
-                  </button>
-                </div>
-              </div>
-            </article>`;
-          }).join("")
+      const list = feedPosts.length
+        ? feedPosts.map((p) => renderCliFeedPostHtml(p)).join("")
         : `<div class="cli-feed-empty">Nenhuma nota neste filtro. Publique um comentário para o time.</div>`;
+      const pinnedHtml = pinned.length
+        ? pinned.map((p) => renderCliFeedPostHtml(p, { compact: true })).join("")
+        : `<div class="cli-feed-empty sm">Nenhum comentário fixado.</div>`;
       return `
         <div class="cli-feed">
           <header class="cli-feed-intro">
-            <h3>Mural do cliente</h3>
-            <p>Notas do time sobre contatos, preferências e rotinas — o que ajuda quem entra depois a trabalhar nesta empresa.</p>
+            <h3>Notas e senhas</h3>
+            <p>Mural do time, comentários fixados e credenciais de acesso desta empresa.</p>
           </header>
-          <div class="cli-feed-composer">
-            <div class="cli-feed-avatar tone-${cliFeedTone(me.nome)}" aria-hidden="true">${me.initials}</div>
-            <div class="cli-feed-composer-main">
-              <textarea id="cliFeedInput" placeholder="Ex.: Para falar sobre notas, falar com o João do financeiro..." aria-label="Novo comentário do mural"></textarea>
-              <div class="cli-feed-composer-bar">
-                <select id="cliFeedVis" aria-label="Visibilidade">
-                  <option value="geral">Geral — todo o time</option>
-                  <option value="privado">Privado — só analistas</option>
-                </select>
-                <select id="cliFeedTema" aria-label="Tema">${temaOpts}</select>
-                <button type="button" class="btn-primary" data-cli-feed-publish>Publicar</button>
+          <div class="cli-feed-layout">
+            <div class="cli-feed-main">
+              <div class="cli-feed-composer">
+                <div class="cli-feed-avatar tone-${cliFeedTone(me.nome)}" aria-hidden="true">${me.initials}</div>
+                <div class="cli-feed-composer-main">
+                  <textarea id="cliFeedInput" placeholder="Ex.: Para falar sobre notas, falar com o João do financeiro..." aria-label="Novo comentário do mural"></textarea>
+                  <div class="cli-feed-composer-bar">
+                    <select id="cliFeedVis" aria-label="Visibilidade">
+                      <option value="geral">Geral — todo o time</option>
+                      <option value="privado">Privado — só analistas</option>
+                    </select>
+                    <select id="cliFeedTema" aria-label="Tema">${temaOpts}</select>
+                    <button type="button" class="btn-primary" data-cli-feed-publish>Publicar</button>
+                  </div>
+                </div>
               </div>
+              <div class="cli-feed-filters" role="tablist" aria-label="Filtrar mural">
+                ${filters.map((f) => `
+                  <button type="button" class="cli-feed-filter${cliFeedFilter === f.id ? " active" : ""}" role="tab" aria-selected="${cliFeedFilter === f.id}" data-cli-feed-filter="${f.id}">${f.label}</button>
+                `).join("")}
+              </div>
+              <div class="cli-feed-list">${list}</div>
             </div>
+            <aside class="cli-feed-aside" aria-label="Fixados e senhas">
+              <section class="cli-feed-side-card is-fixados" aria-label="Comentários fixados">
+                <header class="cli-feed-side-head">
+                  <h4>Fixados</h4>
+                  <span class="sub">${pinned.length}</span>
+                </header>
+                <div class="cli-feed-pinned-list">${pinnedHtml}</div>
+              </section>
+              ${renderCliSenhasPanel(c)}
+            </aside>
           </div>
-          <div class="cli-feed-filters" role="tablist" aria-label="Filtrar mural">
-            ${filters.map((f) => `
-              <button type="button" class="cli-feed-filter${cliFeedFilter === f.id ? " active" : ""}" role="tab" aria-selected="${cliFeedFilter === f.id}" data-cli-feed-filter="${f.id}">${f.label}</button>
-            `).join("")}
-          </div>
-          <div class="cli-feed-list">${list}</div>
         </div>`;
     }
 
@@ -6446,7 +6860,7 @@
       const y = cliEntregaMonth.getFullYear();
       const m = String(cliEntregaMonth.getMonth() + 1).padStart(2, "0");
       const periodPrefix = `${y}-${m}`;
-      const allPeriod = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && String(t.date || "").startsWith(periodPrefix));
+      const allPeriod = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && String(t.date || "").startsWith(periodPrefix) && matchesCliEntregaOrigem(t));
       const totais = allPeriod.length;
       const atrasadas = allPeriod.filter((t) => t.status === "atrasada" || t.status === "ent-atrasada" || t.status === "justificativa-atrasada").length;
       const noPrazo = allPeriod.filter((t) => t.status === "no-prazo" || t.status === "ent-antecipada").length;
@@ -6456,7 +6870,7 @@
       }).length;
       const pctOf = (n) => (totais ? Math.round((n / totais) * 100) : 0);
 
-      const dayTasksBase = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && t.date === cliEntregaSelected);
+      const dayTasksBase = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && t.date === cliEntregaSelected && matchesCliEntregaOrigem(t));
 
       let tasks = [...dayTasksBase];
       if (cliEntregaKpiFilter === "atrasadas") {
@@ -6523,7 +6937,7 @@
       }
       for (let d = 1; d <= daysInMonth; d++) {
         const iso = isoDate(calYear, calMonth, d);
-        const has = agendaTasks.some((t) => t.clienteId === c.id && !t.arquivada && t.date === iso);
+        const has = agendaTasks.some((t) => t.clienteId === c.id && !t.arquivada && t.date === iso && matchesCliEntregaOrigem(t));
         const classes = [
           "agenda-cal-day",
           has ? "has-tasks" : "",
@@ -6593,11 +7007,16 @@
       const cardHtml = (t) => {
         const st = procStatusMeta(t.status);
         const tagCls = t.status === "atrasada" || t.status === "ent-atrasada" || t.status === "justificativa-atrasada" ? "atrasada" : "no-prazo";
+        const origem = getEntregaOrigem(t);
+        const origemLabel = origem === "solicitacao" ? "Solicitação" : "Interna";
         return `
         <div class="agenda-entregas-card tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
           <div class="row">
             <h5>${t.nome}</h5>
-            <span class="agenda-tag ${tagCls}">${st.label}</span>
+            <span class="cli-entrega-tags">
+              <span class="agenda-tag ${origem === "solicitacao" ? "solicitacao" : "interna"}">${origemLabel}</span>
+              <span class="agenda-tag ${tagCls}">${st.label}</span>
+            </span>
           </div>
           <div class="detail">
             <div class="meta"><b>Status</b><span class="val">${st.label}</span></div>
@@ -6688,6 +7107,7 @@
                     <span class="sub">${formatAgendaDayLong(cliEntregaSelected)}</span>
                   </div>
                   <div class="agenda-entregas-filters" id="cliEntregasFilters">
+                    ${renderCliEntregaOrigemToggle()}
                     <div class="proc-filter search">
                       <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                       <input type="search" id="cliEntregaSearch" placeholder="Buscar entrega ou competência" autocomplete="off" aria-label="Buscar entregas" value="${(cliEntregaQuery || "").replace(/"/g, "&quot;")}" />
@@ -6745,15 +7165,15 @@
     ];
 
     const CLI_DOCS_FOLDERS = [
-      { id: "recentes", title: "Recentes", badgeUnit: "items", icon: "clock", kind: "recent" },
-      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "shield-check", kind: "dept" },
-      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "calculator", kind: "dept" },
-      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "users", kind: "dept" },
-      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "wallet", kind: "dept" },
-      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "receipt", kind: "dept" },
-      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "rocket", kind: "dept" },
-      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "scale", kind: "dept" },
-      { id: "outros", title: "Outros", badgeUnit: "arquivos", icon: "folder", kind: "plain" },
+      { id: "recentes", title: "Recentes", badgeUnit: "items", icon: "clock", kind: "recent", tag: "accent" },
+      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "shield-check", kind: "dept", tag: "navy" },
+      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "calculator", kind: "dept", tag: "secondary" },
+      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "users", kind: "dept", tag: "ok" },
+      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "wallet", kind: "dept", tag: "accent" },
+      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "receipt", kind: "dept", tag: "navy" },
+      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "rocket", kind: "dept", tag: "secondary" },
+      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "scale", kind: "dept", tag: "ok" },
+      { id: "outros", title: "Outros", badgeUnit: "arquivos", icon: "folder", kind: "plain", tag: "muted" },
     ];
 
     /** Arquivos de demonstração por pasta (protótipo · contagem alimenta badges). */
@@ -6965,8 +7385,10 @@
       const grid = CLI_DOCS_FOLDERS.map((f) => {
         const count = getCliDocsFiles(f.id).length;
         const badge = formatCliDocsBadge(count, f.badgeUnit);
+        const tag = f.tag || "accent";
         return `
-          <button type="button" class="cli-docs-folder-card" role="listitem" data-cli-doc-folder="${f.id}" data-kind="${f.kind}" aria-label="${f.title} · ${badge}">
+          <button type="button" class="cli-docs-folder-card" role="listitem" data-cli-doc-folder="${f.id}" data-kind="${f.kind}" data-tag="${tag}" aria-label="${f.title} · ${badge}">
+            <span class="cli-docs-folder-tab" aria-hidden="true"></span>
             <span class="cli-docs-folder-ico" aria-hidden="true"><i data-lucide="${f.icon}"></i></span>
             <strong class="cli-docs-folder-title">${f.title}</strong>
             <span class="cli-docs-folder-badge">${badge}</span>
@@ -7091,25 +7513,41 @@
       }
       if (cliPerfilTab === "entregas") {
         if (isClientePortal()) return renderCliEntregasEspelhada(c);
-        const entregas = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada);
-        if (!entregas.length) return `<div class="cli-empty-panel">Nenhuma entrega vinculada</div>`;
-        return `<div class="cli-entregas-grid">${entregas.map((t) => {
-          const stCls = t.status === "atrasada" ? "atrasada" : "no-prazo";
-          const stLabel = stCls === "atrasada" ? "Atrasada" : "No Prazo";
+        const entregas = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && matchesCliEntregaOrigem(t));
+        const origemToggle = renderCliEntregaOrigemToggle();
+        if (!entregas.length) {
           return `
-          <div class="agenda-entregas-card is-${stCls} tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
-            <div class="row">
-              <h5>${t.nome}</h5>
-              <span class="agenda-tag ${stCls}">${stLabel}</span>
-            </div>
-            <div class="detail">
-              <div class="meta"><b>Empresa</b><span class="val" title="${t.razaoSocial || ""}">${(CLIENTES.find((x) => x.id === t.clienteId)?.fantasia || CLIENTES.find((x) => x.id === t.clienteId)?.nome || t.razaoSocial || "—")}</span></div>
-              <div class="meta"><b>Responsável</b><span class="val">${t.responsavel}</span></div>
-              <div class="meta"><b>Prazo</b><span class="val">${t.prazoLegal}</span></div>
-              <div class="meta"><b>Competência</b><span class="val">${t.competencia}</span></div>
-            </div>
+            <div class="cli-entregas-wrap">
+              <div class="cli-entregas-toolbar">${origemToggle}</div>
+              <div class="cli-empty-panel">${cliEntregaOrigem ? "Nenhuma entrega neste filtro" : "Nenhuma entrega vinculada"}</div>
+            </div>`;
+        }
+        return `
+          <div class="cli-entregas-wrap">
+            <div class="cli-entregas-toolbar">${origemToggle}</div>
+            <div class="cli-entregas-grid">${entregas.map((t) => {
+              const stCls = t.status === "atrasada" ? "atrasada" : "no-prazo";
+              const stLabel = stCls === "atrasada" ? "Atrasada" : "No Prazo";
+              const origem = getEntregaOrigem(t);
+              const origemLabel = origem === "solicitacao" ? "Solicitação" : "Interna";
+              return `
+              <div class="agenda-entregas-card is-${stCls} tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
+                <div class="row">
+                  <h5>${t.nome}</h5>
+                  <span class="cli-entrega-tags">
+                    <span class="agenda-tag ${origem === "solicitacao" ? "solicitacao" : "interna"}">${origemLabel}</span>
+                    <span class="agenda-tag ${stCls}">${stLabel}</span>
+                  </span>
+                </div>
+                <div class="detail">
+                  <div class="meta"><b>Empresa</b><span class="val" title="${t.razaoSocial || ""}">${(CLIENTES.find((x) => x.id === t.clienteId)?.fantasia || CLIENTES.find((x) => x.id === t.clienteId)?.nome || t.razaoSocial || "—")}</span></div>
+                  <div class="meta"><b>Responsável</b><span class="val">${t.responsavel}</span></div>
+                  <div class="meta"><b>Prazo</b><span class="val">${t.prazoLegal}</span></div>
+                  <div class="meta"><b>Competência</b><span class="val">${t.competencia}</span></div>
+                </div>
+              </div>`;
+            }).join("")}</div>
           </div>`;
-        }).join("")}</div>`;
       }
       if (cliPerfilTab === "xml") {
         return renderCliXmlAnaliseModule(c);
@@ -7225,32 +7663,26 @@
               <div class="cli-perfil-head-left">
                 ${isClientePortal() ? "" : `<button type="button" class="cli-perfil-back" data-cli-back>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
-                  Voltar à listagem
+                  <span class="cli-perfil-back-label">Voltar à listagem</span>
                 </button>`}
                 <div class="cli-perfil-identity">
                   ${isClientePortal()
                     ? `<h2>${c.fantasia || c.nome}</h2>`
                     : renderModuleEmpresaPickerHtml("perfil")}
-                  <div class="cli-perfil-chips" aria-label="Dados da empresa">
-                    <span>${uiSelectEscape(c.regime || "—")}</span>
-                    <span class="sep" aria-hidden="true">·</span>
-                    <span>${uiSelectEscape(c.estado || "—")}</span>
-                    <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${uiSelectEscape(c.status || "—")}</span>
-                  </div>
+                  <button type="button" class="cli-dados-btn" data-cli-tool="dados" title="Dados cadastrais da empresa">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span class="cli-dados-btn-label">Dados cadastrais</span>
+                  </button>
                 </div>
-                <button type="button" class="cli-dados-link" data-cli-tool="dados">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Visualizar dados da empresa
-                </button>
               </div>
               <div class="cli-perfil-head-actions">
                 <button type="button" class="cli-cert-card ${cert.cls}" data-cli-tool="cert" aria-label="Certificado digital: ${cert.label}">
                   <span class="cert-ico" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   </span>
-                  <span>
+                  <span class="cli-cert-text">
                     <strong>Certificado digital</strong>
-                    <span>${cert.label} · ${certRow.validadeLabel}</span>
+                    <span class="cli-cert-detail">${cert.label} · ${certRow.validadeLabel}</span>
                   </span>
                 </button>
               </div>
@@ -11902,6 +12334,12 @@
                 ${options}
               </div>
               <div class="empresa-empty" id="finEmpresaEmpty">Nenhuma empresa encontrada</div>
+              <div class="empresa-menu-foot">
+                <button type="button" class="empresa-add-btn" data-empresa-add>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                  Adicionar empresa
+                </button>
+              </div>
             </div>
           </div>
         </div>`;
@@ -21491,6 +21929,111 @@
       });
     }
 
+    function openSecCertNotifyModal(clientId) {
+      const row = getCertificadosMonitor().find((r) => r.id === clientId);
+      const cli = CLIENTES.find((c) => c.id === clientId);
+      if (!row) return;
+      const diasTxt = row.dias < 0
+        ? `Vencido há ${Math.abs(row.dias)} ${Math.abs(row.dias) === 1 ? "dia" : "dias"}`
+        : `${row.dias} ${row.dias === 1 ? "dia" : "dias"} restantes`;
+      const emailCliente = `contato@${String(row.fantasia || "cliente").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 18) || "cliente"}.com.br`;
+      openModal({
+        title: "Encaminhar aviso de certificado",
+        sub: "Confira os destinatários antes de enviar",
+        wide: true,
+        body: `
+          <div class="sec-notify-modal">
+            <p class="sec-notify-lead">O aviso será enviado ao <strong>cliente</strong> e à <strong>empresa responsável</strong> pela renovação.</p>
+            <div class="sec-notify-grid">
+              <section class="sec-notify-card" aria-label="Dados do cliente">
+                <header>
+                  <span class="sec-notify-card-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+                  <div class="sec-notify-card-head-text">
+                    <strong>Cliente</strong>
+                    <span>Destinatário principal</span>
+                  </div>
+                  <span class="proc-badge ${row.meta.badge}">${row.meta.label}</span>
+                </header>
+                <div class="sec-notify-fields">
+                  <div class="sec-notify-field is-wide">
+                    <span>Empresa</span>
+                    <strong>${row.fantasia || row.razaoSocial}</strong>
+                  </div>
+                  <div class="sec-notify-field is-wide">
+                    <span>Razão social</span>
+                    <strong>${row.razaoSocial}</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>CNPJ</span>
+                    <strong>${row.cnpj}</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Regime</span>
+                    <strong>${cli?.regime || "—"}</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Titular</span>
+                    <strong>${row.titular}</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Validade</span>
+                    <strong>${row.validade}</strong>
+                    <em>${diasTxt}</em>
+                  </div>
+                  <div class="sec-notify-field is-wide">
+                    <span>E-mail</span>
+                    <strong>${emailCliente}</strong>
+                  </div>
+                </div>
+              </section>
+              <section class="sec-notify-card is-resp" aria-label="Empresa responsável">
+                <header>
+                  <span class="sec-notify-card-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                  <div class="sec-notify-card-head-text">
+                    <strong>Empresa responsável</strong>
+                    <span>Renovação e acompanhamento</span>
+                  </div>
+                </header>
+                <div class="sec-notify-fields">
+                  <div class="sec-notify-field is-wide">
+                    <span>Escritório</span>
+                    <strong>Processo Ágil Contabilidade</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Área</span>
+                    <strong>Certificados · Fiscal</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Responsável</span>
+                    <strong>Marina Souza</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Cargo</span>
+                    <strong>Analista Fiscal</strong>
+                  </div>
+                  <div class="sec-notify-field is-wide">
+                    <span>E-mail</span>
+                    <strong>certificados@processoagil.com.br</strong>
+                  </div>
+                  <div class="sec-notify-field is-wide">
+                    <span>Ação prevista</span>
+                    <strong>Notificar e abrir protocolo de renovação</strong>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" id="secNotifyConfirm">Confirmar encaminhamento</button>`,
+      });
+      if (modalBody) modalBody.style.maxHeight = "min(70vh, 560px)";
+      document.getElementById("secNotifyConfirm")?.addEventListener("click", () => {
+        closeModal();
+        toast(`Aviso de certificado encaminhado para ${row.fantasia || row.razaoSocial} e para a empresa responsável`);
+      });
+    }
+
     function renderSegurancaCertificados() {
       emptyState.classList.add("hide");
       fakeList.classList.add("show");
@@ -21506,52 +22049,58 @@
       } else if (securityCertFilterClienteId) {
         rows = rows.filter((r) => r.id === securityCertFilterClienteId);
       }
-      const filters = [
-        { id: "all", label: "Todos" },
-        { id: "acao", label: "Exigem ação" },
-        { id: "vencido", label: "Vencidos" },
-        { id: "a-vencer", label: "A vencer" },
-        { id: "ok", label: "Válidos" },
-      ];
       const empresaFiltroId = (secEmpresaFilter && secEmpresaFilter !== "all")
         ? secEmpresaFilter
         : securityCertFilterClienteId;
-      const clienteNome = empresaFiltroId
-        ? (CLIENTES.find((c) => c.id === empresaFiltroId)?.fantasia || "empresa")
-        : null;
-      const hasActiveFilters = !!(empresaFiltroId || securityCertFilterMode !== "all");
+      const hasEmpresaFilter = !!empresaFiltroId;
+      const pct = (n) => (counts.total ? Math.round((n / counts.total) * 100) : 0);
+      const planeIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>`;
       fakeList.innerHTML = `
         <div class="sec-monitor">
-          <div class="sec-monitor-top">
-            <div class="sec-monitor-head">
-              <h3>Monitoramento de Certificados Digitais</h3>
-              <span class="sub">${clienteNome
-                ? `Filtro: ${clienteNome}`
-                : `Alerta automático em ${CERT_AVENCER_DIAS} dias`}</span>
-              ${hasActiveFilters
-                ? `<button type="button" class="btn-ghost" id="secClearCliFilter" style="height:30px;padding:0 10px;font-size:.72rem">Limpar filtros</button>`
-                : ""}
-            </div>
-            <div class="sec-kpis" role="toolbar" aria-label="Filtrar por status">
-              <button type="button" class="sec-kpi total${securityCertFilterMode === "all" ? " active" : ""}" data-sec-filter="all" aria-pressed="${securityCertFilterMode === "all"}">
-                <span class="lab">Total</span><strong>${counts.total}</strong>
-              </button>
-              <button type="button" class="sec-kpi ok${securityCertFilterMode === "ok" ? " active" : ""}" data-sec-filter="ok" aria-pressed="${securityCertFilterMode === "ok"}">
-                <span class="lab">Válidos</span><strong>${counts.ok}</strong>
-              </button>
-              <button type="button" class="sec-kpi warn${securityCertFilterMode === "a-vencer" ? " active" : ""}" data-sec-filter="a-vencer" aria-pressed="${securityCertFilterMode === "a-vencer"}">
-                <span class="lab">A vencer</span><strong>${counts.aVencer}</strong>
-              </button>
-              <button type="button" class="sec-kpi bad${securityCertFilterMode === "vencido" ? " active" : ""}" data-sec-filter="vencido" aria-pressed="${securityCertFilterMode === "vencido"}">
-                <span class="lab">Vencidos</span><strong>${counts.vencidos}</strong>
-              </button>
-            </div>
-          </div>
-          <div class="sec-filters" role="toolbar" aria-label="Filtros de certificado">
+          <div class="sec-monitor-toolbar">
             ${renderModuleEmpresaPickerHtml("seguranca")}
-            ${filters.map((f) => `
-              <button type="button" class="sec-filter${securityCertFilterMode === f.id ? " active" : ""}" data-sec-filter="${f.id}">${f.label}</button>
-            `).join("")}
+            ${hasEmpresaFilter
+              ? `<button type="button" class="btn-ghost sec-clear-btn" id="secClearCliFilter">Limpar filtro</button>`
+              : ""}
+            <span class="sec-monitor-count">${rows.length} certificado${rows.length === 1 ? "" : "s"} no filtro</span>
+          </div>
+          <div class="cli-list-kpis sec-kpis" role="toolbar" aria-label="Indicadores de certificados">
+            <button type="button" class="cli-list-kpi${securityCertFilterMode === "all" ? " is-active" : ""}" data-sec-filter="all" aria-pressed="${securityCertFilterMode === "all"}">
+              <span class="cli-list-kpi-top">
+                <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                <span class="lab">Total</span>
+              </span>
+              <strong>${counts.total}</strong>
+              <span class="cli-list-kpi-hint">Certificados monitorados</span>
+              <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:100%"></i></span>
+            </button>
+            <button type="button" class="cli-list-kpi ok${securityCertFilterMode === "ok" ? " is-active" : ""}" data-sec-filter="ok" aria-pressed="${securityCertFilterMode === "ok"}">
+              <span class="cli-list-kpi-top">
+                <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></span>
+                <span class="lab">Válidos</span>
+              </span>
+              <strong>${counts.ok}</strong>
+              <span class="cli-list-kpi-hint">${pct(counts.ok)}% da carteira</span>
+              <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${pct(counts.ok)}%"></i></span>
+            </button>
+            <button type="button" class="cli-list-kpi warn${securityCertFilterMode === "a-vencer" ? " is-active" : ""}" data-sec-filter="a-vencer" aria-pressed="${securityCertFilterMode === "a-vencer"}">
+              <span class="cli-list-kpi-top">
+                <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+                <span class="lab">A vencer</span>
+              </span>
+              <strong>${counts.aVencer}</strong>
+              <span class="cli-list-kpi-hint">${counts.aVencer ? "Requer encaminhamento" : "Nenhum alerta"}</span>
+              <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${pct(counts.aVencer)}%"></i></span>
+            </button>
+            <button type="button" class="cli-list-kpi bad${securityCertFilterMode === "vencido" ? " is-active" : ""}" data-sec-filter="vencido" aria-pressed="${securityCertFilterMode === "vencido"}">
+              <span class="cli-list-kpi-top">
+                <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg></span>
+                <span class="lab">Vencidos</span>
+              </span>
+              <strong>${counts.vencidos}</strong>
+              <span class="cli-list-kpi-hint">${counts.vencidos ? "Ação urgente" : "Nenhum vencido"}</span>
+              <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${pct(counts.vencidos)}%"></i></span>
+            </button>
           </div>
           <div class="sec-table-wrap">
             <div class="sec-list">
@@ -21560,11 +22109,16 @@
                 <span>Status</span>
                 <span>Titular</span>
                 <span>Validade</span>
+                <span>Aviso</span>
               </div>
               ${rows.length ? rows.map((r) => {
                 const diasTxt = r.dias < 0
                   ? `vencido há ${Math.abs(r.dias)} ${Math.abs(r.dias) === 1 ? "dia" : "dias"}`
                   : `${r.dias} ${r.dias === 1 ? "dia" : "dias"} restantes`;
+                const canNotify = r.status === "a-vencer" || r.status === "vencido";
+                const notifyBtn = canNotify
+                  ? `<button type="button" class="sec-notify-btn tip-bottom" data-sec-notify="${r.id}" data-tip="Encaminhar aviso ao cliente e à empresa responsável" title="Encaminhar aviso ao cliente e à empresa responsável" aria-label="Encaminhar aviso de certificado de ${r.fantasia}">${planeIcon}</button>`
+                  : `<span class="sec-notify-empty" aria-hidden="true">—</span>`;
                 return `
                 <div class="sec-list-row status-${r.meta.badge}" data-sec-cli="${r.id}" role="button" tabindex="0" aria-label="Abrir ${r.fantasia}">
                   <div class="cli-id-cell">
@@ -21577,6 +22131,7 @@
                     <strong>${r.validade}</strong>
                     <span>${diasTxt}</span>
                   </div>
+                  <div class="cell-aviso">${notifyBtn}</div>
                 </div>`;
               }).join("") : `<div class="sec-empty">Nenhum certificado neste filtro.</div>`}
             </div>
@@ -21593,6 +22148,13 @@
         btn.addEventListener("click", () => {
           securityCertFilterMode = btn.dataset.secFilter || "all";
           renderSegurancaCertificados();
+        });
+      });
+      fakeList.querySelectorAll("[data-sec-notify]").forEach((btn) => {
+        btn.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          openSecCertNotifyModal(btn.dataset.secNotify);
         });
       });
     }
@@ -22078,7 +22640,7 @@
     });
 
     fakeList.addEventListener("click", (e) => {
-      if (e.target.closest("#secClearCliFilter") || e.target.closest("[data-sec-filter]") || e.target.closest("#secCertSearch") || e.target.closest(".sec-search")) return;
+      if (e.target.closest("#secClearCliFilter") || e.target.closest("[data-sec-filter]") || e.target.closest("[data-sec-notify]") || e.target.closest("#secCertSearch") || e.target.closest(".sec-search")) return;
       const secRow = e.target.closest(".sec-list-row[data-sec-cli]");
       if (secRow) {
         openEmpresaPerfil(secRow.dataset.secCli);
@@ -22538,6 +23100,37 @@
         renderClientes();
         return;
       }
+      if (e.target.closest("[data-cli-senha-add]")) {
+        const c = CLIENTES.find((x) => x.id === cliPerfilId);
+        if (!c) return;
+        const origem = (document.getElementById("cliSenhaOrigem")?.value || "").trim();
+        const login = (document.getElementById("cliSenhaLogin")?.value || "").trim();
+        const senha = (document.getElementById("cliSenhaValor")?.value || "").trim();
+        if (!origem || !login || !senha) {
+          toast("Informe origem, login e senha");
+          return;
+        }
+        ensureCliSenhas(c).unshift({
+          id: `${c.id}-s${Date.now()}`,
+          origem,
+          login,
+          senha,
+          revealed: false,
+        });
+        renderClientes();
+        toast("Senha adicionada");
+        return;
+      }
+      const senhaToggle = e.target.closest("[data-cli-senha-toggle]");
+      if (senhaToggle) {
+        const c = CLIENTES.find((x) => x.id === cliPerfilId);
+        if (!c) return;
+        const item = ensureCliSenhas(c).find((s) => s.id === senhaToggle.dataset.cliSenhaToggle);
+        if (!item) return;
+        item.revealed = !item.revealed;
+        renderClientes();
+        return;
+      }
       const cliEntAct = e.target.closest("[data-cli-ent-action]");
       if (cliEntAct) {
         e.stopPropagation();
@@ -22561,6 +23154,12 @@
           }
           return;
         }
+        return;
+      }
+      const cliEntOrigem = e.target.closest("[data-cli-ent-origem]");
+      if (cliEntOrigem) {
+        cliEntregaOrigem = cliEntOrigem.dataset.cliEntOrigem || "";
+        renderClientes();
         return;
       }
       if (e.target.closest("#cliEntregaPrev")) {
@@ -23616,6 +24215,16 @@
     });
 
     document.addEventListener("mousedown", (e) => {
+      const finAdd = e.target.closest("#financeiroWrap [data-empresa-add]");
+      if (finAdd) {
+        e.preventDefault();
+        e.stopPropagation();
+        finDash.acOpen = false;
+        document.getElementById("finEmpresaWrap")?.classList.remove("open");
+        document.getElementById("finEmpresaSelectBtn")?.setAttribute("aria-expanded", "false");
+        openClienteCadastro();
+        return;
+      }
       const finEmpOpt = e.target.closest("#financeiroWrap [data-fin-empresa-opt]");
       if (finEmpOpt) {
         e.preventDefault();
@@ -23971,6 +24580,13 @@
         e.stopPropagation();
         return;
       }
+      const addBtn = e.target.closest("[data-empresa-add]");
+      if (addBtn) {
+        e.stopPropagation();
+        empresaWrap?.classList.remove("open");
+        openClienteCadastro();
+        return;
+      }
       const opt = e.target.closest(".empresa-option");
       if (!opt || opt.classList.contains("hidden")) return;
       selectEmpresaFromOption(opt);
@@ -24002,6 +24618,16 @@
             setTimeout(() => search.focus(), 0);
           }
         }
+        return;
+      }
+      const modAdd = e.target.closest(".module-empresa-picker [data-empresa-add]");
+      if (modAdd) {
+        e.stopPropagation();
+        document.querySelectorAll(".module-empresa-picker .empresa-wrap.open").forEach((wrap) => {
+          wrap.classList.remove("open");
+          wrap.querySelector("[data-mod-empresa-toggle]")?.setAttribute("aria-expanded", "false");
+        });
+        openClienteCadastro();
         return;
       }
       const modOpt = e.target.closest("[data-mod-empresa-opt]");

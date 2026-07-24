@@ -674,6 +674,104 @@
       return { done, total: etapas.length, pct: Math.round((done / etapas.length) * 100) };
     }
 
+    function etapaStatusLabel(status) {
+      const map = {
+        concluido: "Concluída",
+        em_andamento: "Em andamento",
+        pendente: "Pendente",
+        dispensado: "Dispensada",
+      };
+      return map[status] || status || "—";
+    }
+
+    function escProcTip(s) {
+      return String(s ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    }
+
+    /** Etapa mais recente + pendências (hover do processo). */
+    function procEtapaResumo(p) {
+      const etapas = [...(p.etapas || [])].sort((a, b) => (a.ordem || 0) - (b.ordem || 0));
+      const pendentes = etapas.filter((e) => e.status === "pendente");
+      const emAndamento = etapas.find((e) => e.status === "em_andamento");
+      const latest = emAndamento
+        || [...etapas].reverse().find((e) => e.status === "concluido" || e.status === "dispensado")
+        || etapas[0]
+        || null;
+      const pendTxt = pendentes.length
+        ? `${pendentes.length} pendência${pendentes.length === 1 ? "" : "s"}`
+        : "Sem pendências";
+      const per = procPeriodo(p);
+      const tip = [
+        latest ? `Etapa atual: ${latest.nome} (${etapaStatusLabel(latest.status)})` : "Sem etapas",
+        pendTxt,
+        `Início ${per.inicioLabel} · Fim ${per.fimLabel}${per.atrasado ? " (atrasado)" : ""}`,
+      ].join(" · ");
+      return {
+        latest,
+        pendentes: pendentes.length,
+        latestLabel: latest ? latest.nome : "—",
+        latestStatus: latest ? etapaStatusLabel(latest.status) : "—",
+        tip,
+        tipAttr: escProcTip(tip),
+      };
+    }
+
+    function fmtProcCompetencia(comp) {
+      if (!comp) return "—";
+      const m = String(comp).match(/^(\d{4})-(\d{2})$/);
+      if (m) return `${m[2]}/${m[1]}`;
+      return String(comp);
+    }
+
+    function fmtProcDataCurta(iso) {
+      if (!iso) return "—";
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}` : String(iso);
+    }
+
+    function isoHojeApp() {
+      const y = APP_TODAY.getFullYear();
+      const m = String(APP_TODAY.getMonth() + 1).padStart(2, "0");
+      const d = String(APP_TODAY.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function diasEntreIso(a, b) {
+      if (!a || !b) return null;
+      const da = new Date(`${a}T00:00:00`);
+      const db = new Date(`${b}T00:00:00`);
+      if (Number.isNaN(da.getTime()) || Number.isNaN(db.getTime())) return null;
+      return Math.round((db - da) / 86400000);
+    }
+
+    /** Início / fim (ou previsão) do processo. */
+    function procPeriodo(p) {
+      const inicio = p.inicio || p.criado || "";
+      const fim = p.fim || "";
+      const previsao = p.previsaoFim || "";
+      const concluido = !!fim;
+      const atrasado = !concluido && !!previsao && previsao < isoHojeApp();
+      const fimLabel = concluido
+        ? fmtProcDataCurta(fim)
+        : previsao
+          ? `Prev. ${fmtProcDataCurta(previsao)}`
+          : "Em aberto";
+      return {
+        inicio,
+        fim,
+        previsao,
+        concluido,
+        atrasado,
+        inicioLabel: fmtProcDataCurta(inicio),
+        fimLabel,
+        duracao: concluido ? diasEntreIso(inicio, fim) : null,
+      };
+    }
+
     function getEntregasFiltradasProcessos() {
       let tasks = agendaTasksScoped().filter((t) => !t.arquivada);
       if (procEmpresaFilter && procEmpresaFilter !== "all") {
@@ -818,8 +916,9 @@
     function renderEmpresaBoardItemProc(p, idAttr) {
       const st = procStatusMeta(p.status);
       const prog = typeof procProgress === "function" ? procProgress(p.etapas) : { pct: 0, done: 0, total: 0 };
+      const etapa = typeof procEtapaResumo === "function" ? procEtapaResumo(p) : { tipAttr: "Abrir kanban de etapas" };
       return `
-        <div class="empresa-board-item status-${st.badge}" ${idAttr} role="button" tabindex="0">
+        <div class="empresa-board-item status-${st.badge} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" ${idAttr} role="button" tabindex="0">
           <div class="item-top">
             <strong>${p.title}</strong>
             <div class="item-top-actions">
@@ -829,13 +928,14 @@
               </button>
             </div>
           </div>
-          <div class="item-meta">#${p.id} · ${p.dept || "—"} · ${p.responsavel || "—"}</div>
+          <div class="item-meta">#${p.id} · ${p.dept || "—"} · ${p.responsavel || "—"} · Comp. ${fmtProcCompetencia(p.competencia)}</div>
+          <div class="item-meta item-etapa">Etapa: ${etapa.latestLabel || "—"} · ${etapa.pendentes ? `${etapa.pendentes} pend.` : "Sem pend."}</div>
           <div class="item-foot">
             <div class="proc-progress" style="flex:1">
               <div class="proc-progress-bar"><i style="width:${prog.pct || 0}%"></i></div>
-              <span style="font-size:.68rem;color:var(--muted)">${prog.done || 0}/${prog.total || 0}</span>
+              <span style="font-size:.68rem;color:var(--muted)">${prog.pct || 0}%</span>
             </div>
-            <span class="item-meta">${fmtOpsDate(p.criado)}</span>
+            <span class="item-meta">${procPeriodo(p).inicioLabel} › ${procPeriodo(p).fimLabel}</span>
           </div>
         </div>`;
     }
@@ -965,10 +1065,13 @@
           <div class="proc-list-head">
             <span>Processo</span>
             <span>Status</span>
+            <span>Empresa</span>
             <span>Depto</span>
             <span>Progresso</span>
             <span>Responsável</span>
-            <span>Criado</span>
+            <span>Competência</span>
+            <span>Início</span>
+            <span>Fim</span>
             <span></span>
           </div>`;
 
@@ -987,23 +1090,28 @@
         procGrid.innerHTML = head + addRow + list.map((p) => {
           const st = procStatusLabel(p);
           const prog = procProgress(p.etapas);
-          const criadoFmt = p.criado ? p.criado.split("-").reverse().join("/") : "—";
+          const etapa = procEtapaResumo(p);
+          const per = procPeriodo(p);
+          const empresa = p.cliente || resolveClienteForOps?.(p)?.fantasia || resolveClienteForOps?.(p)?.nome || "—";
           return `
-            <div class="proc-list-row status-${st.cls} tip-bottom" data-tip="Abrir kanban de etapas" data-proc-id="${p.id}" role="button" tabindex="0">
+            <div class="proc-list-row status-${st.cls} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" data-proc-id="${p.id}" role="button" tabindex="0">
               <div class="title-cell">
                 <strong>${p.title}</strong>
                 <span class="pid">#${p.id}</span>
               </div>
               <div class="cell cell-status"><span class="proc-badge ${st.cls}">${st.text}</span></div>
-              <div class="cell cell-dept muted">${p.dept}</div>
+              <div class="cell cell-empresa muted" title="${empresa}">${empresa}</div>
+              <div class="cell cell-dept muted">${p.dept || "—"}</div>
               <div class="cell cell-prog">
                 <div class="proc-progress">
                   <div class="proc-progress-bar"><i style="width:${prog.pct}%"></i></div>
-                  <span>${prog.done}/${prog.total}</span>
+                  <span>${prog.pct}%</span>
                 </div>
               </div>
-              <div class="cell cell-resp">${p.responsavel}</div>
-              <div class="cell cell-date muted">${criadoFmt}</div>
+              <div class="cell cell-resp">${p.responsavel || "—"}</div>
+              <div class="cell cell-comp muted">${fmtProcCompetencia(p.competencia)}</div>
+              <div class="cell cell-inicio muted">${per.inicioLabel}</div>
+              <div class="cell cell-fim${per.concluido ? " is-done" : per.atrasado ? " is-late" : " muted"}">${per.fimLabel}</div>
               <div class="cell cell-actions">
                 <button type="button" class="agenda-edit-btn tip-bottom" data-proc-edit="${p.id}" data-tip="Editar processo" aria-label="Editar processo">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -1036,9 +1144,11 @@
       procGrid.innerHTML = addCard + list.map((p) => {
         const st = procStatusLabel(p);
         const prog = procProgress(p.etapas);
-        const criadoFmt = p.criado ? p.criado.split("-").reverse().join("/") : "—";
+        const etapa = procEtapaResumo(p);
+        const per = procPeriodo(p);
+        const empresa = p.cliente || "—";
         return `
-          <div class="proc-card status-${st.cls} tip-bottom" data-tip="Abrir kanban de etapas" data-proc-id="${p.id}" role="button" tabindex="0">
+          <div class="proc-card status-${st.cls} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" data-proc-id="${p.id}" role="button" tabindex="0">
             <div class="proc-card-head">
               <strong>${p.title}</strong>
               <div class="proc-card-head-actions">
@@ -1052,20 +1162,148 @@
               <span class="proc-badge ${st.cls}">${st.text}</span>
               <span class="proc-badge dept">${p.dept}</span>
             </div>
+            <div class="proc-card-attrs">
+              <span><b>Empresa</b> ${empresa}</span>
+              <span><b>Competência</b> ${fmtProcCompetencia(p.competencia)}</span>
+              <span><b>Etapa</b> ${etapa.latestLabel}</span>
+              <span><b>Início</b> ${per.inicioLabel} <b>· Fim</b> ${per.fimLabel}</span>
+            </div>
             <div class="proc-card-foot">
               <div class="proc-progress">
                 <div class="proc-progress-bar"><i style="width:${prog.pct}%"></i></div>
-                <span>${prog.done}/${prog.total}</span>
+                <span>${prog.pct}%</span>
               </div>
-              <span>${p.responsavel} · ${criadoFmt}</span>
+              <span>${p.responsavel}</span>
             </div>
           </div>`;
       }).join("");
     }
 
+    function getEntregasEvolucaoBase() {
+      let tasks = agendaTasksScoped().filter((t) => !t.arquivada);
+      if (procEmpresaFilter && procEmpresaFilter !== "all") {
+        tasks = tasks.filter((t) => t.clienteId === procEmpresaFilter);
+      }
+      if (procFiltros.responsavel) {
+        tasks = tasks.filter((t) => t.responsavel === procFiltros.responsavel);
+      }
+      return tasks;
+    }
+
+    /** Evolução das entregas nos últimos 6 meses + ciclo dos processos. */
+    function renderProcessosEvolucao(list) {
+      if (!procEvolucao) return;
+      const abrev = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+      const base = getEntregasEvolucaoBase();
+      const universo = agendaTasksScoped().filter((t) => !t.arquivada).length;
+      const fator = universo ? base.length / universo : 1;
+      const mesCorrente = `${APP_TODAY.getFullYear()}-${String(APP_TODAY.getMonth() + 1).padStart(2, "0")}`;
+
+      const meses = [];
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(APP_TODAY.getFullYear(), APP_TODAY.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        const hist = ENTREGAS_HISTORICO[key];
+        meses.push({
+          key,
+          label: abrev[d.getMonth()],
+          parcial: key === mesCorrente,
+          total: hist ? Math.round(hist.total * fator) : 0,
+          entregues: hist ? Math.round(hist.entregues * fator) : 0,
+        });
+      }
+      const porMes = new Map(meses.map((m) => [m.key, m]));
+      base.forEach((t) => {
+        const mes = porMes.get(String(t.date || "").slice(0, 7));
+        if (!mes || !mes.parcial) return;
+        mes.total += 1;
+        if (procStatusMeta(t.status).sucesso === true) mes.entregues += 1;
+      });
+
+      const pctMes = (m) => (m.total ? Math.round((m.entregues / m.total) * 100) : 0);
+      const fechados = meses.filter((m) => !m.parcial);
+      const totalFechado = fechados.reduce((acc, m) => acc + m.total, 0);
+      const entreguesFechado = fechados.reduce((acc, m) => acc + m.entregues, 0);
+      const taxa = totalFechado ? Math.round((entreguesFechado / totalFechado) * 100) : 0;
+      const maxVal = Math.max(1, ...meses.map((m) => m.total));
+      const atual = meses[meses.length - 1];
+      const ultimoFechado = fechados[fechados.length - 1];
+      const penultimoFechado = fechados[fechados.length - 2];
+      const delta = ultimoFechado && penultimoFechado ? pctMes(ultimoFechado) - pctMes(penultimoFechado) : 0;
+      const deltaCls = delta > 0 ? "is-up" : delta < 0 ? "is-down" : "";
+      const deltaTxt = atual
+        ? `${abrev[APP_TODAY.getMonth()]} em curso: ${pctMes(atual)}% · ${delta === 0 ? "estável" : `${delta > 0 ? "+" : ""}${delta} p.p.`} no mês anterior`
+        : "";
+
+      const procs = list || [];
+      const periodos = procs.map((p) => procPeriodo(p));
+      const concluidos = periodos.filter((per) => per.concluido);
+      const duracoes = concluidos.map((per) => per.duracao).filter((n) => typeof n === "number" && n >= 0);
+      const tempoMedio = duracoes.length ? Math.round(duracoes.reduce((a, b) => a + b, 0) / duracoes.length) : null;
+      const emAberto = periodos.filter((per) => !per.concluido);
+      const atrasados = emAberto.filter((per) => per.atrasado).length;
+
+      const colunas = meses.map((m) => {
+        const hTotal = Math.max(4, Math.round((m.total / maxVal) * 100));
+        const hEnt = Math.max(4, Math.round((m.entregues / maxVal) * 100));
+        const tip = escProcTip(`${m.label}${m.parcial ? " (mês em curso)" : ""}: ${m.entregues} de ${m.total} entregues (${pctMes(m)}%)`);
+        return `
+          <div class="chart-col tip-bottom${m.parcial ? " is-parcial" : ""}" data-tip="${tip}">
+            <div class="bars">
+              <i class="bar ant" style="height:${hTotal}%"></i>
+              <i class="bar atual" style="height:${hEnt}%"></i>
+            </div>
+            <span class="lbl">${m.label}${m.parcial ? "*" : ""}</span>
+          </div>`;
+      }).join("");
+
+      procEvolucao.innerHTML = `
+        <div class="dash-panel">
+          <div class="dash-panel-head">
+            <div>
+              <h4>Evolução das entregas</h4>
+              <span class="sub">Últimos 6 meses · entregues sobre o total do mês (*mês em curso)</span>
+            </div>
+            <span class="proc-evo-taxa ${deltaCls}">${taxa}%<small>${deltaTxt}</small></span>
+          </div>
+          <div class="chart-bars">${colunas}</div>
+          <div class="legend">
+            <span><i style="background:var(--accent)"></i>Entregues</span>
+            <span><i style="background:color-mix(in srgb, var(--accent) 22%, var(--border))"></i>Total previsto</span>
+          </div>
+        </div>
+        <div class="dash-panel proc-evo-side">
+          <div class="dash-panel-head">
+            <div>
+              <h4>Ciclo dos processos</h4>
+              <span class="sub">Com base em início e fim</span>
+            </div>
+          </div>
+          <div class="proc-evo-stats">
+            <div class="proc-evo-stat">
+              <span class="k">Concluídos</span>
+              <span class="v">${concluidos.length}<small>de ${procs.length}</small></span>
+            </div>
+            <div class="proc-evo-stat">
+              <span class="k">Tempo médio</span>
+              <span class="v">${tempoMedio === null ? "—" : tempoMedio}<small>${tempoMedio === null ? "sem dados" : "dias"}</small></span>
+            </div>
+            <div class="proc-evo-stat">
+              <span class="k">Em aberto</span>
+              <span class="v">${emAberto.length}<small>em execução</small></span>
+            </div>
+            <div class="proc-evo-stat${atrasados ? " is-late" : ""}">
+              <span class="k">Previsão vencida</span>
+              <span class="v">${atrasados}<small>${atrasados === 1 ? "processo" : "processos"}</small></span>
+            </div>
+          </div>
+        </div>`;
+    }
+
     function renderProcessos() {
       const list = getProcessosFiltrados();
       renderProcessosQuantidade(list);
+      renderProcessosEvolucao(list);
       renderProcessosFilters();
       renderProcessosGrid(list);
     }
@@ -1894,7 +2132,6 @@
               ${REGIME_OPTIONS.map((r) => `<option value="${r}" ${cliRegimeFilter === r ? "selected" : ""}>${r}</option>`).join("")}
             </select>
           </div>
-          <span class="cli-count">${rowsMeta.length} empresa${rowsMeta.length === 1 ? "" : "s"} no filtro</span>
           <button type="button" class="btn-primary cli-add-btn" data-cli-add-empresa>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             Nova empresa
@@ -2109,25 +2346,30 @@
         return `${kpis}${toolbar}
           <div class="proc-grid is-list" style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
             <div class="proc-list-head">
-              <span>Processo</span><span>Status</span><span>Depto</span><span>Progresso</span><span>Responsável</span><span>Criado</span><span></span>
+              <span>Processo</span><span>Status</span><span>Empresa</span><span>Depto</span><span>Progresso</span><span>Responsável</span><span>Competência</span><span>Início</span><span>Fim</span><span></span>
             </div>
             ${procs.map((p) => {
               const st = procStatusLabel(p);
               const prog = procProgress(p.etapas);
-              const criadoFmt = p.criado ? p.criado.split("-").reverse().join("/") : "—";
+              const etapa = procEtapaResumo(p);
+              const per = procPeriodo(p);
+              const empresa = p.cliente || "—";
               return `
-                <div class="proc-list-row status-${st.cls}" data-cli-proc-id="${p.id}" role="button" tabindex="0">
+                <div class="proc-list-row status-${st.cls} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" data-cli-proc-id="${p.id}" role="button" tabindex="0">
                   <div class="title-cell"><strong>${p.title}</strong><span class="pid">#${p.id}</span></div>
                   <div class="cell cell-status"><span class="proc-badge ${st.cls}">${st.text}</span></div>
-                  <div class="cell cell-dept muted">${p.dept}</div>
+                  <div class="cell cell-empresa muted" title="${empresa}">${empresa}</div>
+                  <div class="cell cell-dept muted">${p.dept || "—"}</div>
                   <div class="cell cell-prog">
                     <div class="proc-progress">
                       <div class="proc-progress-bar"><i style="width:${prog.pct}%"></i></div>
-                      <span>${prog.done}/${prog.total}</span>
+                      <span>${prog.pct}%</span>
                     </div>
                   </div>
-                  <div class="cell cell-resp">${p.responsavel}</div>
-                  <div class="cell cell-date muted">${criadoFmt}</div>
+                  <div class="cell cell-resp">${p.responsavel || "—"}</div>
+                  <div class="cell cell-comp muted">${fmtProcCompetencia(p.competencia)}</div>
+                  <div class="cell cell-inicio muted">${per.inicioLabel}</div>
+                  <div class="cell cell-fim${per.concluido ? " is-done" : per.atrasado ? " is-late" : " muted"}">${per.fimLabel}</div>
                   <div class="cell cell-actions">
                     <button type="button" class="agenda-edit-btn tip-bottom" data-cli-proc-edit="${p.id}" data-tip="Editar processo" aria-label="Editar">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -2143,9 +2385,11 @@
           ${procs.map((p) => {
             const st = procStatusLabel(p);
             const prog = procProgress(p.etapas);
-            const criadoFmt = p.criado ? p.criado.split("-").reverse().join("/") : "—";
+            const etapa = procEtapaResumo(p);
+            const per = procPeriodo(p);
+            const empresa = p.cliente || "—";
             return `
-              <div class="proc-card status-${st.cls}" data-cli-proc-id="${p.id}" role="button" tabindex="0">
+              <div class="proc-card status-${st.cls} tip-bottom tip-proc" data-tip="${etapa.tipAttr}" data-cli-proc-id="${p.id}" role="button" tabindex="0">
                 <div class="proc-card-head">
                   <strong>${p.title}</strong>
                   <div class="proc-card-head-actions">
@@ -2159,12 +2403,18 @@
                   <span class="proc-badge ${st.cls}">${st.text}</span>
                   <span class="proc-badge dept">${p.dept}</span>
                 </div>
+                <div class="proc-card-attrs">
+                  <span><b>Empresa</b> ${empresa}</span>
+                  <span><b>Competência</b> ${fmtProcCompetencia(p.competencia)}</span>
+                  <span><b>Etapa</b> ${etapa.latestLabel}</span>
+                  <span><b>Início</b> ${per.inicioLabel} <b>· Fim</b> ${per.fimLabel}</span>
+                </div>
                 <div class="proc-card-foot">
                   <div class="proc-progress">
                     <div class="proc-progress-bar"><i style="width:${prog.pct}%"></i></div>
-                    <span>${prog.done}/${prog.total}</span>
+                    <span>${prog.pct}%</span>
                   </div>
-                  <span>${p.responsavel} · ${criadoFmt}</span>
+                  <span>${p.responsavel}</span>
                 </div>
               </div>`;
           }).join("")}
@@ -2251,6 +2501,18 @@
           utilMe: true,
         },
         {
+          id: `${c.id}-f1b`,
+          autor: "Marcos Lima",
+          cargo: "Contábil",
+          visibilidade: "geral",
+          tema: "operacional",
+          texto: "Acesso e rotina\n• Senha do e-CAC renovada em jun/2026\n• Conferir certificado antes de qualquer entrega fiscal",
+          at: new Date(2026, 6, 11, 8, 30),
+          pinned: true,
+          uteis: 2,
+          utilMe: false,
+        },
+        {
           id: `${c.id}-f2`,
           autor: "Juliana Reis",
           cargo: "Pessoal",
@@ -2306,6 +2568,25 @@
       return cliFeedByClient[c.id];
     }
 
+    function seedCliSenhas(c) {
+      const slug = String(c.fantasia || c.nome || "empresa")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "")
+        .slice(0, 12) || "empresa";
+      return [
+        { id: `${c.id}-s1`, origem: "e-CAC / Gov.br", login: `${slug}@gov.br`, senha: "Ecac2026!", revealed: false },
+        { id: `${c.id}-s2`, origem: "Portal NF-e", login: `nfe.${slug}`, senha: "NFe#jul26", revealed: false },
+        { id: `${c.id}-s3`, origem: "Internet Banking", login: "004812.0", senha: "Bk*91402", revealed: false },
+      ];
+    }
+
+    function ensureCliSenhas(c) {
+      if (!cliSenhasByClient[c.id]) cliSenhasByClient[c.id] = seedCliSenhas(c);
+      return cliSenhasByClient[c.id];
+    }
+
     function cliFeedVisLabel(vis) {
       if (vis === "privado") return "Privado";
       return "Geral";
@@ -2325,10 +2606,88 @@
       return filtered;
     }
 
+    function renderCliFeedPostHtml(p, { compact = false } = {}) {
+      const temaMeta = CLI_FEED_TEMAS.find((t) => t.id === p.tema);
+      const when = cliFeedWhenLabel(p.at);
+      const iso = p.at instanceof Date ? p.at.toISOString() : String(p.at);
+      return `
+        <article class="cli-feed-post${p.pinned ? " is-pinned" : ""}${compact ? " is-compact" : ""}" data-cli-feed-id="${p.id}">
+          <div class="cli-feed-avatar tone-${cliFeedTone(p.autor)}" aria-hidden="true">${cliFeedEsc(cliFeedInitials(p.autor))}</div>
+          <div class="cli-feed-post-body">
+            <div class="cli-feed-post-head">
+              <div class="cli-feed-who">
+                <span class="cli-feed-name">${cliFeedEsc(p.autor)}</span>
+                <span class="cli-feed-sep" aria-hidden="true">·</span>
+                <span class="cli-feed-role">${cliFeedEsc(p.cargo || "")}</span>
+              </div>
+              <time class="cli-feed-when" datetime="${iso}" title="${cliFeedEsc(when)}">${cliFeedEsc(when)}</time>
+            </div>
+            <div class="cli-feed-tags">
+              ${p.pinned ? `<span class="cli-feed-tag pin">Fixado</span>` : ""}
+              <span class="cli-feed-tag vis-${p.visibilidade}">${cliFeedVisLabel(p.visibilidade)}</span>
+              <span class="cli-feed-tag tema-${p.tema}">${cliFeedEsc(temaMeta?.label || p.tema)}</span>
+            </div>
+            ${renderCliFeedTextHtml(p.texto)}
+            ${compact ? "" : `
+            <div class="cli-feed-foot">
+              <button type="button" class="cli-feed-util${p.utilMe ? " is-on" : ""}" data-cli-feed-util="${p.id}" aria-pressed="${p.utilMe ? "true" : "false"}">
+                Útil · ${p.uteis || 0}
+              </button>
+            </div>`}
+          </div>
+        </article>`;
+    }
+
+    function renderCliSenhasPanel(c) {
+      const items = ensureCliSenhas(c);
+      const list = items.length
+        ? items.map((s) => `
+            <article class="cli-senha-card" data-cli-senha-id="${s.id}">
+              <div class="cli-senha-card-head">
+                <strong>${cliFeedEsc(s.origem)}</strong>
+                <button type="button" class="btn-ghost sm" data-cli-senha-toggle="${s.id}" aria-pressed="${s.revealed ? "true" : "false"}" title="${s.revealed ? "Ocultar senha" : "Mostrar senha"}">
+                  ${s.revealed ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
+              <div class="cli-senha-meta">
+                <div><span class="k">Login</span><span class="v">${cliFeedEsc(s.login)}</span></div>
+                <div><span class="k">Senha</span><span class="v mono">${s.revealed ? cliFeedEsc(s.senha) : "••••••••"}</span></div>
+              </div>
+            </article>`).join("")
+        : `<div class="cli-feed-empty sm">Nenhuma senha cadastrada.</div>`;
+      return `
+        <section class="cli-feed-side-card" aria-label="Senhas do cliente">
+          <header class="cli-feed-side-head">
+            <h4>Senhas</h4>
+            <span class="sub">${items.length} cadastrada${items.length === 1 ? "" : "s"}</span>
+          </header>
+          <div class="cli-senha-form">
+            <label>
+              <span>Origem</span>
+              <input type="text" id="cliSenhaOrigem" placeholder="Ex.: e-CAC, Portal NF-e" autocomplete="off" />
+            </label>
+            <label>
+              <span>Login</span>
+              <input type="text" id="cliSenhaLogin" placeholder="Usuário ou e-mail" autocomplete="off" />
+            </label>
+            <label>
+              <span>Senha</span>
+              <input type="password" id="cliSenhaValor" placeholder="••••••••" autocomplete="new-password" />
+            </label>
+            <button type="button" class="btn-primary" data-cli-senha-add>Adicionar</button>
+          </div>
+          <div class="cli-senha-list">${list}</div>
+        </section>`;
+    }
+
     function renderCliFeed(c) {
       const me = CLI_FEED_ME;
       if (cliFeedFilter === "mim") cliFeedFilter = "todos";
       const posts = getCliFeedPosts(c);
+      const pinned = ensureCliFeed(c)
+        .filter((p) => p.pinned)
+        .sort((a, b) => new Date(b.at) - new Date(a.at));
+      const feedPosts = posts.filter((p) => !p.pinned);
       const filters = [
         { id: "todos", label: "Todos" },
         { id: "geral", label: "Gerais" },
@@ -2336,64 +2695,52 @@
         ...CLI_FEED_TEMAS,
       ];
       const temaOpts = CLI_FEED_TEMAS.map((t) => `<option value="${t.id}">${t.label}</option>`).join("");
-      const list = posts.length
-        ? posts.map((p) => {
-            const temaMeta = CLI_FEED_TEMAS.find((t) => t.id === p.tema);
-            const when = cliFeedWhenLabel(p.at);
-            const iso = p.at instanceof Date ? p.at.toISOString() : String(p.at);
-            return `
-            <article class="cli-feed-post${p.pinned ? " is-pinned" : ""}" data-cli-feed-id="${p.id}">
-              <div class="cli-feed-avatar tone-${cliFeedTone(p.autor)}" aria-hidden="true">${cliFeedEsc(cliFeedInitials(p.autor))}</div>
-              <div class="cli-feed-post-body">
-                <div class="cli-feed-post-head">
-                  <div class="cli-feed-who">
-                    <span class="cli-feed-name">${cliFeedEsc(p.autor)}</span>
-                    <span class="cli-feed-sep" aria-hidden="true">·</span>
-                    <span class="cli-feed-role">${cliFeedEsc(p.cargo || "")}</span>
-                  </div>
-                  <time class="cli-feed-when" datetime="${iso}" title="${cliFeedEsc(when)}">${cliFeedEsc(when)}</time>
-                </div>
-                <div class="cli-feed-tags">
-                  ${p.pinned ? `<span class="cli-feed-tag pin">Fixado</span>` : ""}
-                  <span class="cli-feed-tag vis-${p.visibilidade}">${cliFeedVisLabel(p.visibilidade)}</span>
-                  <span class="cli-feed-tag tema-${p.tema}">${cliFeedEsc(temaMeta?.label || p.tema)}</span>
-                </div>
-                ${renderCliFeedTextHtml(p.texto)}
-                <div class="cli-feed-foot">
-                  <button type="button" class="cli-feed-util${p.utilMe ? " is-on" : ""}" data-cli-feed-util="${p.id}" aria-pressed="${p.utilMe ? "true" : "false"}">
-                    Útil · ${p.uteis || 0}
-                  </button>
-                </div>
-              </div>
-            </article>`;
-          }).join("")
+      const list = feedPosts.length
+        ? feedPosts.map((p) => renderCliFeedPostHtml(p)).join("")
         : `<div class="cli-feed-empty">Nenhuma nota neste filtro. Publique um comentário para o time.</div>`;
+      const pinnedHtml = pinned.length
+        ? pinned.map((p) => renderCliFeedPostHtml(p, { compact: true })).join("")
+        : `<div class="cli-feed-empty sm">Nenhum comentário fixado.</div>`;
       return `
         <div class="cli-feed">
           <header class="cli-feed-intro">
-            <h3>Mural do cliente</h3>
-            <p>Notas do time sobre contatos, preferências e rotinas — o que ajuda quem entra depois a trabalhar nesta empresa.</p>
+            <h3>Notas e senhas</h3>
+            <p>Mural do time, comentários fixados e credenciais de acesso desta empresa.</p>
           </header>
-          <div class="cli-feed-composer">
-            <div class="cli-feed-avatar tone-${cliFeedTone(me.nome)}" aria-hidden="true">${me.initials}</div>
-            <div class="cli-feed-composer-main">
-              <textarea id="cliFeedInput" placeholder="Ex.: Para falar sobre notas, falar com o João do financeiro..." aria-label="Novo comentário do mural"></textarea>
-              <div class="cli-feed-composer-bar">
-                <select id="cliFeedVis" aria-label="Visibilidade">
-                  <option value="geral">Geral — todo o time</option>
-                  <option value="privado">Privado — só analistas</option>
-                </select>
-                <select id="cliFeedTema" aria-label="Tema">${temaOpts}</select>
-                <button type="button" class="btn-primary" data-cli-feed-publish>Publicar</button>
+          <div class="cli-feed-layout">
+            <div class="cli-feed-main">
+              <div class="cli-feed-composer">
+                <div class="cli-feed-avatar tone-${cliFeedTone(me.nome)}" aria-hidden="true">${me.initials}</div>
+                <div class="cli-feed-composer-main">
+                  <textarea id="cliFeedInput" placeholder="Ex.: Para falar sobre notas, falar com o João do financeiro..." aria-label="Novo comentário do mural"></textarea>
+                  <div class="cli-feed-composer-bar">
+                    <select id="cliFeedVis" aria-label="Visibilidade">
+                      <option value="geral">Geral — todo o time</option>
+                      <option value="privado">Privado — só analistas</option>
+                    </select>
+                    <select id="cliFeedTema" aria-label="Tema">${temaOpts}</select>
+                    <button type="button" class="btn-primary" data-cli-feed-publish>Publicar</button>
+                  </div>
+                </div>
               </div>
+              <div class="cli-feed-filters" role="tablist" aria-label="Filtrar mural">
+                ${filters.map((f) => `
+                  <button type="button" class="cli-feed-filter${cliFeedFilter === f.id ? " active" : ""}" role="tab" aria-selected="${cliFeedFilter === f.id}" data-cli-feed-filter="${f.id}">${f.label}</button>
+                `).join("")}
+              </div>
+              <div class="cli-feed-list">${list}</div>
             </div>
+            <aside class="cli-feed-aside" aria-label="Fixados e senhas">
+              <section class="cli-feed-side-card is-fixados" aria-label="Comentários fixados">
+                <header class="cli-feed-side-head">
+                  <h4>Fixados</h4>
+                  <span class="sub">${pinned.length}</span>
+                </header>
+                <div class="cli-feed-pinned-list">${pinnedHtml}</div>
+              </section>
+              ${renderCliSenhasPanel(c)}
+            </aside>
           </div>
-          <div class="cli-feed-filters" role="tablist" aria-label="Filtrar mural">
-            ${filters.map((f) => `
-              <button type="button" class="cli-feed-filter${cliFeedFilter === f.id ? " active" : ""}" role="tab" aria-selected="${cliFeedFilter === f.id}" data-cli-feed-filter="${f.id}">${f.label}</button>
-            `).join("")}
-          </div>
-          <div class="cli-feed-list">${list}</div>
         </div>`;
     }
 
@@ -2461,7 +2808,7 @@
       const y = cliEntregaMonth.getFullYear();
       const m = String(cliEntregaMonth.getMonth() + 1).padStart(2, "0");
       const periodPrefix = `${y}-${m}`;
-      const allPeriod = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && String(t.date || "").startsWith(periodPrefix));
+      const allPeriod = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && String(t.date || "").startsWith(periodPrefix) && matchesCliEntregaOrigem(t));
       const totais = allPeriod.length;
       const atrasadas = allPeriod.filter((t) => t.status === "atrasada" || t.status === "ent-atrasada" || t.status === "justificativa-atrasada").length;
       const noPrazo = allPeriod.filter((t) => t.status === "no-prazo" || t.status === "ent-antecipada").length;
@@ -2471,7 +2818,7 @@
       }).length;
       const pctOf = (n) => (totais ? Math.round((n / totais) * 100) : 0);
 
-      const dayTasksBase = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && t.date === cliEntregaSelected);
+      const dayTasksBase = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && t.date === cliEntregaSelected && matchesCliEntregaOrigem(t));
 
       let tasks = [...dayTasksBase];
       if (cliEntregaKpiFilter === "atrasadas") {
@@ -2538,7 +2885,7 @@
       }
       for (let d = 1; d <= daysInMonth; d++) {
         const iso = isoDate(calYear, calMonth, d);
-        const has = agendaTasks.some((t) => t.clienteId === c.id && !t.arquivada && t.date === iso);
+        const has = agendaTasks.some((t) => t.clienteId === c.id && !t.arquivada && t.date === iso && matchesCliEntregaOrigem(t));
         const classes = [
           "agenda-cal-day",
           has ? "has-tasks" : "",
@@ -2608,11 +2955,16 @@
       const cardHtml = (t) => {
         const st = procStatusMeta(t.status);
         const tagCls = t.status === "atrasada" || t.status === "ent-atrasada" || t.status === "justificativa-atrasada" ? "atrasada" : "no-prazo";
+        const origem = getEntregaOrigem(t);
+        const origemLabel = origem === "solicitacao" ? "Solicitação" : "Interna";
         return `
         <div class="agenda-entregas-card tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
           <div class="row">
             <h5>${t.nome}</h5>
-            <span class="agenda-tag ${tagCls}">${st.label}</span>
+            <span class="cli-entrega-tags">
+              <span class="agenda-tag ${origem === "solicitacao" ? "solicitacao" : "interna"}">${origemLabel}</span>
+              <span class="agenda-tag ${tagCls}">${st.label}</span>
+            </span>
           </div>
           <div class="detail">
             <div class="meta"><b>Status</b><span class="val">${st.label}</span></div>
@@ -2703,6 +3055,7 @@
                     <span class="sub">${formatAgendaDayLong(cliEntregaSelected)}</span>
                   </div>
                   <div class="agenda-entregas-filters" id="cliEntregasFilters">
+                    ${renderCliEntregaOrigemToggle()}
                     <div class="proc-filter search">
                       <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                       <input type="search" id="cliEntregaSearch" placeholder="Buscar entrega ou competência" autocomplete="off" aria-label="Buscar entregas" value="${(cliEntregaQuery || "").replace(/"/g, "&quot;")}" />
@@ -2760,15 +3113,15 @@
     ];
 
     const CLI_DOCS_FOLDERS = [
-      { id: "recentes", title: "Recentes", badgeUnit: "items", icon: "clock", kind: "recent" },
-      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "shield-check", kind: "dept" },
-      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "calculator", kind: "dept" },
-      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "users", kind: "dept" },
-      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "wallet", kind: "dept" },
-      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "receipt", kind: "dept" },
-      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "rocket", kind: "dept" },
-      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "scale", kind: "dept" },
-      { id: "outros", title: "Outros", badgeUnit: "arquivos", icon: "folder", kind: "plain" },
+      { id: "recentes", title: "Recentes", badgeUnit: "items", icon: "clock", kind: "recent", tag: "accent" },
+      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "shield-check", kind: "dept", tag: "navy" },
+      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "calculator", kind: "dept", tag: "secondary" },
+      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "users", kind: "dept", tag: "ok" },
+      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "wallet", kind: "dept", tag: "accent" },
+      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "receipt", kind: "dept", tag: "navy" },
+      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "rocket", kind: "dept", tag: "secondary" },
+      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "scale", kind: "dept", tag: "ok" },
+      { id: "outros", title: "Outros", badgeUnit: "arquivos", icon: "folder", kind: "plain", tag: "muted" },
     ];
 
     /** Arquivos de demonstração por pasta (protótipo · contagem alimenta badges). */
@@ -2980,8 +3333,10 @@
       const grid = CLI_DOCS_FOLDERS.map((f) => {
         const count = getCliDocsFiles(f.id).length;
         const badge = formatCliDocsBadge(count, f.badgeUnit);
+        const tag = f.tag || "accent";
         return `
-          <button type="button" class="cli-docs-folder-card" role="listitem" data-cli-doc-folder="${f.id}" data-kind="${f.kind}" aria-label="${f.title} · ${badge}">
+          <button type="button" class="cli-docs-folder-card" role="listitem" data-cli-doc-folder="${f.id}" data-kind="${f.kind}" data-tag="${tag}" aria-label="${f.title} · ${badge}">
+            <span class="cli-docs-folder-tab" aria-hidden="true"></span>
             <span class="cli-docs-folder-ico" aria-hidden="true"><i data-lucide="${f.icon}"></i></span>
             <strong class="cli-docs-folder-title">${f.title}</strong>
             <span class="cli-docs-folder-badge">${badge}</span>
@@ -3106,25 +3461,41 @@
       }
       if (cliPerfilTab === "entregas") {
         if (isClientePortal()) return renderCliEntregasEspelhada(c);
-        const entregas = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada);
-        if (!entregas.length) return `<div class="cli-empty-panel">Nenhuma entrega vinculada</div>`;
-        return `<div class="cli-entregas-grid">${entregas.map((t) => {
-          const stCls = t.status === "atrasada" ? "atrasada" : "no-prazo";
-          const stLabel = stCls === "atrasada" ? "Atrasada" : "No Prazo";
+        const entregas = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && matchesCliEntregaOrigem(t));
+        const origemToggle = renderCliEntregaOrigemToggle();
+        if (!entregas.length) {
           return `
-          <div class="agenda-entregas-card is-${stCls} tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
-            <div class="row">
-              <h5>${t.nome}</h5>
-              <span class="agenda-tag ${stCls}">${stLabel}</span>
-            </div>
-            <div class="detail">
-              <div class="meta"><b>Empresa</b><span class="val" title="${t.razaoSocial || ""}">${(CLIENTES.find((x) => x.id === t.clienteId)?.fantasia || CLIENTES.find((x) => x.id === t.clienteId)?.nome || t.razaoSocial || "—")}</span></div>
-              <div class="meta"><b>Responsável</b><span class="val">${t.responsavel}</span></div>
-              <div class="meta"><b>Prazo</b><span class="val">${t.prazoLegal}</span></div>
-              <div class="meta"><b>Competência</b><span class="val">${t.competencia}</span></div>
-            </div>
+            <div class="cli-entregas-wrap">
+              <div class="cli-entregas-toolbar">${origemToggle}</div>
+              <div class="cli-empty-panel">${cliEntregaOrigem ? "Nenhuma entrega neste filtro" : "Nenhuma entrega vinculada"}</div>
+            </div>`;
+        }
+        return `
+          <div class="cli-entregas-wrap">
+            <div class="cli-entregas-toolbar">${origemToggle}</div>
+            <div class="cli-entregas-grid">${entregas.map((t) => {
+              const stCls = t.status === "atrasada" ? "atrasada" : "no-prazo";
+              const stLabel = stCls === "atrasada" ? "Atrasada" : "No Prazo";
+              const origem = getEntregaOrigem(t);
+              const origemLabel = origem === "solicitacao" ? "Solicitação" : "Interna";
+              return `
+              <div class="agenda-entregas-card is-${stCls} tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
+                <div class="row">
+                  <h5>${t.nome}</h5>
+                  <span class="cli-entrega-tags">
+                    <span class="agenda-tag ${origem === "solicitacao" ? "solicitacao" : "interna"}">${origemLabel}</span>
+                    <span class="agenda-tag ${stCls}">${stLabel}</span>
+                  </span>
+                </div>
+                <div class="detail">
+                  <div class="meta"><b>Empresa</b><span class="val" title="${t.razaoSocial || ""}">${(CLIENTES.find((x) => x.id === t.clienteId)?.fantasia || CLIENTES.find((x) => x.id === t.clienteId)?.nome || t.razaoSocial || "—")}</span></div>
+                  <div class="meta"><b>Responsável</b><span class="val">${t.responsavel}</span></div>
+                  <div class="meta"><b>Prazo</b><span class="val">${t.prazoLegal}</span></div>
+                  <div class="meta"><b>Competência</b><span class="val">${t.competencia}</span></div>
+                </div>
+              </div>`;
+            }).join("")}</div>
           </div>`;
-        }).join("")}</div>`;
       }
       if (cliPerfilTab === "xml") {
         return renderCliXmlAnaliseModule(c);
@@ -3240,32 +3611,26 @@
               <div class="cli-perfil-head-left">
                 ${isClientePortal() ? "" : `<button type="button" class="cli-perfil-back" data-cli-back>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>
-                  Voltar à listagem
+                  <span class="cli-perfil-back-label">Voltar à listagem</span>
                 </button>`}
                 <div class="cli-perfil-identity">
                   ${isClientePortal()
                     ? `<h2>${c.fantasia || c.nome}</h2>`
                     : renderModuleEmpresaPickerHtml("perfil")}
-                  <div class="cli-perfil-chips" aria-label="Dados da empresa">
-                    <span>${uiSelectEscape(c.regime || "—")}</span>
-                    <span class="sep" aria-hidden="true">·</span>
-                    <span>${uiSelectEscape(c.estado || "—")}</span>
-                    <span class="cli-badge ${c.status === "Ativo" ? "matriz" : "filial"}">${uiSelectEscape(c.status || "—")}</span>
-                  </div>
+                  <button type="button" class="cli-dados-btn" data-cli-tool="dados" title="Dados cadastrais da empresa">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <span class="cli-dados-btn-label">Dados cadastrais</span>
+                  </button>
                 </div>
-                <button type="button" class="cli-dados-link" data-cli-tool="dados">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                  Visualizar dados da empresa
-                </button>
               </div>
               <div class="cli-perfil-head-actions">
                 <button type="button" class="cli-cert-card ${cert.cls}" data-cli-tool="cert" aria-label="Certificado digital: ${cert.label}">
                   <span class="cert-ico" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   </span>
-                  <span>
+                  <span class="cli-cert-text">
                     <strong>Certificado digital</strong>
-                    <span>${cert.label} · ${certRow.validadeLabel}</span>
+                    <span class="cli-cert-detail">${cert.label} · ${certRow.validadeLabel}</span>
                   </span>
                 </button>
               </div>

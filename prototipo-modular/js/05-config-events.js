@@ -771,6 +771,111 @@
       });
     }
 
+    function openSecCertNotifyModal(clientId) {
+      const row = getCertificadosMonitor().find((r) => r.id === clientId);
+      const cli = CLIENTES.find((c) => c.id === clientId);
+      if (!row) return;
+      const diasTxt = row.dias < 0
+        ? `Vencido há ${Math.abs(row.dias)} ${Math.abs(row.dias) === 1 ? "dia" : "dias"}`
+        : `${row.dias} ${row.dias === 1 ? "dia" : "dias"} restantes`;
+      const emailCliente = `contato@${String(row.fantasia || "cliente").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 18) || "cliente"}.com.br`;
+      openModal({
+        title: "Encaminhar aviso de certificado",
+        sub: "Confira os destinatários antes de enviar",
+        wide: true,
+        body: `
+          <div class="sec-notify-modal">
+            <p class="sec-notify-lead">O aviso será enviado ao <strong>cliente</strong> e à <strong>empresa responsável</strong> pela renovação.</p>
+            <div class="sec-notify-grid">
+              <section class="sec-notify-card" aria-label="Dados do cliente">
+                <header>
+                  <span class="sec-notify-card-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg></span>
+                  <div class="sec-notify-card-head-text">
+                    <strong>Cliente</strong>
+                    <span>Destinatário principal</span>
+                  </div>
+                  <span class="proc-badge ${row.meta.badge}">${row.meta.label}</span>
+                </header>
+                <div class="sec-notify-fields">
+                  <div class="sec-notify-field is-wide">
+                    <span>Empresa</span>
+                    <strong>${row.fantasia || row.razaoSocial}</strong>
+                  </div>
+                  <div class="sec-notify-field is-wide">
+                    <span>Razão social</span>
+                    <strong>${row.razaoSocial}</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>CNPJ</span>
+                    <strong>${row.cnpj}</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Regime</span>
+                    <strong>${cli?.regime || "—"}</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Titular</span>
+                    <strong>${row.titular}</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Validade</span>
+                    <strong>${row.validade}</strong>
+                    <em>${diasTxt}</em>
+                  </div>
+                  <div class="sec-notify-field is-wide">
+                    <span>E-mail</span>
+                    <strong>${emailCliente}</strong>
+                  </div>
+                </div>
+              </section>
+              <section class="sec-notify-card is-resp" aria-label="Empresa responsável">
+                <header>
+                  <span class="sec-notify-card-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                  <div class="sec-notify-card-head-text">
+                    <strong>Empresa responsável</strong>
+                    <span>Renovação e acompanhamento</span>
+                  </div>
+                </header>
+                <div class="sec-notify-fields">
+                  <div class="sec-notify-field is-wide">
+                    <span>Escritório</span>
+                    <strong>Processo Ágil Contabilidade</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Área</span>
+                    <strong>Certificados · Fiscal</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Responsável</span>
+                    <strong>Marina Souza</strong>
+                  </div>
+                  <div class="sec-notify-field">
+                    <span>Cargo</span>
+                    <strong>Analista Fiscal</strong>
+                  </div>
+                  <div class="sec-notify-field is-wide">
+                    <span>E-mail</span>
+                    <strong>certificados@processoagil.com.br</strong>
+                  </div>
+                  <div class="sec-notify-field is-wide">
+                    <span>Ação prevista</span>
+                    <strong>Notificar e abrir protocolo de renovação</strong>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" id="secNotifyConfirm">Confirmar encaminhamento</button>`,
+      });
+      if (modalBody) modalBody.style.maxHeight = "min(70vh, 560px)";
+      document.getElementById("secNotifyConfirm")?.addEventListener("click", () => {
+        closeModal();
+        toast(`Aviso de certificado encaminhado para ${row.fantasia || row.razaoSocial} e para a empresa responsável`);
+      });
+    }
+
     function renderSegurancaCertificados() {
       emptyState.classList.add("hide");
       fakeList.classList.add("show");
@@ -786,52 +891,58 @@
       } else if (securityCertFilterClienteId) {
         rows = rows.filter((r) => r.id === securityCertFilterClienteId);
       }
-      const filters = [
-        { id: "all", label: "Todos" },
-        { id: "acao", label: "Exigem ação" },
-        { id: "vencido", label: "Vencidos" },
-        { id: "a-vencer", label: "A vencer" },
-        { id: "ok", label: "Válidos" },
-      ];
       const empresaFiltroId = (secEmpresaFilter && secEmpresaFilter !== "all")
         ? secEmpresaFilter
         : securityCertFilterClienteId;
-      const clienteNome = empresaFiltroId
-        ? (CLIENTES.find((c) => c.id === empresaFiltroId)?.fantasia || "empresa")
-        : null;
-      const hasActiveFilters = !!(empresaFiltroId || securityCertFilterMode !== "all");
+      const hasEmpresaFilter = !!empresaFiltroId;
+      const pct = (n) => (counts.total ? Math.round((n / counts.total) * 100) : 0);
+      const planeIcon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>`;
       fakeList.innerHTML = `
         <div class="sec-monitor">
-          <div class="sec-monitor-top">
-            <div class="sec-monitor-head">
-              <h3>Monitoramento de Certificados Digitais</h3>
-              <span class="sub">${clienteNome
-                ? `Filtro: ${clienteNome}`
-                : `Alerta automático em ${CERT_AVENCER_DIAS} dias`}</span>
-              ${hasActiveFilters
-                ? `<button type="button" class="btn-ghost" id="secClearCliFilter" style="height:30px;padding:0 10px;font-size:.72rem">Limpar filtros</button>`
-                : ""}
-            </div>
-            <div class="sec-kpis" role="toolbar" aria-label="Filtrar por status">
-              <button type="button" class="sec-kpi total${securityCertFilterMode === "all" ? " active" : ""}" data-sec-filter="all" aria-pressed="${securityCertFilterMode === "all"}">
-                <span class="lab">Total</span><strong>${counts.total}</strong>
-              </button>
-              <button type="button" class="sec-kpi ok${securityCertFilterMode === "ok" ? " active" : ""}" data-sec-filter="ok" aria-pressed="${securityCertFilterMode === "ok"}">
-                <span class="lab">Válidos</span><strong>${counts.ok}</strong>
-              </button>
-              <button type="button" class="sec-kpi warn${securityCertFilterMode === "a-vencer" ? " active" : ""}" data-sec-filter="a-vencer" aria-pressed="${securityCertFilterMode === "a-vencer"}">
-                <span class="lab">A vencer</span><strong>${counts.aVencer}</strong>
-              </button>
-              <button type="button" class="sec-kpi bad${securityCertFilterMode === "vencido" ? " active" : ""}" data-sec-filter="vencido" aria-pressed="${securityCertFilterMode === "vencido"}">
-                <span class="lab">Vencidos</span><strong>${counts.vencidos}</strong>
-              </button>
-            </div>
-          </div>
-          <div class="sec-filters" role="toolbar" aria-label="Filtros de certificado">
+          <div class="sec-monitor-toolbar">
             ${renderModuleEmpresaPickerHtml("seguranca")}
-            ${filters.map((f) => `
-              <button type="button" class="sec-filter${securityCertFilterMode === f.id ? " active" : ""}" data-sec-filter="${f.id}">${f.label}</button>
-            `).join("")}
+            ${hasEmpresaFilter
+              ? `<button type="button" class="btn-ghost sec-clear-btn" id="secClearCliFilter">Limpar filtro</button>`
+              : ""}
+            <span class="sec-monitor-count">${rows.length} certificado${rows.length === 1 ? "" : "s"} no filtro</span>
+          </div>
+          <div class="cli-list-kpis sec-kpis" role="toolbar" aria-label="Indicadores de certificados">
+            <button type="button" class="cli-list-kpi${securityCertFilterMode === "all" ? " is-active" : ""}" data-sec-filter="all" aria-pressed="${securityCertFilterMode === "all"}">
+              <span class="cli-list-kpi-top">
+                <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+                <span class="lab">Total</span>
+              </span>
+              <strong>${counts.total}</strong>
+              <span class="cli-list-kpi-hint">Certificados monitorados</span>
+              <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:100%"></i></span>
+            </button>
+            <button type="button" class="cli-list-kpi ok${securityCertFilterMode === "ok" ? " is-active" : ""}" data-sec-filter="ok" aria-pressed="${securityCertFilterMode === "ok"}">
+              <span class="cli-list-kpi-top">
+                <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></span>
+                <span class="lab">Válidos</span>
+              </span>
+              <strong>${counts.ok}</strong>
+              <span class="cli-list-kpi-hint">${pct(counts.ok)}% da carteira</span>
+              <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${pct(counts.ok)}%"></i></span>
+            </button>
+            <button type="button" class="cli-list-kpi warn${securityCertFilterMode === "a-vencer" ? " is-active" : ""}" data-sec-filter="a-vencer" aria-pressed="${securityCertFilterMode === "a-vencer"}">
+              <span class="cli-list-kpi-top">
+                <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3.1l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+                <span class="lab">A vencer</span>
+              </span>
+              <strong>${counts.aVencer}</strong>
+              <span class="cli-list-kpi-hint">${counts.aVencer ? "Requer encaminhamento" : "Nenhum alerta"}</span>
+              <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${pct(counts.aVencer)}%"></i></span>
+            </button>
+            <button type="button" class="cli-list-kpi bad${securityCertFilterMode === "vencido" ? " is-active" : ""}" data-sec-filter="vencido" aria-pressed="${securityCertFilterMode === "vencido"}">
+              <span class="cli-list-kpi-top">
+                <span class="cli-list-kpi-ico" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg></span>
+                <span class="lab">Vencidos</span>
+              </span>
+              <strong>${counts.vencidos}</strong>
+              <span class="cli-list-kpi-hint">${counts.vencidos ? "Ação urgente" : "Nenhum vencido"}</span>
+              <span class="cli-list-kpi-meter" aria-hidden="true"><i style="width:${pct(counts.vencidos)}%"></i></span>
+            </button>
           </div>
           <div class="sec-table-wrap">
             <div class="sec-list">
@@ -840,11 +951,16 @@
                 <span>Status</span>
                 <span>Titular</span>
                 <span>Validade</span>
+                <span>Aviso</span>
               </div>
               ${rows.length ? rows.map((r) => {
                 const diasTxt = r.dias < 0
                   ? `vencido há ${Math.abs(r.dias)} ${Math.abs(r.dias) === 1 ? "dia" : "dias"}`
                   : `${r.dias} ${r.dias === 1 ? "dia" : "dias"} restantes`;
+                const canNotify = r.status === "a-vencer" || r.status === "vencido";
+                const notifyBtn = canNotify
+                  ? `<button type="button" class="sec-notify-btn tip-bottom" data-sec-notify="${r.id}" data-tip="Encaminhar aviso ao cliente e à empresa responsável" title="Encaminhar aviso ao cliente e à empresa responsável" aria-label="Encaminhar aviso de certificado de ${r.fantasia}">${planeIcon}</button>`
+                  : `<span class="sec-notify-empty" aria-hidden="true">—</span>`;
                 return `
                 <div class="sec-list-row status-${r.meta.badge}" data-sec-cli="${r.id}" role="button" tabindex="0" aria-label="Abrir ${r.fantasia}">
                   <div class="cli-id-cell">
@@ -857,6 +973,7 @@
                     <strong>${r.validade}</strong>
                     <span>${diasTxt}</span>
                   </div>
+                  <div class="cell-aviso">${notifyBtn}</div>
                 </div>`;
               }).join("") : `<div class="sec-empty">Nenhum certificado neste filtro.</div>`}
             </div>
@@ -873,6 +990,13 @@
         btn.addEventListener("click", () => {
           securityCertFilterMode = btn.dataset.secFilter || "all";
           renderSegurancaCertificados();
+        });
+      });
+      fakeList.querySelectorAll("[data-sec-notify]").forEach((btn) => {
+        btn.addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          openSecCertNotifyModal(btn.dataset.secNotify);
         });
       });
     }
@@ -1358,7 +1482,7 @@
     });
 
     fakeList.addEventListener("click", (e) => {
-      if (e.target.closest("#secClearCliFilter") || e.target.closest("[data-sec-filter]") || e.target.closest("#secCertSearch") || e.target.closest(".sec-search")) return;
+      if (e.target.closest("#secClearCliFilter") || e.target.closest("[data-sec-filter]") || e.target.closest("[data-sec-notify]") || e.target.closest("#secCertSearch") || e.target.closest(".sec-search")) return;
       const secRow = e.target.closest(".sec-list-row[data-sec-cli]");
       if (secRow) {
         openEmpresaPerfil(secRow.dataset.secCli);
@@ -1818,6 +1942,37 @@
         renderClientes();
         return;
       }
+      if (e.target.closest("[data-cli-senha-add]")) {
+        const c = CLIENTES.find((x) => x.id === cliPerfilId);
+        if (!c) return;
+        const origem = (document.getElementById("cliSenhaOrigem")?.value || "").trim();
+        const login = (document.getElementById("cliSenhaLogin")?.value || "").trim();
+        const senha = (document.getElementById("cliSenhaValor")?.value || "").trim();
+        if (!origem || !login || !senha) {
+          toast("Informe origem, login e senha");
+          return;
+        }
+        ensureCliSenhas(c).unshift({
+          id: `${c.id}-s${Date.now()}`,
+          origem,
+          login,
+          senha,
+          revealed: false,
+        });
+        renderClientes();
+        toast("Senha adicionada");
+        return;
+      }
+      const senhaToggle = e.target.closest("[data-cli-senha-toggle]");
+      if (senhaToggle) {
+        const c = CLIENTES.find((x) => x.id === cliPerfilId);
+        if (!c) return;
+        const item = ensureCliSenhas(c).find((s) => s.id === senhaToggle.dataset.cliSenhaToggle);
+        if (!item) return;
+        item.revealed = !item.revealed;
+        renderClientes();
+        return;
+      }
       const cliEntAct = e.target.closest("[data-cli-ent-action]");
       if (cliEntAct) {
         e.stopPropagation();
@@ -1841,6 +1996,12 @@
           }
           return;
         }
+        return;
+      }
+      const cliEntOrigem = e.target.closest("[data-cli-ent-origem]");
+      if (cliEntOrigem) {
+        cliEntregaOrigem = cliEntOrigem.dataset.cliEntOrigem || "";
+        renderClientes();
         return;
       }
       if (e.target.closest("#cliEntregaPrev")) {
@@ -2896,6 +3057,16 @@
     });
 
     document.addEventListener("mousedown", (e) => {
+      const finAdd = e.target.closest("#financeiroWrap [data-empresa-add]");
+      if (finAdd) {
+        e.preventDefault();
+        e.stopPropagation();
+        finDash.acOpen = false;
+        document.getElementById("finEmpresaWrap")?.classList.remove("open");
+        document.getElementById("finEmpresaSelectBtn")?.setAttribute("aria-expanded", "false");
+        openClienteCadastro();
+        return;
+      }
       const finEmpOpt = e.target.closest("#financeiroWrap [data-fin-empresa-opt]");
       if (finEmpOpt) {
         e.preventDefault();
@@ -3251,6 +3422,13 @@
         e.stopPropagation();
         return;
       }
+      const addBtn = e.target.closest("[data-empresa-add]");
+      if (addBtn) {
+        e.stopPropagation();
+        empresaWrap?.classList.remove("open");
+        openClienteCadastro();
+        return;
+      }
       const opt = e.target.closest(".empresa-option");
       if (!opt || opt.classList.contains("hidden")) return;
       selectEmpresaFromOption(opt);
@@ -3282,6 +3460,16 @@
             setTimeout(() => search.focus(), 0);
           }
         }
+        return;
+      }
+      const modAdd = e.target.closest(".module-empresa-picker [data-empresa-add]");
+      if (modAdd) {
+        e.stopPropagation();
+        document.querySelectorAll(".module-empresa-picker .empresa-wrap.open").forEach((wrap) => {
+          wrap.classList.remove("open");
+          wrap.querySelector("[data-mod-empresa-toggle]")?.setAttribute("aria-expanded", "false");
+        });
+        openClienteCadastro();
         return;
       }
       const modOpt = e.target.closest("[data-mod-empresa-opt]");

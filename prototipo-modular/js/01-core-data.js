@@ -281,61 +281,61 @@
       { id: "clientes", label: "Gestão de Clientes", tip: "Gestão de clientes", empty: "Nenhum cliente cadastrado", desc: "Cadastre ou selecione um cliente para começar.", clientes: true, items: CLIENTES },
       { id: "financeiro", label: "Módulo Contábil", tip: "Módulo contábil", empty: "Sem lançamentos financeiros", desc: "Dashboard de análise financeira.", financeiroDash: true, items: [] },
       { id: "processos", label: "Gestão de Operações e Processos", tip: "Operações e processos", empty: "Nenhum processo encontrado", desc: "Adicione um processo usando o botão +", actions: false, processos: true, items: [
-        { id: 1042, title: "Abertura de filial", status: "em-andamento", sucesso: null, dept: "Implantação", clienteId: "farmelhor", cliente: "Farmelhor Taquaralto", responsavel: "Ana Costa", criado: "2026-06-12", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1042, title: "Abertura de filial", status: "em-andamento", sucesso: null, dept: "Implantação", clienteId: "farmelhor", cliente: "Farmelhor Taquaralto", responsavel: "Ana Costa", criado: "2026-06-12", inicio: "2026-06-12", fim: null, previsaoFim: "2026-07-31", competencia: "2026-06", arquivado: false, etapas: [
           { id: 1, nome: "Coleta de documentos", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 2, nome: "Protocolo Junta Comercial", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 3, nome: "Inscrição Estadual", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 4, nome: "Atualizar cadastro interno", status: "pendente", ordem: 4, obrigatorio: false, responsavel: "Juliana Reis" },
         ]},
-        { id: 998, title: "Alteração contratual", status: "no-prazo", sucesso: null, dept: "Paralegal", clienteId: "centro", cliente: "Farmácia Centro", responsavel: "Juliana Reis", criado: "2026-05-20", competencia: "2026-05", arquivado: false, etapas: [
+        { id: 998, title: "Alteração contratual", status: "no-prazo", sucesso: null, dept: "Paralegal", clienteId: "centro", cliente: "Farmácia Centro", responsavel: "Juliana Reis", criado: "2026-05-20", inicio: "2026-05-22", fim: null, previsaoFim: "2026-07-20", competencia: "2026-05", arquivado: false, etapas: [
           { id: 5, nome: "Análise do contrato", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 6, nome: "Elaborar minuta", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 7, nome: "Assinatura sócios", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
         ]},
-        { id: 875, title: "Baixa de inscrição municipal", status: "entregue", sucesso: true, dept: "Comercial", clienteId: "norte", cliente: "Drogaria Norte", responsavel: "Marcos Lima", criado: "2026-03-08", competencia: "2026-03", arquivado: false, etapas: [
+        { id: 875, title: "Baixa de inscrição municipal", status: "entregue", sucesso: true, dept: "Comercial", clienteId: "norte", cliente: "Drogaria Norte", responsavel: "Marcos Lima", criado: "2026-03-08", inicio: "2026-03-08", fim: "2026-04-15", previsaoFim: "2026-04-20", competencia: "2026-03", arquivado: false, etapas: [
           { id: 8, nome: "Requerimento", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 9, nome: "Protocolo prefeitura", status: "concluido", ordem: 2, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 10, nome: "Arquivar comprovantes", status: "concluido", ordem: 3, obrigatorio: false, responsavel: "Juliana Reis" },
         ]},
-        { id: 712, title: "Regularização eSocial", status: "atrasada", sucesso: false, dept: "Pessoal", clienteId: "farmelhor", cliente: "Farmelhor Taquaralto", responsavel: "Marcos Lima", criado: "2026-04-02", competencia: "2026-04", arquivado: false, etapas: [
+        { id: 712, title: "Regularização eSocial", status: "atrasada", sucesso: false, dept: "Pessoal", clienteId: "farmelhor", cliente: "Farmelhor Taquaralto", responsavel: "Marcos Lima", criado: "2026-04-02", inicio: "2026-04-02", fim: null, previsaoFim: "2026-06-30", competencia: "2026-04", arquivado: false, etapas: [
           { id: 11, nome: "Diagnóstico", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 12, nome: "Envio eventos", status: "dispensado", ordem: 2, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 13, nome: "Retorno gov", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
         ]},
-        { id: 640, title: "Encerramento 2025", status: "concluida", sucesso: true, dept: "Gestão de Processos", clienteId: "centro", cliente: "Farmácia Centro", responsavel: "Juliana Reis", criado: "2025-12-10", competencia: "2025-12", arquivado: true, etapas: [
+        { id: 640, title: "Encerramento 2025", status: "concluida", sucesso: true, dept: "Gestão de Processos", clienteId: "centro", cliente: "Farmácia Centro", responsavel: "Juliana Reis", criado: "2025-12-10", inicio: "2025-12-10", fim: "2026-01-20", previsaoFim: "2026-01-31", competencia: "2025-12", arquivado: true, etapas: [
           { id: 14, nome: "Fechamento contábil", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 15, nome: "Entrega obrigatória", status: "concluido", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
         ]},
-        { id: 1180, title: "Apuração Lucro Real — 2º tri", status: "pendente", sucesso: null, dept: "Gestão de Processos", clienteId: "sul", cliente: "Farmácia Sul", responsavel: "Ana Costa", criado: "2026-06-28", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1180, title: "Apuração Lucro Real — 2º tri", status: "pendente", sucesso: null, dept: "Gestão de Processos", clienteId: "sul", cliente: "Farmácia Sul", responsavel: "Ana Costa", criado: "2026-06-28", inicio: "2026-07-01", fim: null, previsaoFim: "2026-07-31", competencia: "2026-06", arquivado: false, etapas: [
           { id: 16, nome: "Levantamento de balancete", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 17, nome: "Apuração IRPJ/CSLL", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 18, nome: "Geração DARFs", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
         ]},
-        { id: 1192, title: "Cadastro MEI — atualização", status: "justificado", sucesso: null, dept: "Comercial", clienteId: "leste", cliente: "Drogaria Leste", responsavel: "Juliana Reis", criado: "2026-07-01", competencia: "2026-07", arquivado: false, etapas: [
+        { id: 1192, title: "Cadastro MEI — atualização", status: "justificado", sucesso: null, dept: "Comercial", clienteId: "leste", cliente: "Drogaria Leste", responsavel: "Juliana Reis", criado: "2026-07-01", inicio: "2026-07-01", fim: null, previsaoFim: "2026-07-25", competencia: "2026-07", arquivado: false, etapas: [
           { id: 19, nome: "Conferir dados PGMEI", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 20, nome: "Atualizar enquadramento", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 21, nome: "Validar DAS", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
         ]},
-        { id: 1205, title: "Imunidade ISS — renovação", status: "em-andamento", sucesso: null, dept: "Paralegal", clienteId: "oeste", cliente: "Clínica Oeste", responsavel: "Marcos Lima", criado: "2026-06-18", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1205, title: "Imunidade ISS — renovação", status: "em-andamento", sucesso: null, dept: "Paralegal", clienteId: "oeste", cliente: "Clínica Oeste", responsavel: "Marcos Lima", criado: "2026-06-18", inicio: "2026-06-18", fim: null, previsaoFim: "2026-08-10", competencia: "2026-06", arquivado: false, etapas: [
           { id: 22, nome: "Coleta de certificados", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 23, nome: "Protocolo prefeitura", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 24, nome: "Arquivo definitivo", status: "pendente", ordem: 3, obrigatorio: false, responsavel: "Juliana Reis" },
         ]},
-        { id: 905, title: "Encerramento de atividades", status: "ent-atrasada", sucesso: false, dept: "Diretoria", clienteId: "alpha", cliente: "Alpha Contábil ME", responsavel: "Juliana Reis", criado: "2026-05-05", competencia: "2026-05", arquivado: false, etapas: [
+        { id: 905, title: "Encerramento de atividades", status: "ent-atrasada", sucesso: false, dept: "Diretoria", clienteId: "alpha", cliente: "Alpha Contábil ME", responsavel: "Juliana Reis", criado: "2026-05-05", inicio: "2026-05-05", fim: "2026-07-10", previsaoFim: "2026-06-20", competencia: "2026-05", arquivado: false, etapas: [
           { id: 25, nome: "Inventário patrimonial", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 26, nome: "Protocolo baixa", status: "dispensado", ordem: 2, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 27, nome: "Baixa CNPJ", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Marcos Lima" },
         ]},
-        { id: 1218, title: "Migração Lucro Presumido", status: "ent-antecipada", sucesso: true, dept: "Comercial", clienteId: "beta", cliente: "Beta Farmacêutica", responsavel: "Ana Costa", criado: "2026-07-02", competencia: "2026-07", arquivado: false, etapas: [
+        { id: 1218, title: "Migração Lucro Presumido", status: "ent-antecipada", sucesso: true, dept: "Comercial", clienteId: "beta", cliente: "Beta Farmacêutica", responsavel: "Ana Costa", criado: "2026-07-02", inicio: "2026-07-02", fim: "2026-07-14", previsaoFim: "2026-07-20", competencia: "2026-07", arquivado: false, etapas: [
           { id: 28, nome: "Simulação tributária", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Ana Costa" },
           { id: 29, nome: "Ajustes de plano de contas", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 30, nome: "Parametrizar obrigações", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Marcos Lima" },
         ]},
-        { id: 1224, title: "Folha MEI — autenticação", status: "dispensada", sucesso: true, dept: "Pessoal", clienteId: "gamma", cliente: "Gamma Serviços", responsavel: "Marcos Lima", criado: "2026-06-10", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1224, title: "Folha MEI — autenticação", status: "dispensada", sucesso: true, dept: "Pessoal", clienteId: "gamma", cliente: "Gamma Serviços", responsavel: "Marcos Lima", criado: "2026-06-10", inicio: "2026-06-10", fim: "2026-06-28", previsaoFim: "2026-06-30", competencia: "2026-06", arquivado: false, etapas: [
           { id: 31, nome: "Conferir colaboradores", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Marcos Lima" },
           { id: 32, nome: "Gerar guias", status: "concluido", ordem: 2, obrigatorio: true, responsavel: "Marcos Lima" },
         ]},
-        { id: 1231, title: "SPED ECD — revisão", status: "justificativa-atrasada", sucesso: false, dept: "Gestão de Processos", clienteId: "delta", cliente: "Delta Comércio LTDA", responsavel: "Juliana Reis", criado: "2026-06-25", competencia: "2026-06", arquivado: false, etapas: [
+        { id: 1231, title: "SPED ECD — revisão", status: "justificativa-atrasada", sucesso: false, dept: "Gestão de Processos", clienteId: "delta", cliente: "Delta Comércio LTDA", responsavel: "Juliana Reis", criado: "2026-06-25", inicio: "2026-06-25", fim: null, previsaoFim: "2026-07-31", competencia: "2026-06", arquivado: false, etapas: [
           { id: 33, nome: "Importar balancete", status: "concluido", ordem: 1, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 34, nome: "Validar inconsistências", status: "em_andamento", ordem: 2, obrigatorio: true, responsavel: "Juliana Reis" },
           { id: 35, nome: "Assinatura e transmissão", status: "pendente", ordem: 3, obrigatorio: true, responsavel: "Ana Costa" },
@@ -411,6 +411,15 @@
       if (!isClientePortal()) return agendaTasks;
       return agendaTasks.filter((t) => t.clienteId === portalClienteId);
     }
+
+    /* Meses fechados de entregas (o mês corrente vem de agendaTasks). */
+    const ENTREGAS_HISTORICO = {
+      "2026-02": { total: 21, entregues: 15 },
+      "2026-03": { total: 24, entregues: 18 },
+      "2026-04": { total: 23, entregues: 18 },
+      "2026-05": { total: 26, entregues: 21 },
+      "2026-06": { total: 27, entregues: 23 },
+    };
 
     function agendaTasksForModule() {
       let tasks = agendaTasksScoped();
@@ -533,7 +542,54 @@
         clienteId: "leste", razaoSocial: "DROGARIA LESTE LTDA", cnpj: "44.444.444/0001-44",
         endereco: "Rua da Bahia, 210 — Salvador/BA", responsavel: "Ana Costa", prazoLegal: "20/07/2026",
       },
+      {
+        id: 23, date: "2026-07-14", nome: "2ª via do balancete", status: "pendente", competencia: "Jun/2026",
+        clienteId: "farmelhor", razaoSocial: "DROGARIA FARMELHOR TAQUARALTO LTDA", cnpj: "00.000.000/0001-00",
+        endereco: "Av. Tocantins, 1200 — Taquaralto, Palmas/TO", responsavel: "Ana Costa", prazoLegal: "18/07/2026",
+        origem: "solicitacao",
+      },
+      {
+        id: 24, date: "2026-07-16", nome: "Esclarecimento fiscal avulso", status: "em-andamento", competencia: "Jul/2026",
+        clienteId: "farmelhor", razaoSocial: "DROGARIA FARMELHOR TAQUARALTO LTDA", cnpj: "00.000.000/0001-00",
+        endereco: "Av. Tocantins, 1200 — Taquaralto, Palmas/TO", responsavel: "Juliana Reis", prazoLegal: "22/07/2026",
+        origem: "solicitacao",
+      },
+      {
+        id: 25, date: "2026-07-15", nome: "Cópia de contrato social", status: "pendente", competencia: "Jul/2026",
+        clienteId: "centro", razaoSocial: "FARMACIA CENTRO LTDA", cnpj: "11.111.111/0001-11",
+        endereco: "Rua Goiás, 450 — Centro, Goiânia/GO", responsavel: "Juliana Reis", prazoLegal: "19/07/2026",
+        origem: "solicitacao",
+      },
     ];
+
+    /** Solicitações externas (demandas avulsas do cliente); demais = entregas internas programadas. */
+    const ENTREGA_SOLICITACAO_IDS = new Set([6, 9, 11, 13, 16, 20, 23, 24, 25]);
+    agendaTasks.forEach((t) => {
+      if (!t.origem) t.origem = ENTREGA_SOLICITACAO_IDS.has(t.id) ? "solicitacao" : "interna";
+    });
+
+    function getEntregaOrigem(t) {
+      return t?.origem === "solicitacao" ? "solicitacao" : "interna";
+    }
+
+    function matchesCliEntregaOrigem(t) {
+      if (!cliEntregaOrigem) return true;
+      return getEntregaOrigem(t) === cliEntregaOrigem;
+    }
+
+    function renderCliEntregaOrigemToggle() {
+      const opts = [
+        { id: "", label: "Todas" },
+        { id: "interna", label: "Internas" },
+        { id: "solicitacao", label: "Solicitações externas" },
+      ];
+      return `
+        <div class="fin-side-toggles" role="group" aria-label="Tipo de entrega">
+          ${opts.map((o) => `
+            <button type="button" class="${cliEntregaOrigem === o.id ? "active" : ""}" data-cli-ent-origem="${o.id}" aria-pressed="${cliEntregaOrigem === o.id}">${o.label}</button>
+          `).join("")}
+        </div>`;
+    }
 
     function isoDate(y, m, d) {
       return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -1354,6 +1410,8 @@
     let cliEntregaStatus = "";
     let cliEntregaKpiFilter = null;
     let cliEntregaResp = "";
+    /** Filtro da aba Entregas: "" | "interna" | "solicitacao" */
+    let cliEntregaOrigem = "";
     /** Accordion do Quadro de Entregas (portal) · seções abertas por padrão */
     let cliEntregaAccord = { atrasadas: true, abertas: true, prazo: true };
     let cliEntregaMonth = new Date(2026, 6, 1);
@@ -1498,6 +1556,8 @@
     };
     let cliFeedFilter = "todos"; // todos | geral | privado | contatos | fiscal | financeiro | operacional | preferencias
     let cliFeedByClient = {};
+    /** Senhas do cliente (origem / login / senha) · aba Notas e senhas */
+    let cliSenhasByClient = {};
     const CLI_FEED_ME = { nome: "Ana Costa", cargo: "Fiscal", initials: "AC" };
     const CLI_FEED_TEMAS = [
       { id: "contatos", label: "Contatos" },
@@ -1559,7 +1619,7 @@
       { id: "processos", label: "Processos" },
       { id: "funcionarios", label: "Funcionários" },
       { id: "documentos", label: "Documentos" },
-      { id: "comentarios", label: "Comentários" },
+      { id: "comentarios", label: "Notas e senhas" },
       { id: "entregas", label: "Entregas" },
       { id: "xml", label: "XML" },
       { id: "financeiro", label: "Financeiro" },
@@ -2882,6 +2942,7 @@
     const agendaCal = document.getElementById("agendaCal");
     const agendaFeed = document.getElementById("agendaFeed");
     const procKpis = document.getElementById("procKpis");
+    const procEvolucao = document.getElementById("procEvolucao");
     const procFilters = document.getElementById("procFilters");
     const procGrid = document.getElementById("procGrid");
     const dashboard = document.getElementById("dashboard");
@@ -3125,6 +3186,12 @@
                 ${options}
               </div>
               <div class="empresa-empty" id="modEmpresaEmpty-${sc}" hidden>Nenhuma empresa encontrada</div>
+              <div class="empresa-menu-foot">
+                <button type="button" class="empresa-add-btn" data-empresa-add>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                  Adicionar empresa
+                </button>
+              </div>
             </div>
           </div>
         </div>`;

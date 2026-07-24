@@ -1967,6 +1967,12 @@
                 ${options}
               </div>
               <div class="empresa-empty" id="finEmpresaEmpty">Nenhuma empresa encontrada</div>
+              <div class="empresa-menu-foot">
+                <button type="button" class="empresa-add-btn" data-empresa-add>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                  Adicionar empresa
+                </button>
+              </div>
             </div>
           </div>
         </div>`;
