@@ -58,14 +58,7 @@ $jsPath = Join-Path $root "app.js"
 $indexPath = Join-Path $root "index.html"
 Copy-Item -Path $out -Destination $indexPath -Force
 
-# Publicação GitHub Pages: espelha o build na raiz do repositório
-$parent = Split-Path $root -Parent
-Copy-Item -Path $out -Destination (Join-Path $parent "index.html") -Force
-Copy-Item -Path $out -Destination (Join-Path $parent "menu-suspenso.html") -Force
-Copy-Item -Path $cssPath -Destination (Join-Path $parent "styles.css") -Force
-Copy-Item -Path $jsPath -Destination (Join-Path $parent "app.js") -Force
-
-Write-Host "OK -> styles.css, app.js, menu-suspenso.html, index.html (+ raiz)"
+Write-Host "OK -> styles.css, app.js, menu-suspenso.html, index.html"
 Write-Host ("styles.css:        {0:N0} bytes" -f (Get-Item $cssPath).Length)
 Write-Host ("app.js:            {0:N0} bytes" -f (Get-Item $jsPath).Length)
 Write-Host ("menu-suspenso.html: {0:N0} bytes" -f (Get-Item $out).Length)
