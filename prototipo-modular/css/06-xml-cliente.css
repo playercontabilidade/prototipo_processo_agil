@@ -516,7 +516,7 @@
     .cli-docs-hub {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       --cli-docs-blue: var(--accent);
     }
 
@@ -524,22 +524,22 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
     .cli-docs-toolbar-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       min-width: 0;
     }
 
     .cli-docs-folder-heading {
       margin: 0;
-      font-size: 1rem;
-      font-weight: 750;
-      color: var(--cli-docs-blue);
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--navy-deep);
     }
 
     .cli-docs-back {
@@ -550,15 +550,16 @@
       background: var(--surface);
       border-radius: var(--radius-sm);
       padding: 6px 10px;
+      min-height: 36px;
       font-family: inherit;
       font-size: .78rem;
       font-weight: 650;
-      color: var(--cli-docs-blue);
+      color: var(--accent);
       cursor: pointer;
     }
 
     .cli-docs-back:hover {
-      border-color: color-mix(in srgb, var(--cli-docs-blue) 35%, var(--border));
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
     }
 
     .cli-docs-toolbar-actions {
@@ -567,6 +568,11 @@
       gap: 8px;
       flex-wrap: wrap;
       margin-left: auto;
+    }
+
+    .cli-docs-toolbar-actions .btn-ghost,
+    .cli-docs-toolbar-actions .btn-primary {
+      min-height: 36px;
     }
 
     .cli-docs-upload-input {
@@ -677,14 +683,14 @@
     .cli-docs-folders-block {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .cli-docs-folders-label {
-      font-size: .72rem;
-      font-weight: 700;
-      letter-spacing: .04em;
-      text-transform: uppercase;
+      font-size: .76rem;
+      font-weight: 650;
+      letter-spacing: 0;
+      text-transform: none;
       color: var(--muted);
     }
 
@@ -751,13 +757,13 @@
     .cli-docs-folders {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 16px;
-      padding: 4px 2px 12px;
+      gap: 10px;
+      padding: 2px 0 8px;
       align-items: stretch;
     }
 
     .cli-docs-folder-card {
-      --cli-docs-tag: color-mix(in srgb, var(--accent) 14%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--accent) 10%, var(--surface));
       --cli-docs-tag-ink: var(--accent);
       appearance: none;
       -webkit-appearance: none;
@@ -766,68 +772,69 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      min-height: 168px;
-      padding: 26px 16px 18px;
-      border: 1px solid color-mix(in srgb, var(--border) 85%, var(--surface));
+      gap: 8px;
+      min-height: 132px;
+      padding: 16px 12px 12px;
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       background: var(--surface);
-      box-shadow: 0 1px 3px rgba(28, 56, 110, 0.06), 0 4px 14px rgba(28, 56, 110, 0.04);
-      color: var(--cli-docs-blue);
+      box-shadow: none;
+      color: var(--navy-deep);
       cursor: pointer;
       font-family: inherit;
       text-align: center;
       overflow: hidden;
-      transition: transform .18s var(--ease, ease), box-shadow .18s var(--ease, ease), border-color .18s var(--ease, ease);
+      transition: border-color .15s ease, background .15s ease;
     }
 
-    /* Etiqueta / aba — tons do projeto (accent, navy, secondary, ok, muted) */
+    /* Etiqueta / aba — tons contidos (tokens do sistema) */
     .cli-docs-folder-card[data-tag="blue"],
     .cli-docs-folder-card[data-tag="accent"] {
-      --cli-docs-tag: color-mix(in srgb, var(--accent) 14%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--accent) 10%, var(--surface));
       --cli-docs-tag-ink: var(--accent);
     }
     .cli-docs-folder-card[data-tag="red"],
     .cli-docs-folder-card[data-tag="navy"] {
-      --cli-docs-tag: color-mix(in srgb, var(--navy-deep) 12%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--navy-deep) 8%, var(--surface));
       --cli-docs-tag-ink: var(--navy-deep);
     }
     .cli-docs-folder-card[data-tag="yellow"],
     .cli-docs-folder-card[data-tag="secondary"] {
-      --cli-docs-tag: color-mix(in srgb, var(--secondary) 28%, var(--surface));
-      --cli-docs-tag-ink: color-mix(in srgb, var(--secondary) 55%, var(--navy-deep));
+      --cli-docs-tag: color-mix(in srgb, var(--secondary) 18%, var(--surface));
+      --cli-docs-tag-ink: color-mix(in srgb, var(--secondary) 40%, var(--navy-deep));
     }
     .cli-docs-folder-card[data-tag="green"],
     .cli-docs-folder-card[data-tag="ok"] {
-      --cli-docs-tag: color-mix(in srgb, var(--ok) 14%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--ok) 10%, var(--surface));
       --cli-docs-tag-ink: var(--ok);
     }
     .cli-docs-folder-card[data-tag="purple"],
     .cli-docs-folder-card[data-tag="muted"] {
-      --cli-docs-tag: color-mix(in srgb, var(--muted) 14%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--muted) 10%, var(--surface));
       --cli-docs-tag-ink: var(--muted);
     }
 
     .cli-docs-folder-tab {
       position: absolute;
       top: 0;
-      left: 14px;
-      width: 42%;
-      max-width: 72px;
-      height: 8px;
-      border-radius: 0 0 8px 8px;
+      left: 12px;
+      width: 36%;
+      max-width: 56px;
+      height: 4px;
+      border-radius: 0 0 6px 6px;
       background: var(--cli-docs-tag);
-      box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--cli-docs-tag-ink) 12%, transparent);
+      box-shadow: none;
     }
 
     .cli-docs-folder-card:hover {
-      transform: translateY(-2px);
-      border-color: color-mix(in srgb, var(--cli-docs-tag-ink) 22%, var(--border));
-      box-shadow: 0 4px 12px rgba(28, 56, 110, 0.1), 0 8px 22px rgba(28, 56, 110, 0.06);
+      transform: none;
+      border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+      background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+      box-shadow: none;
     }
 
     .cli-docs-folder-card:focus-visible {
-      outline: 2px solid color-mix(in srgb, var(--cli-docs-tag-ink) 55%, transparent);
+      outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
       outline-offset: 2px;
     }
 
@@ -835,33 +842,34 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
       color: var(--cli-docs-tag-ink);
       background: var(--cli-docs-tag);
     }
 
     .cli-docs-folder-ico svg {
-      width: 28px;
-      height: 28px;
+      width: 20px;
+      height: 20px;
       fill: none;
       stroke: currentColor;
-      stroke-width: 1.75;
+      stroke-width: 1.85;
     }
 
     .cli-docs-folder-card[data-kind="plain"] .cli-docs-folder-ico svg {
-      fill: color-mix(in srgb, var(--cli-docs-tag-ink) 16%, transparent);
+      fill: color-mix(in srgb, var(--cli-docs-tag-ink) 12%, transparent);
       stroke: currentColor;
     }
 
     .cli-docs-folder-title {
       margin: 0;
       font-size: .78rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
+      font-weight: 650;
+      letter-spacing: 0;
       line-height: 1.25;
-      color: var(--cli-docs-blue);
+      color: var(--navy-deep);
+      text-transform: none;
       max-width: 100%;
       word-break: break-word;
     }
@@ -870,12 +878,12 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 4px 10px;
+      padding: 2px 8px;
       border-radius: var(--radius-pill);
-      border: 1px solid color-mix(in srgb, var(--cli-docs-tag-ink) 14%, var(--border));
-      background: color-mix(in srgb, var(--cli-docs-tag) 55%, var(--surface-2));
-      color: color-mix(in srgb, var(--cli-docs-tag-ink) 45%, var(--muted));
-      font-size: .68rem;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+      color: var(--muted);
+      font-size: .66rem;
       font-weight: 600;
       line-height: 1.2;
       white-space: nowrap;
@@ -1042,8 +1050,8 @@
     }
 
     @media (max-width: 720px) {
-      .cli-docs-folders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-      .cli-docs-folder-card { min-height: 148px; padding: 18px 12px 14px; }
+      .cli-docs-folders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .cli-docs-folder-card { min-height: 120px; padding: 14px 10px 10px; }
       .cli-docs-toolbar-actions { width: 100%; }
     }
 

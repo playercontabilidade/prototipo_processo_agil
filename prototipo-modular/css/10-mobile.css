@@ -1,0 +1,613 @@
+    /* =========================================================
+       Mobile · Processo Ágil (revisão)
+       Breakpoint: 720px
+       Foco: ocultar densidades + adaptar sem quebrar texto
+       ========================================================= */
+
+    @media (max-width: 720px) {
+      /* --- Ocultações --- */
+      .chat-fab,
+      .chat-panel,
+      .chat-panel.open,
+      #chatFab,
+      #chatPanel {
+        display: none !important;
+      }
+
+      .btn-expand,
+      [data-cli-perfil-expand],
+      .modal-head-tools .btn-expand,
+      .fin-header-tools .btn-expand,
+      .fin-conc-toolbar-right .btn-expand {
+        display: none !important;
+      }
+
+      .brand-text small {
+        display: none !important;
+      }
+
+      .user-meta {
+        display: none !important;
+      }
+
+      .page-rich-header .info-chips,
+      #infoChips {
+        display: none !important;
+      }
+
+      .cli-cert-card,
+      .cli-cert-card .cli-cert-text,
+      .cli-cert-card .cli-cert-detail,
+      .cli-cert-card > span:not(.cert-ico) {
+        display: none !important;
+      }
+
+      .cli-dados-btn .cli-dados-btn-label {
+        display: none !important;
+      }
+
+      /* Chips de regime/UF/status no perfil (portal e escritório) */
+      .cli-perfil-chips {
+        display: none !important;
+      }
+
+      /* Data por extenso no quadro de entregas */
+      .agenda-entregas-head .sub,
+      .cli-entregas-espelho .agenda-entregas-head .sub {
+        display: none !important;
+      }
+
+      /* Status duplica Todas/Internas/Externas no portal */
+      .cli-entregas-espelho #cliEntregaStatusWrap,
+      .cli-entregas-espelho .agenda-entregas-filters .proc-filter.agenda-ops-status {
+        display: none !important;
+      }
+
+      /* Abas do topo: só ícone + tooltip (data-tip) */
+      .text-tabs {
+        gap: 4px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+
+      .text-tab {
+        flex: 0 0 auto !important;
+        min-width: auto !important;
+        max-width: none !important;
+        padding: 8px 10px 10px !important;
+        gap: 0;
+      }
+
+      .text-tab .tab-label {
+        display: none !important;
+      }
+
+      .text-tab .tab-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .text-tab .tab-close {
+        margin-left: 2px;
+      }
+
+      /* Portal: identidade sem certificado */
+      body.is-cliente-portal .cli-perfil-head-main {
+        grid-template-columns: 1fr !important;
+        align-items: start;
+        gap: 8px;
+      }
+
+      body.is-cliente-portal .cli-perfil-identity {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      body.is-cliente-portal .cli-perfil-identity > h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        line-height: 1.25;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      body.is-cliente-portal .cli-perfil-head-actions {
+        display: none !important;
+      }
+
+      .kanban-wrap,
+      .kanban-wrap.show {
+        display: none !important;
+      }
+
+      .fin-dash-kpis.volume,
+      #procEvolucao,
+      .proc-evolucao,
+      .fin-exec-charts,
+      .cli-fin-report-charts .cli-fin-report-chart-card:nth-child(n + 2),
+      .cli-fin-audit-dash-grid .fin-mini-chart:not(:first-child),
+      .cli-fin-report-meta {
+        display: none !important;
+      }
+
+      .cli-list-kpis > :nth-child(n + 4),
+      .cfg-sess-kpis > :nth-child(n + 4),
+      .proc-kpis > :nth-child(n + 4),
+      .agenda-kpis > :nth-child(n + 4) {
+        display: none !important;
+      }
+
+      /* --- Texto: regras anti-quebra --- */
+      .brand-text h1,
+      .cli-tab,
+      .cli-fin-subnav button,
+      .fin-tabs button,
+      .cfg-tabs button,
+      .proc-badge,
+      .cli-badge,
+      .agenda-tag {
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: unset;
+        word-break: normal;
+        overflow-wrap: normal;
+      }
+
+      .proc-kpi .kpi-top span,
+      .agenda-kpi .kpi-top span,
+      .fin-dash-kpi .kpi-top span,
+      .cli-list-kpis .kpi-top span {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+        hyphens: manual;
+        line-height: 1.25;
+      }
+
+      .proc-kpi .kpi-value,
+      .agenda-kpi .kpi-value,
+      .fin-dash-kpi .kpi-value {
+        white-space: nowrap;
+      }
+
+      /* --- Topbar --- */
+      .topbar {
+        padding-inline: 10px;
+        gap: 8px;
+      }
+
+      .brand-text h1 {
+        font-size: 1rem;
+        letter-spacing: -0.01em;
+      }
+
+      .user-chip {
+        padding-inline: 6px;
+        gap: 0;
+      }
+
+      /* --- Perfil --- */
+      .cli-perfil-tabs-bar {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        flex-wrap: nowrap !important;
+        gap: 8px;
+      }
+
+      .cli-perfil-tabs-bar .cli-tabs {
+        display: flex;
+        flex-wrap: nowrap !important;
+        width: max-content;
+        min-width: max-content;
+        flex: 0 0 auto;
+        gap: 4px;
+      }
+
+      .cli-perfil-tabs-bar .cli-tab {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: auto !important;
+        max-width: none !important;
+        padding: 8px 12px;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        white-space: nowrap !important;
+      }
+
+      .cli-perfil-head-main {
+        grid-template-columns: 1fr auto !important;
+        align-items: start;
+        gap: 10px;
+      }
+
+      .cli-perfil-head-actions {
+        display: inline-flex;
+        gap: 8px;
+        justify-self: end;
+      }
+
+      .cli-cert-card {
+        width: 40px;
+        min-width: 40px;
+        height: 40px;
+        padding: 0;
+        justify-content: center;
+        align-items: center;
+        border-radius: var(--radius-sm);
+      }
+
+      .cli-cert-card .cert-ico {
+        margin: 0;
+      }
+
+      .cli-dados-btn {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        padding: 0;
+        justify-content: center;
+      }
+
+      .cli-perfil-head-left .module-empresa-picker,
+      .cli-perfil-head-left .module-empresa-picker.is-perfil {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .cli-perfil-head-left .module-empresa-picker .empresa-wrap,
+      .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-name {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      .cli-perfil-head-left .module-empresa-picker .empresa-trigger .name-line {
+        white-space: normal;
+        overflow: visible;
+        flex-wrap: wrap;
+      }
+
+      .cli-perfil-ops.is-expanded,
+      .content-panel.is-expanded {
+        inset: 0 !important;
+        border-radius: 0 !important;
+      }
+
+      /* --- KPIs --- */
+      .cli-list-kpis,
+      .cfg-sess-kpis,
+      .proc-kpis,
+      .agenda-kpis,
+      .fin-dash-kpis.health,
+      .fin-exec-kpis,
+      .xml-kpis,
+      .cli-honor-kpis,
+      .cli-fin-report-kpis,
+      .cli-fin-report-kpis.is-exec {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+      }
+
+      .proc-kpi,
+      .agenda-kpi,
+      .fin-dash-kpi {
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      /* --- Filtros: busca + empresa; extras ocultos --- */
+      .cli-list-toolbar .proc-filter.field,
+      .cli-tab-toolbar .proc-filter.field,
+      .proc-filters-like .proc-filter.field,
+      .fin-ofx-filters .proc-filter:not(.search),
+      .fin-op-filters .proc-filter:not(.search),
+      .cli-fin-mov-toolbar .proc-filter:not(.search),
+      .cli-xml-filters .proc-filter:not(.search),
+      .agenda-quick-filters,
+      .cli-list-toolbar .agenda-ops-view,
+      .cli-tab-toolbar .proc-view-toggle,
+      .proc-actions .proc-view-toggle {
+        display: none !important;
+      }
+
+      .cli-list-toolbar .proc-filter.search,
+      .cli-tab-toolbar .proc-filter.search,
+      .proc-filters-like .proc-filter.search {
+        flex: 1 1 auto !important;
+        max-width: none !important;
+        min-width: 140px !important;
+        width: auto;
+      }
+
+      .cli-list-toolbar,
+      .cli-tab-toolbar.proc-filters-like,
+      .proc-filters,
+      .fin-dash-toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .cli-list-toolbar .module-empresa-picker,
+      .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker {
+        flex: 1 1 100%;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .cli-list-toolbar .module-empresa-picker .empresa-wrap,
+      .cli-list-toolbar .module-empresa-picker .empresa-trigger {
+        width: 100%;
+      }
+
+      .cli-list-toolbar .module-empresa-picker .empresa-trigger .empresa-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* --- Dual / stack --- */
+      .cli-fin-dual {
+        grid-template-columns: 1fr !important;
+      }
+
+      .fin-pmap-modal .fin-pmap-grid,
+      .fin-gerar-titulo-modal .fin-gerar-grid,
+      .modal.wide .cfg-obr-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cli-fin-report-charts {
+        grid-template-columns: 1fr !important;
+      }
+
+      .etapa-kanban {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* --- Modais --- */
+      .modal,
+      .modal.wide,
+      .modal.cli-fin-audit-modal,
+      .modal.cli-fin-audit-rules-modal,
+      .modal.fin-ofx-import-modal,
+      .modal.fin-pmap-modal,
+      .modal.fin-gerar-titulo-modal,
+      .modal.cfg-obr-modal {
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        max-height: calc(100dvh - 16px);
+        margin: 8px auto;
+      }
+
+      .modal-body {
+        max-height: min(62dvh, 520px) !important;
+      }
+
+      .modal-title,
+      .modal-sub {
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      .modal.fin-ofx-import-modal .modal-body::before,
+      .modal.fin-pmap-modal .modal-body::before,
+      .modal.fin-gerar-titulo-modal .modal-body::before,
+      .modal.cli-fin-audit-modal .modal-body::before,
+      .modal.cfg-obr-modal .modal-body::before {
+        content: "Versão simplificada no celular. Use o desktop para a operação completa.";
+        display: block;
+        margin: 0 0 12px;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+        color: var(--muted);
+        font-size: .72rem;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      /* --- Abas: scroll horizontal sem truncar rótulo --- */
+      .fin-tabs,
+      .fin-tabs-bar,
+      .fin-report-nav,
+      .fin-config-nav,
+      .cfg-tabs,
+      .cfg-sess-tabs,
+      .cli-fin-subnav,
+      .text-tabs {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        gap: 6px;
+      }
+
+      .fin-tabs button,
+      .fin-report-nav button,
+      .fin-config-nav button,
+      .cfg-tabs button,
+      .cli-fin-subnav button,
+      .text-tabs button {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        max-width: none !important;
+      }
+
+      /* --- Tabelas: scroll horizontal (não esmagar colunas) --- */
+      .proc-list-head,
+      .sec-list-head,
+      .cli-list-head {
+        display: none !important;
+      }
+
+      .cli-fin-tit-table,
+      .cfg-sess-table,
+      .cfg-table,
+      .laudo-full-table,
+      .agenda-table,
+      .sec-list,
+      .proc-grid.is-list {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .cli-fin-tit-table table,
+      .cfg-sess-table table,
+      .cfg-table table,
+      .laudo-full-table table,
+      .agenda-table table {
+        width: max-content;
+        min-width: 100%;
+        max-width: none;
+      }
+
+      .cli-fin-tit-table th,
+      .cli-fin-tit-table td,
+      .cfg-sess-table th,
+      .cfg-sess-table td,
+      .cfg-table th,
+      .cfg-table td,
+      .laudo-full-table th,
+      .laudo-full-table td {
+        white-space: nowrap;
+      }
+
+      /* Lista de processos em card no mobile */
+      .proc-list-row {
+        grid-template-columns: 1fr auto !important;
+        grid-template-areas:
+          "title actions"
+          "status actions"
+          "empresa empresa"
+          "prog prog"
+          "meta meta" !important;
+        gap: 6px 10px !important;
+        padding: 12px !important;
+        align-items: start;
+      }
+
+      .proc-list-row .title-cell {
+        grid-area: title;
+        min-width: 0;
+      }
+
+      .proc-list-row .title-cell strong {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      .proc-list-row .cell-status { grid-area: status; justify-self: start; }
+      .proc-list-row .cell-actions { grid-area: actions; justify-self: end; }
+      .proc-list-row .cell-empresa { grid-area: empresa; }
+      .proc-list-row .cell-prog { grid-area: prog; }
+      .proc-list-row .cell-dept,
+      .proc-list-row .cell-resp,
+      .proc-list-row .cell-comp,
+      .proc-list-row .cell-inicio,
+      .proc-list-row .cell-fim {
+        grid-area: meta;
+        display: inline;
+      }
+
+      .proc-list-row .cell-dept::after,
+      .proc-list-row .cell-resp::after,
+      .proc-list-row .cell-comp::after,
+      .proc-list-row .cell-inicio::after {
+        content: " · ";
+        color: var(--muted);
+      }
+
+      .proc-list-row .cell-fim::after {
+        content: none;
+      }
+
+      /* --- Calendário --- */
+      .agenda-cal-grid,
+      .cfg-cal-grid {
+        gap: 2px;
+      }
+
+      .agenda-cal-grid .day,
+      .cfg-cal-grid .day {
+        min-height: 34px;
+        font-size: .68rem;
+        padding: 3px;
+        overflow: hidden;
+      }
+
+      /* --- Painel --- */
+      .panel-body {
+        padding: 10px;
+      }
+
+      .panel-toolbar {
+        padding: 8px 10px;
+        min-height: 0;
+      }
+
+      .cli-docs-folders {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px;
+      }
+
+      .cli-docs-folder-title {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      .toast {
+        left: 16px;
+        right: 16px;
+        max-width: none;
+      }
+
+      .fake-row strong,
+      .fake-row span {
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .cli-list-kpis,
+      .proc-kpis,
+      .agenda-kpis,
+      .fin-dash-kpis.health {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cli-docs-folders {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cli-perfil-head-main {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cli-perfil-head-actions {
+        justify-self: start;
+      }
+    }

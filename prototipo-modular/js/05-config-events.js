@@ -1033,9 +1033,9 @@
                   <span class="cert-ico" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   </span>
-                  <span>
+                  <span class="cli-cert-text">
                     <strong>Certificado digital</strong>
-                    <span>${cert.label} · ${certRow.validadeLabel}</span>
+                    <span class="cli-cert-detail">${cert.label} · ${certRow.validadeLabel}</span>
                   </span>
                 </button>
               </div>
@@ -1220,6 +1220,25 @@
       const hasItems = section.items && section.items.length > 0;
 
       if (section.kanban) {
+        if (typeof isMobileUi === "function" ? isMobileUi() : window.matchMedia("(max-width: 720px)").matches) {
+          kanbanWrap.classList.remove("show");
+          kanbanBoard.innerHTML = "";
+          emptyState.classList.toggle("hide", hasItems);
+          fakeList.classList.toggle("show", hasItems);
+          if (!hasItems) {
+            fakeList.innerHTML = "";
+            return;
+          }
+          fakeList.innerHTML = (section.items || []).map((item, i) => `
+            <button type="button" class="fake-row tip-bottom" data-tip="Abrir: ${item.title}" data-item="${i}">
+              <div>
+                <strong>${item.title}</strong><br>
+                <span>${item.meta || ""}</span>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            </button>`).join("");
+          return;
+        }
         fakeList.classList.remove("show");
         fakeList.innerHTML = "";
         emptyState.classList.add("hide");
@@ -1246,9 +1265,52 @@
         </button>`).join("");
     }
 
+    function syncExpandButtonUi(btn, on, tipExpand = "Expandir para tela toda") {
+      if (!btn) return;
+      const expandIcon = btn.querySelector(".icon-expand");
+      const collapseIcon = btn.querySelector(".icon-collapse");
+      if (expandIcon) expandIcon.hidden = on;
+      if (collapseIcon) collapseIcon.hidden = !on;
+      btn.setAttribute("data-tip", on ? "Sair da tela toda" : tipExpand);
+      btn.setAttribute("aria-label", on ? "Sair da tela toda" : tipExpand);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    function setCliPerfilBodyExpanded(on) {
+      const active = !!on && cliView === "perfil";
+      cliPerfilBodyExpanded = active;
+      if (active && contentPanel.classList.contains("is-expanded")) {
+        contentPanel.classList.remove("is-expanded");
+        syncExpandButtonUi(expandBtn, false);
+      }
+      if (active && typeof setFinConcOpsExpanded === "function" && finDash?.conc?.opsExpanded) {
+        setFinConcOpsExpanded(false);
+      }
+      const ops = document.getElementById("cliPerfilOps");
+      ops?.classList.toggle("is-expanded", active);
+      document.getElementById("cliPerfilBody")?.classList.remove("is-expanded");
+      expandBackdrop.classList.toggle("show", active || contentPanel.classList.contains("is-expanded"));
+      document.body.classList.toggle("cli-perfil-body-expanded", active);
+      document.body.classList.toggle("panel-expanded", active || contentPanel.classList.contains("is-expanded"));
+      document.body.classList.remove("fin-conc-ops-expanded");
+      document.body.style.overflow = (active || contentPanel.classList.contains("is-expanded")) ? "hidden" : "";
+      document.querySelectorAll("[data-cli-perfil-expand]").forEach((btn) => {
+        syncExpandButtonUi(btn, active, "Expandir área operacional");
+      });
+    }
+
     function setExpanded(on) {
       if (on && typeof setFinConcOpsExpanded === "function" && finDash?.conc?.opsExpanded) {
         setFinConcOpsExpanded(false);
+      }
+      if (on && cliPerfilBodyExpanded) {
+        cliPerfilBodyExpanded = false;
+        document.getElementById("cliPerfilOps")?.classList.remove("is-expanded");
+        document.getElementById("cliPerfilBody")?.classList.remove("is-expanded");
+        document.body.classList.remove("cli-perfil-body-expanded");
+        document.querySelectorAll("[data-cli-perfil-expand]").forEach((btn) => {
+          syncExpandButtonUi(btn, false, "Expandir área operacional");
+        });
       }
       contentPanel.classList.toggle("is-expanded", on);
       expandBackdrop.classList.toggle("show", on);
@@ -1260,12 +1322,7 @@
       document.getElementById("tabSwitcherBtn")?.setAttribute("aria-expanded", "false");
       filterWrap?.classList.remove("open");
       filterBtn?.setAttribute("aria-expanded", "false");
-      const expandIcon = expandBtn.querySelector(".icon-expand");
-      const collapseIcon = expandBtn.querySelector(".icon-collapse");
-      expandIcon.hidden = on;
-      collapseIcon.hidden = !on;
-      expandBtn.setAttribute("data-tip", on ? "Sair da tela toda" : "Expandir para tela toda");
-      expandBtn.setAttribute("aria-label", on ? "Sair da tela toda" : "Expandir");
+      syncExpandButtonUi(expandBtn, on);
       document.body.style.overflow = on ? "hidden" : "";
       if (on) renderTabSwitcher();
     }
@@ -1785,12 +1842,23 @@
       }
       const tab = e.target.closest("[data-cli-tab]");
       if (tab) {
-        cliPerfilTab = tab.dataset.cliTab || "obrigacoes";
+        const next = tab.dataset.cliTab || "entregas";
+        if (next === "obrigacoes") {
+          cliPerfilTab = "entregas";
+          cliEntregaSubTab = "obrigacoes";
+        } else {
+          cliPerfilTab = next;
+        }
         if (cliPerfilTab !== "documentos") {
           cliDocsFolderId = null;
           cliDocsFileMenuId = null;
         }
         renderClientes();
+        return;
+      }
+      const perfilExpand = e.target.closest("[data-cli-perfil-expand]");
+      if (perfilExpand) {
+        setCliPerfilBodyExpanded(!cliPerfilBodyExpanded);
         return;
       }
       if (e.target.closest("[data-cli-doc-back]")) {
@@ -2122,6 +2190,27 @@
         renderClientes();
         return;
       }
+      const entSub = e.target.closest("[data-cli-ent-sub]");
+      if (entSub) {
+        cliPerfilTab = "entregas";
+        cliEntregaSubTab = entSub.dataset.cliEntSub === "obrigacoes" ? "obrigacoes" : "execucao";
+        renderClientes();
+        return;
+      }
+      const procSub = e.target.closest("[data-cli-proc-sub]");
+      if (procSub) {
+        cliPerfilTab = "processos";
+        cliProcSubTab = procSub.dataset.cliProcSub === "recorrencias" ? "recorrencias" : "execucao";
+        renderClientes();
+        return;
+      }
+      const procRecAct = e.target.closest("[data-cli-proc-rec]");
+      if (procRecAct) {
+        if (procRecAct.dataset.cliProcRec === "criar") {
+          openProcRecorrenciaModal(cliPerfilId);
+        }
+        return;
+      }
       const cliAuditAct = e.target.closest("[data-cli-fin-audit]");
       if (cliAuditAct) {
         const act = cliAuditAct.dataset.cliFinAudit;
@@ -2255,7 +2344,8 @@
               interna: true,
             });
             closeModal();
-            cliPerfilTab = "obrigacoes";
+            cliPerfilTab = "entregas";
+            cliEntregaSubTab = "obrigacoes";
             renderClientes();
             toast("Obrigação interna criada");
           });
@@ -3379,13 +3469,10 @@
       const kind = action.dataset.procAction;
       if (kind === "add") openAddProcessoModal();
       else if (kind === "recorrencia") {
-        openModal({
-          title: "Criar recorrência",
-          sub: "Molde com recorrência (simulação)",
-          body: `<p style="font-size:.84rem;color:var(--muted)">Simulação do <code>SelecaoProcessoMoldeRecorrenciaDialog</code>.</p>`,
-          foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>
-            <button type="button" class="btn-primary" data-close onclick="toast('Recorrência criada')">Confirmar</button>`,
-        });
+        const empresaId = (typeof procEmpresaFilter === "string" && procEmpresaFilter && procEmpresaFilter !== "all")
+          ? procEmpresaFilter
+          : (cliPerfilId || null);
+        openProcRecorrenciaModal(empresaId);
       } else if (kind === "arquivados") {
         procFiltros.arquivados = !procFiltros.arquivados;
         renderProcessos();
@@ -3400,12 +3487,65 @@
     });
 
     modalBody.addEventListener("click", (e) => {
+      const moldeAssociar = e.target.closest("[data-cli-proc-molde-associar]");
+      if (moldeAssociar) {
+        openCriarProcessoFromMoldeModal(moldeAssociar.dataset.cliProcMoldeAssociar);
+        return;
+      }
+      const moldeCriar = e.target.closest("[data-cli-proc-molde-criar]");
+      if (moldeCriar) {
+        if (moldeCriar.disabled) return;
+        const moldeId = moldeCriar.dataset.cliProcMoldeCriar;
+        const cid = modal?.dataset?.cliProcRecCliente || cliPerfilId;
+        const res = associateCliProcRecorrencia(cid, moldeId);
+        if (!res.ok) {
+          toast(res.reason === "exists" ? "Recorrência já associada" : "Não foi possível criar a recorrência");
+          return;
+        }
+        const molde = getProcMoldeById(moldeId);
+        toast(`Recorrência criada: ${molde?.nome || "molde"}`);
+        closeModal();
+        cliProcSubTab = "recorrencias";
+        if (cliView === "perfil") renderClientes();
+        return;
+      }
       const etapa = e.target.closest("[data-etapa-id]");
       if (!etapa) return;
       const proc = sections.find((s) => s.id === "processos")?.items.find((p) => String(p.id) === etapa.dataset.procId);
       const et = proc?.etapas?.find((x) => String(x.id) === etapa.dataset.etapaId);
       if (!et) return;
       toast(`Etapa: ${et.nome}`);
+    });
+
+    modalBody.addEventListener("input", (e) => {
+      if (e.target?.id === "procMoldeAvulsoSearch") {
+        const list = document.getElementById("procMoldeAvulsoList");
+        if (!list) return;
+        const wrap = list.parentElement;
+        const q = e.target.value || "";
+        const html = renderProcMoldeAvulsoPickHtml(q);
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        const nextList = tmp.querySelector("#procMoldeAvulsoList");
+        if (nextList) list.replaceWith(nextList);
+        const search = wrap?.querySelector("#procMoldeAvulsoSearch");
+        if (search && document.activeElement !== search) {
+          search.value = q;
+        }
+        return;
+      }
+      if (e.target?.id === "procCriarNomeCustom") {
+        const wrap = document.getElementById("procCriarNomeWrap");
+        if (wrap) wrap.hidden = !e.target.checked;
+      }
+    });
+
+    modalBody.addEventListener("change", (e) => {
+      if (e.target?.id === "procCriarNomeCustom") {
+        const wrap = document.getElementById("procCriarNomeWrap");
+        if (wrap) wrap.hidden = !e.target.checked;
+        if (e.target.checked) document.getElementById("procCriarNome")?.focus();
+      }
     });
 
     const empresaSearch = document.getElementById("empresaSearch");
@@ -3819,6 +3959,20 @@
         }
         return;
       }
+      const criarAct = e.target.closest("[data-cli-proc-criar]");
+      if (criarAct) {
+        const act = criarAct.dataset.cliProcCriar;
+        if (act === "voltar") {
+          const clienteId = modal.dataset.procAddCliente || resolveProcAddClienteId();
+          modal.dataset.procAddCliente = clienteId || "";
+          openAddProcessoModal();
+          return;
+        }
+        if (act === "associar") {
+          confirmCriarProcessoFromMolde();
+          return;
+        }
+      }
       if (e.target === backdrop || e.target.closest("[data-close]")) closeModal();
     });
     backdrop.addEventListener("change", (e) => {
@@ -3880,6 +4034,10 @@
     expandBackdrop.addEventListener("click", () => {
       if (finDash?.conc?.opsExpanded && typeof setFinConcOpsExpanded === "function") {
         setFinConcOpsExpanded(false);
+        return;
+      }
+      if (cliPerfilBodyExpanded) {
+        setCliPerfilBodyExpanded(false);
         return;
       }
       setExpanded(false);
@@ -4174,6 +4332,10 @@
           setExpanded(false);
           return;
         }
+        if (cliPerfilBodyExpanded) {
+          setCliPerfilBodyExpanded(false);
+          return;
+        }
         closeModal();
         empresaWrap.classList.remove("open");
         document.getElementById("tabAddWrap")?.classList.remove("open");
@@ -4272,3 +4434,58 @@
     });
 
     enhanceUiSelects(document);
+
+    function isMobileUi() {
+      return window.matchMedia("(max-width: 720px)").matches;
+    }
+
+    function syncMobileUi() {
+      const mobile = isMobileUi();
+      document.body.classList.toggle("is-mobile-ui", mobile);
+      if (!mobile) return;
+
+      document.getElementById("chatPanel")?.classList.remove("open");
+      if (cliPerfilBodyExpanded && typeof setCliPerfilBodyExpanded === "function") {
+        setCliPerfilBodyExpanded(false);
+      }
+      if (contentPanel?.classList.contains("is-expanded") && typeof setExpanded === "function") {
+        setExpanded(false);
+      }
+      if (typeof setFinConcOpsExpanded === "function" && finDash?.conc?.opsExpanded) {
+        setFinConcOpsExpanded(false);
+      }
+
+      if (typeof cliEntregaStatus === "string" && cliEntregaStatus) {
+        cliEntregaStatus = "";
+        if (cliView === "perfil" && (cliPerfilTab === "entregas" || isClientePortal())) {
+          renderClientes();
+        }
+      }
+
+      let needProc = false;
+      if (typeof procFiltros === "object" && procFiltros) {
+        if (procFiltros.view !== "list") {
+          procFiltros.view = "list";
+          needProc = true;
+        }
+        if (procFiltros.groupBy === "empresa") {
+          procFiltros.groupBy = "lista";
+          needProc = true;
+        }
+      }
+      if (typeof cliProcView === "string" && cliProcView !== "list") {
+        cliProcView = "list";
+        if (cliView === "perfil" && cliPerfilTab === "processos") renderClientes();
+      }
+      if (needProc && typeof renderProcessos === "function" && processosWrap?.classList.contains("show")) {
+        renderProcessos();
+      }
+
+      const section = typeof resolveSection === "function" ? resolveSection(current) : null;
+      if (section?.kanban && kanbanWrap?.classList.contains("show") && typeof setSection === "function") {
+        setSection(current, true);
+      }
+    }
+
+    syncMobileUi();
+    window.matchMedia("(max-width: 720px)").addEventListener("change", syncMobileUi);

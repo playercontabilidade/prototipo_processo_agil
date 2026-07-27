@@ -475,6 +475,11 @@
       }
       const closeBtn = document.getElementById("modalClose");
       if (closeBtn) closeBtn.hidden = true;
+      if (modal?.dataset) {
+        delete modal.dataset.cliProcRecCliente;
+        delete modal.dataset.procAddMolde;
+        delete modal.dataset.procAddCliente;
+      }
       backdrop.classList.remove("open");
       if (wasReport) {
         destroyCliFinReportCharts();
@@ -1301,6 +1306,10 @@
     }
 
     function renderProcessos() {
+      if (window.matchMedia("(max-width: 720px)").matches) {
+        procFiltros.view = "list";
+        if (procFiltros.groupBy === "empresa") procFiltros.groupBy = "lista";
+      }
       const list = getProcessosFiltrados();
       renderProcessosQuantidade(list);
       renderProcessosEvolucao(list);
@@ -1352,47 +1361,151 @@
       });
     }
 
+    function resolveProcAddClienteId() {
+      if (cliView === "perfil" && cliPerfilId) return cliPerfilId;
+      if (typeof procEmpresaFilter === "string" && procEmpresaFilter && procEmpresaFilter !== "all") {
+        return procEmpresaFilter;
+      }
+      return CLIENTES[0]?.id || null;
+    }
+
+    function renderProcMoldeAvulsoPickHtml(query = "") {
+      const q = normalizeSearchText(query);
+      const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
+      const check = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
+      const list = PROC_MOLDES_CATALOG.filter((m) => !q || normalizeSearchText(m.nome).includes(q));
+      return `
+        <div class="cli-proc-molde-pick-wrap">
+          <div class="proc-filter search cli-proc-molde-search">
+            <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="procMoldeAvulsoSearch" placeholder="Pesquisar processo molde..." value="${String(query || "").replace(/"/g, "&quot;")}" aria-label="Pesquisar processo molde" />
+          </div>
+          <div class="cli-proc-molde-pick" id="procMoldeAvulsoList">
+            ${list.length ? list.map((m) => `
+              <div class="cli-proc-molde-row">
+                <span class="cli-proc-molde-ico">${ico}</span>
+                <div class="cli-proc-molde-info">
+                  <strong>${m.nome}</strong>
+                  <span>${m.etapas} etapas · ${m.obrigatorias} obrigatórias</span>
+                </div>
+                <button type="button" class="btn-primary cli-proc-molde-criar" data-cli-proc-molde-associar="${m.id}" aria-label="Associar ${m.nome}">
+                  ${check}
+                  <span>Associar</span>
+                </button>
+              </div>`).join("") : `<div class="cli-empty-panel">Nenhum processo molde encontrado</div>`}
+          </div>
+        </div>`;
+    }
+
     function openAddProcessoModal() {
+      const clienteId = resolveProcAddClienteId();
+      modal.dataset.procAddCliente = clienteId || "";
+      delete modal.dataset.procAddMolde;
       openModal({
-        title: "Adicionar processo",
-        sub: "Seleção de molde (simulação)",
+        title: "Selecionar Processo Molde",
+        sub: "Selecione um processo molde para criar um processo avulso:",
+        wide: true,
+        body: renderProcMoldeAvulsoPickHtml(""),
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
+      });
+    }
+
+    function openCriarProcessoFromMoldeModal(moldeId) {
+      const molde = getProcMoldeById(moldeId);
+      if (!molde) {
+        toast("Molde não encontrado");
+        return;
+      }
+      if (!modal.dataset.procAddCliente) {
+        modal.dataset.procAddCliente = resolveProcAddClienteId() || "";
+      }
+      modal.dataset.procAddMolde = molde.id;
+      const compDefault = "2026-06";
+      openModal({
+        title: "Criar Processo",
+        sub: `Molde selecionado: ${molde.nome}`,
         body: `
-          <p style="margin-bottom:12px;font-size:.84rem;color:var(--muted)">Escolha um molde para duplicar neste cliente.</p>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            ${["Abertura de empresa", "Alteração cadastral", "Baixa de inscrição", "Encerramento anual"].map((n, i) => `
-              <label class="filter-option" style="justify-content:flex-start">
-                <input type="radio" name="moldeProc" value="${i}" ${i === 0 ? "checked" : ""}>
-                <span><strong style="display:block;font-size:.84rem">${n}</strong>
-                <span style="font-size:.74rem;color:var(--muted)">Molde padrão</span></span>
-              </label>`).join("")}
+          <div class="cli-proc-criar-form">
+            <div class="field">
+              <label for="procCriarCompetencia">Competência</label>
+              <div class="cli-proc-criar-comp">
+                <input type="month" id="procCriarCompetencia" value="${compDefault}" aria-label="Competência" />
+              </div>
+            </div>
+            <label class="cfg-molde-check wrap" for="procCriarNomeCustom">
+              <input type="checkbox" id="procCriarNomeCustom" />
+              <span>Atribuir nome personalizado</span>
+            </label>
+            <div class="field" id="procCriarNomeWrap" hidden>
+              <label for="procCriarNome">Nome do processo</label>
+              <input type="text" id="procCriarNome" value="${molde.nome.replace(/"/g, "&quot;")}" maxlength="120" />
+            </div>
+            <label class="cfg-molde-check wrap" for="procCriarChat">
+              <input type="checkbox" id="procCriarChat" />
+              <span>É uma Solicitação do Chat?<small>Marque quando o processo veio de uma solicitação do chat.</small></span>
+            </label>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Cancelar</button>
-          <button type="button" class="btn-primary" id="procAddConfirm">Duplicar molde</button>`,
+          <button type="button" class="btn-ghost" data-cli-proc-criar="voltar">Cancelar</button>
+          <button type="button" class="btn-primary" data-cli-proc-criar="associar">Associar</button>`,
       });
-      document.getElementById("procAddConfirm")?.addEventListener("click", () => {
-        const section = sections.find((s) => s.id === "processos");
-        const nome = document.querySelector('input[name="moldeProc"]:checked')?.closest("label")?.querySelector("strong")?.textContent || "Novo processo";
-        const id = 1100 + section.items.length;
-        section.items.unshift({
-          id,
-          title: nome,
-          status: "em-andamento",
-          sucesso: null,
-          dept: "Comercial",
-          responsavel: "Ana Costa",
-          criado: "2026-07-13",
-          competencia: "2026-07",
-          arquivado: false,
-          etapas: [
-            { id: id * 10 + 1, nome: "Início", status: "em_andamento", ordem: 1, obrigatorio: true, responsavel: "Ana Costa" },
-            { id: id * 10 + 2, nome: "Conclusão", status: "pendente", ordem: 2, obrigatorio: true, responsavel: "Ana Costa" },
-          ],
-        });
-        closeModal();
+    }
+
+    function confirmCriarProcessoFromMolde() {
+      const moldeId = modal.dataset.procAddMolde;
+      const molde = getProcMoldeById(moldeId);
+      if (!molde) {
+        toast("Molde não encontrado");
+        return;
+      }
+      const section = sections.find((s) => s.id === "processos");
+      if (!section) return;
+      const clienteId = modal.dataset.procAddCliente || resolveProcAddClienteId();
+      const cliente = CLIENTES.find((c) => c.id === clienteId);
+      const useCustom = !!document.getElementById("procCriarNomeCustom")?.checked;
+      const customName = (document.getElementById("procCriarNome")?.value || "").trim();
+      const title = useCustom && customName ? customName : molde.nome;
+      const compRaw = document.getElementById("procCriarCompetencia")?.value || "2026-06";
+      const competencia = /^\d{4}-\d{2}$/.test(compRaw) ? compRaw : "2026-06";
+      const fromChat = !!document.getElementById("procCriarChat")?.checked;
+      const id = 1100 + section.items.length + Math.floor(Math.random() * 80);
+      const etapas = Array.from({ length: Math.max(2, molde.etapas || 2) }, (_, i) => ({
+        id: id * 10 + i + 1,
+        nome: i === 0 ? "Início" : (i === Math.max(1, (molde.etapas || 2) - 1) ? "Conclusão" : `Etapa ${i + 1}`),
+        status: i === 0 ? "em_andamento" : "pendente",
+        ordem: i + 1,
+        obrigatorio: i < Math.max(1, molde.obrigatorias || 1),
+        responsavel: "Ana Costa",
+      }));
+      section.items.unshift({
+        id,
+        title,
+        status: "em-andamento",
+        sucesso: null,
+        dept: "Comercial",
+        clienteId: cliente?.id || null,
+        cliente: cliente?.fantasia || cliente?.nome || "—",
+        responsavel: "Ana Costa",
+        criado: "2026-07-14",
+        inicio: "2026-07-14",
+        fim: null,
+        previsaoFim: null,
+        competencia,
+        arquivado: false,
+        origemChat: fromChat,
+        moldeId: molde.id,
+        etapas,
+      });
+      delete modal.dataset.procAddMolde;
+      delete modal.dataset.procAddCliente;
+      closeModal();
+      if (cliView === "perfil" && cliPerfilId) {
+        cliProcSubTab = "execucao";
+        renderClientes();
+      } else {
         renderProcessos();
-        toast("Processo duplicado com sucesso!");
-      });
+      }
+      toast(fromChat ? "Processo associado (solicitação do chat)" : "Processo associado com sucesso");
     }
 
     function getCliGestaoPendenciasCount(c) {
@@ -2201,10 +2314,6 @@
           <button type="button" class="btn-ghost tip-bottom" data-cli-com-report data-tip="Relatório comercial do filtro atual">
             Relatório
           </button>
-          <button type="button" class="btn-primary cli-add-btn" data-cli-add-empresa>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-            Nova empresa
-          </button>
         </div>
         <div class="cli-list-kpis" aria-label="Indicadores da carteira filtrada">
           <button type="button" class="cli-list-kpi${!kpiActive ? " is-active" : ""}" data-cli-list-kpi="" aria-pressed="${!kpiActive}">
@@ -2337,7 +2446,8 @@
       ].join("");
     }
 
-    function renderCliPerfilProcessos(c) {
+    function renderCliPerfilProcessosExecucao(c) {
+      if (window.matchMedia("(max-width: 720px)").matches) cliProcView = "list";
       const all = getCliProcessos(c, false);
       const procs = getCliProcessos(c, true);
       const resps = [...new Set(all.map((p) => p.responsavel).filter(Boolean))];
@@ -2488,6 +2598,82 @@
               </div>`;
           }).join("")}
         </div>`;
+    }
+
+    function renderProcMoldePickListHtml(clienteId) {
+      const associated = new Set(ensureCliProcRecorrencias(clienteId).map((r) => r.moldeId));
+      const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
+      const sync = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 0 0-14.3-7.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 14.3 7.2L21 16"/><path d="M16 21h5v-5"/></svg>`;
+      return `
+        <div class="cli-proc-molde-pick">
+          ${PROC_MOLDES_CATALOG.map((m) => {
+            const done = associated.has(m.id);
+            return `
+              <div class="cli-proc-molde-row${done ? " is-associated" : ""}">
+                <span class="cli-proc-molde-ico">${ico}</span>
+                <div class="cli-proc-molde-info">
+                  <strong>${m.nome}</strong>
+                  <span>${m.etapas} etapas · ${m.obrigatorias} obrigatórias</span>
+                </div>
+                <button type="button" class="btn-primary cli-proc-molde-criar" data-cli-proc-molde-criar="${m.id}" ${done ? "disabled" : ""} aria-label="${done ? "Já associada" : `Criar recorrência: ${m.nome}`}">
+                  ${sync}
+                  <span>${done ? "Associada" : "Criar"}</span>
+                </button>
+              </div>`;
+          }).join("")}
+        </div>`;
+    }
+
+    function openProcRecorrenciaModal(clienteId) {
+      const cid = clienteId || cliPerfilId || null;
+      if (!cid) {
+        toast("Selecione uma empresa para criar a recorrência");
+        return;
+      }
+      openModal({
+        title: "Criar Recorrência de Processo",
+        sub: "Selecione um processo molde para criar uma recorrência:",
+        wide: true,
+        body: renderProcMoldePickListHtml(cid),
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
+      });
+      modal.dataset.cliProcRecCliente = cid;
+    }
+
+    function renderCliPerfilProcessosRecorrencias(c) {
+      const items = getCliProcRecorrenciasDetalhe(c.id);
+      const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
+      return `
+        <div class="cli-proc-rec-panel">
+          <div class="cli-obr-actions">
+            <button type="button" class="btn-primary" data-cli-proc-rec="criar">Criar recorrência</button>
+          </div>
+          <div class="cli-proc-rec-list">
+            ${items.length ? items.map((r) => `
+              <article class="cli-proc-rec-card">
+                <span class="cli-proc-molde-ico">${ico}</span>
+                <div class="cli-proc-molde-info">
+                  <strong>${r.molde.nome}</strong>
+                  <span>${r.molde.etapas} etapas · ${r.molde.obrigatorias} obrigatórias${r.associadaEm ? ` · desde ${r.associadaEm}` : ""}</span>
+                </div>
+                <span class="cli-badge ${r.status === "pausada" ? "filial" : "matriz"}">${r.status === "pausada" ? "Pausada" : "Ativa"}</span>
+              </article>`).join("") : `<div class="cli-empty-panel">Nenhuma recorrência associada a este cliente</div>`}
+          </div>
+        </div>`;
+    }
+
+    function renderCliPerfilProcessos(c) {
+      const portal = isClientePortal();
+      const sub = portal ? "execucao" : (cliProcSubTab === "recorrencias" ? "recorrencias" : "execucao");
+      const subnav = portal ? "" : `
+        <div class="cli-fin-subnav" role="tablist" aria-label="Processos e recorrências">
+          <button type="button" role="tab" class="${sub === "execucao" ? "active" : ""}" aria-selected="${sub === "execucao"}" data-cli-proc-sub="execucao">Em execução</button>
+          <button type="button" role="tab" class="${sub === "recorrencias" ? "active" : ""}" aria-selected="${sub === "recorrencias"}" data-cli-proc-sub="recorrencias">Recorrências</button>
+        </div>`;
+      const body = sub === "recorrencias" && !portal
+        ? renderCliPerfilProcessosRecorrencias(c)
+        : renderCliPerfilProcessosExecucao(c);
+      return `${subnav}${body}`;
     }
 
     function cliFeedEsc(s) {
@@ -3183,13 +3369,13 @@
 
     const CLI_DOCS_FOLDERS = [
       { id: "recentes", title: "Recentes", badgeUnit: "items", icon: "clock", kind: "recent", tag: "accent" },
-      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "shield-check", kind: "dept", tag: "navy" },
-      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "calculator", kind: "dept", tag: "secondary" },
-      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "users", kind: "dept", tag: "ok" },
-      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "wallet", kind: "dept", tag: "accent" },
-      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "receipt", kind: "dept", tag: "navy" },
-      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "rocket", kind: "dept", tag: "secondary" },
-      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "scale", kind: "dept", tag: "ok" },
+      { id: "certificado-digital", title: "Certificado digital", badgeUnit: "arquivos", icon: "shield-check", kind: "dept", tag: "navy" },
+      { id: "contabil", title: "Contábil", badgeUnit: "arquivos", icon: "calculator", kind: "dept", tag: "secondary" },
+      { id: "departamento-pessoal", title: "Departamento pessoal", badgeUnit: "arquivos", icon: "users", kind: "dept", tag: "ok" },
+      { id: "financeiro", title: "Financeiro", badgeUnit: "arquivos", icon: "wallet", kind: "dept", tag: "accent" },
+      { id: "fiscal", title: "Fiscal", badgeUnit: "arquivos", icon: "receipt", kind: "dept", tag: "navy" },
+      { id: "implantacao", title: "Implantação", badgeUnit: "arquivos", icon: "rocket", kind: "dept", tag: "secondary" },
+      { id: "paralegal", title: "Paralegal", badgeUnit: "arquivos", icon: "scale", kind: "dept", tag: "ok" },
       { id: "outros", title: "Outros", badgeUnit: "arquivos", icon: "folder", kind: "plain", tag: "muted" },
     ];
 
@@ -3439,11 +3625,10 @@
       lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
     }
 
-    function renderCliPerfilTabBody(c) {
-      const metrics = empresaMetrics[c.id] || {};
-      if (cliPerfilTab === "obrigacoes") {
-        const items = obrigacoesItems.filter((o) => !o.interna).slice(0, 8);
-        return `
+    function renderCliPerfilObrigacoes(c) {
+      const items = obrigacoesItems.filter((o) => !o.interna).slice(0, 8);
+      return `
+        <div class="cli-obr-panel">
           <div class="cli-obr-actions">
             <button type="button" class="btn-primary" data-cli-action="iniciar-obrigacoes">Iniciar obrigações</button>
             <button type="button" class="btn-ghost" data-cli-action="obrigacao-interna">Obrigação interna</button>
@@ -3457,8 +3642,65 @@
               </div>
               <span class="proc-badge dept">${o.grupo ? "Grupo" : "Avulsa"}</span>
             </article>`).join("") : `<div class="cli-empty-panel">Nenhuma obrigação listada</div>`}
+          </div>
+        </div>`;
+    }
+
+    function renderCliPerfilEntregasExecucao(c) {
+      if (isClientePortal()) return renderCliEntregasEspelhada(c);
+      const entregas = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && matchesCliEntregaOrigem(t));
+      const origemToggle = renderCliEntregaOrigemToggle();
+      if (!entregas.length) {
+        return `
+          <div class="cli-entregas-wrap">
+            <div class="cli-entregas-toolbar">${origemToggle}</div>
+            <div class="cli-empty-panel">${cliEntregaOrigem ? "Nenhuma entrega neste filtro" : "Nenhuma entrega vinculada"}</div>
           </div>`;
       }
+      return `
+        <div class="cli-entregas-wrap">
+          <div class="cli-entregas-toolbar">${origemToggle}</div>
+          <div class="cli-entregas-grid">${entregas.map((t) => {
+            const stCls = t.status === "atrasada" ? "atrasada" : "no-prazo";
+            const stLabel = stCls === "atrasada" ? "Atrasada" : "No Prazo";
+            const origem = getEntregaOrigem(t);
+            const origemLabel = origem === "solicitacao" ? "Solicitação" : "Interna";
+            return `
+            <div class="agenda-entregas-card is-${stCls} tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
+              <div class="row">
+                <h5>${t.nome}</h5>
+                <span class="cli-entrega-tags">
+                  <span class="agenda-tag ${origem === "solicitacao" ? "solicitacao" : "interna"}">${origemLabel}</span>
+                  <span class="agenda-tag ${stCls}">${stLabel}</span>
+                </span>
+              </div>
+              <div class="detail">
+                <div class="meta"><b>Empresa</b><span class="val" title="${t.razaoSocial || ""}">${(CLIENTES.find((x) => x.id === t.clienteId)?.fantasia || CLIENTES.find((x) => x.id === t.clienteId)?.nome || t.razaoSocial || "—")}</span></div>
+                <div class="meta"><b>Responsável</b><span class="val">${t.responsavel}</span></div>
+                <div class="meta"><b>Prazo</b><span class="val">${t.prazoLegal}</span></div>
+                <div class="meta"><b>Competência</b><span class="val">${t.competencia}</span></div>
+              </div>
+            </div>`;
+          }).join("")}</div>
+        </div>`;
+    }
+
+    function renderCliPerfilEntregas(c) {
+      const portal = isClientePortal();
+      const sub = portal ? "execucao" : (cliEntregaSubTab === "obrigacoes" ? "obrigacoes" : "execucao");
+      const subnav = portal ? "" : `
+        <div class="cli-fin-subnav" role="tablist" aria-label="Entregas e obrigações">
+          <button type="button" role="tab" class="${sub === "execucao" ? "active" : ""}" aria-selected="${sub === "execucao"}" data-cli-ent-sub="execucao">Em execução</button>
+          <button type="button" role="tab" class="${sub === "obrigacoes" ? "active" : ""}" aria-selected="${sub === "obrigacoes"}" data-cli-ent-sub="obrigacoes">Obrigações</button>
+        </div>`;
+      const body = sub === "obrigacoes" && !portal
+        ? renderCliPerfilObrigacoes(c)
+        : renderCliPerfilEntregasExecucao(c);
+      return `${subnav}${body}`;
+    }
+
+    function renderCliPerfilTabBody(c) {
+      const metrics = empresaMetrics[c.id] || {};
       if (cliPerfilTab === "processos") return renderCliPerfilProcessos(c);
       if (cliPerfilTab === "funcionarios") {
         const internos = c.funcInternos ?? 0;
@@ -3529,42 +3771,7 @@
         return renderCliFeed(c);
       }
       if (cliPerfilTab === "entregas") {
-        if (isClientePortal()) return renderCliEntregasEspelhada(c);
-        const entregas = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && matchesCliEntregaOrigem(t));
-        const origemToggle = renderCliEntregaOrigemToggle();
-        if (!entregas.length) {
-          return `
-            <div class="cli-entregas-wrap">
-              <div class="cli-entregas-toolbar">${origemToggle}</div>
-              <div class="cli-empty-panel">${cliEntregaOrigem ? "Nenhuma entrega neste filtro" : "Nenhuma entrega vinculada"}</div>
-            </div>`;
-        }
-        return `
-          <div class="cli-entregas-wrap">
-            <div class="cli-entregas-toolbar">${origemToggle}</div>
-            <div class="cli-entregas-grid">${entregas.map((t) => {
-              const stCls = t.status === "atrasada" ? "atrasada" : "no-prazo";
-              const stLabel = stCls === "atrasada" ? "Atrasada" : "No Prazo";
-              const origem = getEntregaOrigem(t);
-              const origemLabel = origem === "solicitacao" ? "Solicitação" : "Interna";
-              return `
-              <div class="agenda-entregas-card is-${stCls} tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
-                <div class="row">
-                  <h5>${t.nome}</h5>
-                  <span class="cli-entrega-tags">
-                    <span class="agenda-tag ${origem === "solicitacao" ? "solicitacao" : "interna"}">${origemLabel}</span>
-                    <span class="agenda-tag ${stCls}">${stLabel}</span>
-                  </span>
-                </div>
-                <div class="detail">
-                  <div class="meta"><b>Empresa</b><span class="val" title="${t.razaoSocial || ""}">${(CLIENTES.find((x) => x.id === t.clienteId)?.fantasia || CLIENTES.find((x) => x.id === t.clienteId)?.nome || t.razaoSocial || "—")}</span></div>
-                  <div class="meta"><b>Responsável</b><span class="val">${t.responsavel}</span></div>
-                  <div class="meta"><b>Prazo</b><span class="val">${t.prazoLegal}</span></div>
-                  <div class="meta"><b>Competência</b><span class="val">${t.competencia}</span></div>
-                </div>
-              </div>`;
-            }).join("")}</div>
-          </div>`;
+        return renderCliPerfilEntregas(c);
       }
       if (cliPerfilTab === "xml") {
         return renderCliXmlAnaliseModule(c);
@@ -3683,9 +3890,10 @@
         renderClientesList();
         return;
       }
-      if (!CLI_PERFIL_TABS.some((t) => t.id === cliPerfilTab)) cliPerfilTab = "obrigacoes";
+      if (!CLI_PERFIL_TABS.some((t) => t.id === cliPerfilTab)) cliPerfilTab = "entregas";
       const certRow = getCertificadoRow(c);
       const cert = certRow.meta;
+      const opsExpanded = !!cliPerfilBodyExpanded;
       wrap.innerHTML = `
         <div class="cli-perfil">
           <div class="cli-perfil-head">
@@ -3718,15 +3926,21 @@
               </div>
             </div>
           </div>
-          <div class="cli-perfil-tabs-bar">
-            <div class="cli-tabs" role="tablist" aria-label="Abas do perfil">
-              ${CLI_PERFIL_TABS.map((t) => `
-                <button type="button" class="cli-tab${cliPerfilTab === t.id ? " active" : ""}" role="tab" aria-selected="${cliPerfilTab === t.id}" data-cli-tab="${t.id}">${t.label}</button>
-              `).join("")}
+          <div class="cli-perfil-ops${opsExpanded ? " is-expanded" : ""}" id="cliPerfilOps">
+            <div class="cli-perfil-tabs-bar">
+              <div class="cli-tabs" role="tablist" aria-label="Abas do perfil">
+                ${CLI_PERFIL_TABS.map((t) => `
+                  <button type="button" class="cli-tab${cliPerfilTab === t.id ? " active" : ""}" role="tab" aria-selected="${cliPerfilTab === t.id}" data-cli-tab="${t.id}">${t.label}</button>
+                `).join("")}
+              </div>
+              <button type="button" class="btn-expand tip-bottom" data-cli-perfil-expand data-tip="${opsExpanded ? "Sair da tela toda" : "Expandir área operacional"}" aria-label="${opsExpanded ? "Sair da tela toda" : "Expandir área operacional"}" aria-pressed="${opsExpanded ? "true" : "false"}">
+                <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${opsExpanded ? "hidden" : ""}><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <svg class="icon-collapse" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${opsExpanded ? "" : "hidden"}><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+              </button>
             </div>
-          </div>
-          <div class="cli-perfil-body" id="cliPerfilBody">
-            ${renderCliPerfilTabBody(c)}
+            <div class="cli-perfil-body" id="cliPerfilBody">
+              ${renderCliPerfilTabBody(c)}
+            </div>
           </div>
         </div>`;
       enhanceUiSelects(wrap);

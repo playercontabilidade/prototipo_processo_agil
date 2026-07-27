@@ -1454,7 +1454,13 @@
     let recentClientIds = CLIENTES.slice(0, 5).map((c) => c.id);
     let cliView = "lista"; // lista | perfil
     let cliPerfilId = null;
-    let cliPerfilTab = "obrigacoes";
+    let cliPerfilTab = "entregas";
+    /** Expandir área operacional do perfil (abas + conteúdo; sem cabeçalho). */
+    let cliPerfilBodyExpanded = false;
+    /** Sub-aba de Processos no perfil: execucao | recorrencias */
+    let cliProcSubTab = "execucao";
+    /** Sub-aba de Entregas no perfil: execucao | obrigacoes (moldes) */
+    let cliEntregaSubTab = "execucao";
     /** Filtros da aba Entregas no Acesso ao Cliente (IDs próprios · sem conflito com agenda). */
     let cliEntregaQuery = "";
     let cliEntregaStatus = "";
@@ -1673,16 +1679,62 @@
     let cliHonorRelatorioAtualizado = "14/07/2026 17:40";
 
     const CLI_PERFIL_TABS = [
-      { id: "obrigacoes", label: "Obrigações" },
+      { id: "entregas", label: "Entregas" },
       { id: "processos", label: "Processos" },
       { id: "funcionarios", label: "Funcionários" },
       { id: "documentos", label: "Documentos" },
       { id: "comentarios", label: "Notas e senhas" },
-      { id: "entregas", label: "Entregas" },
       { id: "xml", label: "XML" },
       { id: "financeiro", label: "Financeiro" },
       { id: "honorarios", label: "Honorários" },
     ];
+
+    /** Catálogo de processos molde (recorrências). */
+    const PROC_MOLDES_CATALOG = [
+      { id: "pm-cad-emp", nome: "CADASTRO DE EMPRESAS", etapas: 4, obrigatorias: 2 },
+      { id: "pm-pauta", nome: "PAUTA DE DÉBITOS", etapas: 3, obrigatorias: 1 },
+      { id: "pm-efd", nome: "VERIFICAÇÃO EFD ERRONAMENTE ZERADOS - DIA 16", etapas: 5, obrigatorias: 3 },
+      { id: "pm-audit", nome: "Auditoria de Cartões.", etapas: 6, obrigatorias: 2 },
+      { id: "pm-test", nome: "test", etapas: 0, obrigatorias: 0 },
+    ];
+
+    /** Recorrências associadas por cliente: { [clienteId]: [{ moldeId, status, associadaEm }] } */
+    let cliProcRecorrenciasByClient = {};
+
+    function ensureCliProcRecorrencias(clienteId) {
+      if (!clienteId) return [];
+      if (!cliProcRecorrenciasByClient[clienteId]) {
+        const seed = [];
+        if (PROC_MOLDES_CATALOG[0]) seed.push({ moldeId: PROC_MOLDES_CATALOG[0].id, status: "ativa", associadaEm: "01/07/2026" });
+        if (PROC_MOLDES_CATALOG[1] && String(clienteId).length % 2 === 0) {
+          seed.push({ moldeId: PROC_MOLDES_CATALOG[1].id, status: "ativa", associadaEm: "08/07/2026" });
+        }
+        cliProcRecorrenciasByClient[clienteId] = seed;
+      }
+      return cliProcRecorrenciasByClient[clienteId];
+    }
+
+    function getProcMoldeById(id) {
+      return PROC_MOLDES_CATALOG.find((m) => m.id === id) || null;
+    }
+
+    function getCliProcRecorrenciasDetalhe(clienteId) {
+      return ensureCliProcRecorrencias(clienteId)
+        .map((r) => {
+          const molde = getProcMoldeById(r.moldeId);
+          if (!molde) return null;
+          return { ...r, molde };
+        })
+        .filter(Boolean);
+    }
+
+    function associateCliProcRecorrencia(clienteId, moldeId) {
+      if (!clienteId || !moldeId || !getProcMoldeById(moldeId)) return { ok: false, reason: "invalid" };
+      const list = ensureCliProcRecorrencias(clienteId);
+      if (list.some((r) => r.moldeId === moldeId)) return { ok: false, reason: "exists" };
+      list.push({ moldeId, status: "ativa", associadaEm: "14/07/2026" });
+      return { ok: true };
+    }
 
     function resolveSection(id) {
       if (isClientePortal()) {
@@ -1800,7 +1852,14 @@
       cliListMenuId = null;
       cliView = "perfil";
       cliPerfilId = c.id;
-      cliPerfilTab = (tab && CLI_PERFIL_TABS.some((t) => t.id === tab)) ? tab : "obrigacoes";
+      /* legado: "obrigacoes" abre Entregas → subtela moldes */
+      if (tab === "obrigacoes") {
+        cliPerfilTab = "entregas";
+        cliEntregaSubTab = "obrigacoes";
+      } else {
+        cliPerfilTab = (tab && CLI_PERFIL_TABS.some((t) => t.id === tab)) ? tab : "entregas";
+        if (tab === "entregas") cliEntregaSubTab = "execucao";
+      }
       renderClientes();
     }
 
@@ -1809,6 +1868,8 @@
         toast("No acesso cliente você permanece no perfil da sua empresa");
         return;
       }
+      if (typeof setCliPerfilBodyExpanded === "function") setCliPerfilBodyExpanded(false);
+      else cliPerfilBodyExpanded = false;
       cliView = "lista";
       cliPerfilId = null;
       renderClientes();

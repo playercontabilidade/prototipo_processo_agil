@@ -1646,61 +1646,66 @@
       line-height: 1.25;
     }
 
-    .cli-perfil-head-left .module-empresa-picker {
-      flex: 1 1 auto;
-      max-width: 100%;
-      width: auto;
+    /* Menu de empresa no perfil = mesmo padrão da listagem (cli-list-toolbar) */
+    .cli-perfil-head-left .module-empresa-picker,
+    .cli-perfil-head-left .module-empresa-picker.is-perfil {
+      flex: 0 1 auto;
+      width: max-content;
+      max-width: min(420px, 100%);
       min-width: 0;
       z-index: 8;
     }
 
-    .cli-perfil-head-left .module-empresa-picker.is-perfil {
-      flex: 1 1 auto;
-      width: fit-content;
+    .cli-perfil-head-left .module-empresa-picker .empresa-wrap,
+    .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
+      width: auto;
       max-width: 100%;
       min-width: 0;
     }
 
-    .cli-perfil-head-left .module-empresa-picker .empresa-wrap {
-      width: fit-content;
-      max-width: 100%;
-    }
-
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
       display: inline-flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 8px;
-      min-height: 0;
       height: auto;
-      width: fit-content;
-      max-width: 100%;
+      min-height: 36px;
       padding: 4px 8px 4px 4px;
-      margin: 0 0 0 -2px;
+      margin: 0;
       overflow: hidden;
       box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--navy-deep);
+    }
+
+    .cli-perfil-head-left .module-empresa-picker .empresa-trigger:hover {
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .trigger-text {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 2px;
-      flex: 0 1 auto;
+      gap: 1px;
+      flex: 1 1 auto;
       min-width: 0;
       max-width: 100%;
       overflow: hidden;
+      line-height: 1.2;
     }
 
-    /* Linha 1: código + nome + seta (seta no trigger) — não empilhar código acima do nome */
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .name-line {
       display: inline-flex;
       flex-wrap: nowrap;
       align-items: center;
       gap: 8px;
-      font-size: 1.1rem;
-      font-weight: 700;
+      font-size: 1.05rem;
+      font-weight: 750;
       color: var(--navy-deep);
-      line-height: 1.35;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
       white-space: nowrap;
       max-width: 100%;
       min-width: 0;
@@ -1709,10 +1714,18 @@
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-code {
       flex-shrink: 0;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 2px 7px;
+      line-height: 1.25;
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-name {
-      flex: 0 1 auto;
+      flex: 1 1 auto;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1720,7 +1733,9 @@
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-cnpj {
-      font-size: .72rem;
+      font-size: .74rem;
+      font-weight: 550;
+      color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1729,11 +1744,14 @@
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .chev {
       flex-shrink: 0;
-      margin-top: 4px;
+      margin: 0;
+      color: var(--muted);
+      align-self: center;
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-menu {
       min-width: min(360px, 86vw);
+      width: max(100%, min(360px, 86vw));
     }
 
     .cli-perfil-identity {
@@ -1743,6 +1761,11 @@
       gap: 8px 12px;
       min-width: 0;
       width: 100%;
+    }
+
+    .cli-perfil-identity .module-empresa-picker {
+      flex: 0 1 auto;
+      max-width: min(420px, 100%);
     }
 
     .cli-perfil-identity > h2 {
@@ -1809,8 +1832,15 @@
         align-items: flex-start;
       }
       .cli-perfil-head-left .module-empresa-picker,
+      .cli-perfil-head-left .module-empresa-picker.is-perfil,
       .cli-perfil-identity > h2 {
         flex: 1 1 100%;
+        width: 100%;
+        max-width: 100%;
+      }
+      .cli-perfil-head-left .module-empresa-picker .empresa-wrap,
+      .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
+        width: 100%;
         max-width: 100%;
       }
       .cli-dados-btn {
@@ -1988,6 +2018,156 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-pill);
       background: transparent;
+    }
+
+    .cli-proc-rec-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-width: 0;
+    }
+
+    .cli-proc-rec-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cli-proc-rec-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .cli-proc-rec-card .cli-badge {
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .cli-proc-molde-ico {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    .cli-proc-molde-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .cli-proc-molde-info strong {
+      font-size: .84rem;
+      font-weight: 700;
+      color: var(--navy-deep);
+      line-height: 1.25;
+    }
+
+    .cli-proc-molde-info span {
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .cli-proc-molde-pick {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cli-proc-molde-pick-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .cli-proc-molde-search {
+      width: 100%;
+      max-width: none;
+    }
+
+    .cli-proc-molde-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .cli-proc-molde-row.is-associated {
+      opacity: .72;
+    }
+
+    .cli-proc-molde-criar {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 8px 14px;
+      white-space: nowrap;
+    }
+
+    .cli-proc-molde-criar:disabled {
+      opacity: .65;
+      cursor: default;
+    }
+
+    .cli-proc-criar-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .cli-proc-criar-form .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cli-proc-criar-form .field label {
+      font-size: .78rem;
+      font-weight: 650;
+      color: var(--navy-deep);
+    }
+
+    .cli-proc-criar-comp {
+      position: relative;
+      max-width: 220px;
+    }
+
+    .cli-proc-criar-comp input[type="month"] {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font: inherit;
+      color: var(--navy-deep);
+      background: var(--surface);
+    }
+
+    .cli-proc-criar-form .cfg-molde-check.wrap {
+      align-items: flex-start;
+    }
+
+    .cli-proc-criar-form .cfg-molde-check.wrap input {
+      margin-top: 2px !important;
     }
 
     /* Mural interno do cliente (notas entre analistas) */
@@ -2645,6 +2825,21 @@
       padding: 8px 10px;
       width: 100%;
       box-sizing: border-box;
+      flex: 0 0 auto;
+    }
+
+    .cli-perfil-tabs-bar .btn-expand {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      margin: 0;
+      margin-left: 4px;
+    }
+
+    /* No perfil, expansão fica na barra de abas — esconde o botão flutuante do panel-tools */
+    .content-panel.toolbar-compact:has(.clientes-wrap.show .cli-perfil) .panel-tools {
+      display: none;
     }
 
     .cli-tabs {
@@ -2653,7 +2848,7 @@
       gap: 4px;
       min-width: 0;
       flex: 1 1 auto;
-      width: 100%;
+      width: auto;
       align-items: center;
     }
 
@@ -2747,6 +2942,15 @@
       .cli-tabs.is-portal .cli-tab { flex: 1 1 calc(50% - 4px); max-width: none; }
     }
 
+    .cli-perfil-ops {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+    }
+
     .cli-perfil-body {
       flex: 1;
       min-height: 0;
@@ -2755,5 +2959,28 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 14px;
+    }
+
+    .cli-perfil-ops.is-expanded {
+      position: fixed;
+      inset: 12px;
+      z-index: 230;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px color-mix(in srgb, var(--navy-deep) 28%, transparent);
+      overflow: hidden;
+    }
+
+    .cli-perfil-ops.is-expanded .cli-perfil-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    body.cli-perfil-body-expanded .client-header {
+      pointer-events: none;
     }
 

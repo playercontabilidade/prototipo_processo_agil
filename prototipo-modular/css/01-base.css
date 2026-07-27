@@ -1432,6 +1432,17 @@
       min-width: 0;
     }
 
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 4px 8px 4px 4px;
+    }
+
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger:hover {
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+    }
+
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger .trigger-text {
       min-width: 0;
       overflow: hidden;

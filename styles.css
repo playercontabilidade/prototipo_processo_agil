@@ -1432,6 +1432,17 @@
       min-width: 0;
     }
 
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      padding: 4px 8px 4px 4px;
+    }
+
+    .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger:hover {
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+    }
+
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-trigger .trigger-text {
       min-width: 0;
       overflow: hidden;
@@ -13803,61 +13814,66 @@
       line-height: 1.25;
     }
 
-    .cli-perfil-head-left .module-empresa-picker {
-      flex: 1 1 auto;
-      max-width: 100%;
-      width: auto;
+    /* Menu de empresa no perfil = mesmo padrão da listagem (cli-list-toolbar) */
+    .cli-perfil-head-left .module-empresa-picker,
+    .cli-perfil-head-left .module-empresa-picker.is-perfil {
+      flex: 0 1 auto;
+      width: max-content;
+      max-width: min(420px, 100%);
       min-width: 0;
       z-index: 8;
     }
 
-    .cli-perfil-head-left .module-empresa-picker.is-perfil {
-      flex: 1 1 auto;
-      width: fit-content;
+    .cli-perfil-head-left .module-empresa-picker .empresa-wrap,
+    .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
+      width: auto;
       max-width: 100%;
       min-width: 0;
     }
 
-    .cli-perfil-head-left .module-empresa-picker .empresa-wrap {
-      width: fit-content;
-      max-width: 100%;
-    }
-
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
       display: inline-flex;
-      align-items: flex-start;
+      align-items: center;
       gap: 8px;
-      min-height: 0;
       height: auto;
-      width: fit-content;
-      max-width: 100%;
+      min-height: 36px;
       padding: 4px 8px 4px 4px;
-      margin: 0 0 0 -2px;
+      margin: 0;
       overflow: hidden;
       box-sizing: border-box;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--navy-deep);
+    }
+
+    .cli-perfil-head-left .module-empresa-picker .empresa-trigger:hover {
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .trigger-text {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 2px;
-      flex: 0 1 auto;
+      gap: 1px;
+      flex: 1 1 auto;
       min-width: 0;
       max-width: 100%;
       overflow: hidden;
+      line-height: 1.2;
     }
 
-    /* Linha 1: código + nome + seta (seta no trigger) — não empilhar código acima do nome */
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .name-line {
       display: inline-flex;
       flex-wrap: nowrap;
       align-items: center;
       gap: 8px;
-      font-size: 1.1rem;
-      font-weight: 700;
+      font-size: 1.05rem;
+      font-weight: 750;
       color: var(--navy-deep);
-      line-height: 1.35;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
       white-space: nowrap;
       max-width: 100%;
       min-width: 0;
@@ -13866,10 +13882,18 @@
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-code {
       flex-shrink: 0;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 2px 7px;
+      line-height: 1.25;
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-name {
-      flex: 0 1 auto;
+      flex: 1 1 auto;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -13877,7 +13901,9 @@
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-cnpj {
-      font-size: .72rem;
+      font-size: .74rem;
+      font-weight: 550;
+      color: var(--muted);
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -13886,11 +13912,14 @@
 
     .cli-perfil-head-left .module-empresa-picker .empresa-trigger .chev {
       flex-shrink: 0;
-      margin-top: 4px;
+      margin: 0;
+      color: var(--muted);
+      align-self: center;
     }
 
     .cli-perfil-head-left .module-empresa-picker .empresa-menu {
       min-width: min(360px, 86vw);
+      width: max(100%, min(360px, 86vw));
     }
 
     .cli-perfil-identity {
@@ -13900,6 +13929,11 @@
       gap: 8px 12px;
       min-width: 0;
       width: 100%;
+    }
+
+    .cli-perfil-identity .module-empresa-picker {
+      flex: 0 1 auto;
+      max-width: min(420px, 100%);
     }
 
     .cli-perfil-identity > h2 {
@@ -13966,8 +14000,15 @@
         align-items: flex-start;
       }
       .cli-perfil-head-left .module-empresa-picker,
+      .cli-perfil-head-left .module-empresa-picker.is-perfil,
       .cli-perfil-identity > h2 {
         flex: 1 1 100%;
+        width: 100%;
+        max-width: 100%;
+      }
+      .cli-perfil-head-left .module-empresa-picker .empresa-wrap,
+      .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
+        width: 100%;
         max-width: 100%;
       }
       .cli-dados-btn {
@@ -14145,6 +14186,156 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-pill);
       background: transparent;
+    }
+
+    .cli-proc-rec-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      min-width: 0;
+    }
+
+    .cli-proc-rec-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cli-proc-rec-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .cli-proc-rec-card .cli-badge {
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .cli-proc-molde-ico {
+      flex: 0 0 auto;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    .cli-proc-molde-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .cli-proc-molde-info strong {
+      font-size: .84rem;
+      font-weight: 700;
+      color: var(--navy-deep);
+      line-height: 1.25;
+    }
+
+    .cli-proc-molde-info span {
+      font-size: .72rem;
+      color: var(--muted);
+    }
+
+    .cli-proc-molde-pick {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .cli-proc-molde-pick-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .cli-proc-molde-search {
+      width: 100%;
+      max-width: none;
+    }
+
+    .cli-proc-molde-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .cli-proc-molde-row.is-associated {
+      opacity: .72;
+    }
+
+    .cli-proc-molde-criar {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 8px 14px;
+      white-space: nowrap;
+    }
+
+    .cli-proc-molde-criar:disabled {
+      opacity: .65;
+      cursor: default;
+    }
+
+    .cli-proc-criar-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .cli-proc-criar-form .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cli-proc-criar-form .field label {
+      font-size: .78rem;
+      font-weight: 650;
+      color: var(--navy-deep);
+    }
+
+    .cli-proc-criar-comp {
+      position: relative;
+      max-width: 220px;
+    }
+
+    .cli-proc-criar-comp input[type="month"] {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font: inherit;
+      color: var(--navy-deep);
+      background: var(--surface);
+    }
+
+    .cli-proc-criar-form .cfg-molde-check.wrap {
+      align-items: flex-start;
+    }
+
+    .cli-proc-criar-form .cfg-molde-check.wrap input {
+      margin-top: 2px !important;
     }
 
     /* Mural interno do cliente (notas entre analistas) */
@@ -14802,6 +14993,21 @@
       padding: 8px 10px;
       width: 100%;
       box-sizing: border-box;
+      flex: 0 0 auto;
+    }
+
+    .cli-perfil-tabs-bar .btn-expand {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      margin: 0;
+      margin-left: 4px;
+    }
+
+    /* No perfil, expansão fica na barra de abas — esconde o botão flutuante do panel-tools */
+    .content-panel.toolbar-compact:has(.clientes-wrap.show .cli-perfil) .panel-tools {
+      display: none;
     }
 
     .cli-tabs {
@@ -14810,7 +15016,7 @@
       gap: 4px;
       min-width: 0;
       flex: 1 1 auto;
-      width: 100%;
+      width: auto;
       align-items: center;
     }
 
@@ -14904,6 +15110,15 @@
       .cli-tabs.is-portal .cli-tab { flex: 1 1 calc(50% - 4px); max-width: none; }
     }
 
+    .cli-perfil-ops {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      min-height: 0;
+      min-width: 0;
+    }
+
     .cli-perfil-body {
       flex: 1;
       min-height: 0;
@@ -14912,6 +15127,29 @@
       border: 1px solid var(--border);
       border-radius: var(--radius);
       padding: 14px;
+    }
+
+    .cli-perfil-ops.is-expanded {
+      position: fixed;
+      inset: 12px;
+      z-index: 230;
+      gap: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px color-mix(in srgb, var(--navy-deep) 28%, transparent);
+      overflow: hidden;
+    }
+
+    .cli-perfil-ops.is-expanded .cli-perfil-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    body.cli-perfil-body-expanded .client-header {
+      pointer-events: none;
     }
 
     /* —— Extrator XML · Análise de NF-e —— */
@@ -16414,7 +16652,7 @@
     .cli-docs-hub {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
       --cli-docs-blue: var(--accent);
     }
 
@@ -16422,22 +16660,22 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
     .cli-docs-toolbar-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       min-width: 0;
     }
 
     .cli-docs-folder-heading {
       margin: 0;
-      font-size: 1rem;
-      font-weight: 750;
-      color: var(--cli-docs-blue);
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--navy-deep);
     }
 
     .cli-docs-back {
@@ -16448,15 +16686,16 @@
       background: var(--surface);
       border-radius: var(--radius-sm);
       padding: 6px 10px;
+      min-height: 36px;
       font-family: inherit;
       font-size: .78rem;
       font-weight: 650;
-      color: var(--cli-docs-blue);
+      color: var(--accent);
       cursor: pointer;
     }
 
     .cli-docs-back:hover {
-      border-color: color-mix(in srgb, var(--cli-docs-blue) 35%, var(--border));
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
     }
 
     .cli-docs-toolbar-actions {
@@ -16465,6 +16704,11 @@
       gap: 8px;
       flex-wrap: wrap;
       margin-left: auto;
+    }
+
+    .cli-docs-toolbar-actions .btn-ghost,
+    .cli-docs-toolbar-actions .btn-primary {
+      min-height: 36px;
     }
 
     .cli-docs-upload-input {
@@ -16575,14 +16819,14 @@
     .cli-docs-folders-block {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
     .cli-docs-folders-label {
-      font-size: .72rem;
-      font-weight: 700;
-      letter-spacing: .04em;
-      text-transform: uppercase;
+      font-size: .76rem;
+      font-weight: 650;
+      letter-spacing: 0;
+      text-transform: none;
       color: var(--muted);
     }
 
@@ -16649,13 +16893,13 @@
     .cli-docs-folders {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: 16px;
-      padding: 4px 2px 12px;
+      gap: 10px;
+      padding: 2px 0 8px;
       align-items: stretch;
     }
 
     .cli-docs-folder-card {
-      --cli-docs-tag: color-mix(in srgb, var(--accent) 14%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--accent) 10%, var(--surface));
       --cli-docs-tag-ink: var(--accent);
       appearance: none;
       -webkit-appearance: none;
@@ -16664,68 +16908,69 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
-      min-height: 168px;
-      padding: 26px 16px 18px;
-      border: 1px solid color-mix(in srgb, var(--border) 85%, var(--surface));
+      gap: 8px;
+      min-height: 132px;
+      padding: 16px 12px 12px;
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       background: var(--surface);
-      box-shadow: 0 1px 3px rgba(28, 56, 110, 0.06), 0 4px 14px rgba(28, 56, 110, 0.04);
-      color: var(--cli-docs-blue);
+      box-shadow: none;
+      color: var(--navy-deep);
       cursor: pointer;
       font-family: inherit;
       text-align: center;
       overflow: hidden;
-      transition: transform .18s var(--ease, ease), box-shadow .18s var(--ease, ease), border-color .18s var(--ease, ease);
+      transition: border-color .15s ease, background .15s ease;
     }
 
-    /* Etiqueta / aba — tons do projeto (accent, navy, secondary, ok, muted) */
+    /* Etiqueta / aba — tons contidos (tokens do sistema) */
     .cli-docs-folder-card[data-tag="blue"],
     .cli-docs-folder-card[data-tag="accent"] {
-      --cli-docs-tag: color-mix(in srgb, var(--accent) 14%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--accent) 10%, var(--surface));
       --cli-docs-tag-ink: var(--accent);
     }
     .cli-docs-folder-card[data-tag="red"],
     .cli-docs-folder-card[data-tag="navy"] {
-      --cli-docs-tag: color-mix(in srgb, var(--navy-deep) 12%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--navy-deep) 8%, var(--surface));
       --cli-docs-tag-ink: var(--navy-deep);
     }
     .cli-docs-folder-card[data-tag="yellow"],
     .cli-docs-folder-card[data-tag="secondary"] {
-      --cli-docs-tag: color-mix(in srgb, var(--secondary) 28%, var(--surface));
-      --cli-docs-tag-ink: color-mix(in srgb, var(--secondary) 55%, var(--navy-deep));
+      --cli-docs-tag: color-mix(in srgb, var(--secondary) 18%, var(--surface));
+      --cli-docs-tag-ink: color-mix(in srgb, var(--secondary) 40%, var(--navy-deep));
     }
     .cli-docs-folder-card[data-tag="green"],
     .cli-docs-folder-card[data-tag="ok"] {
-      --cli-docs-tag: color-mix(in srgb, var(--ok) 14%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--ok) 10%, var(--surface));
       --cli-docs-tag-ink: var(--ok);
     }
     .cli-docs-folder-card[data-tag="purple"],
     .cli-docs-folder-card[data-tag="muted"] {
-      --cli-docs-tag: color-mix(in srgb, var(--muted) 14%, var(--surface));
+      --cli-docs-tag: color-mix(in srgb, var(--muted) 10%, var(--surface));
       --cli-docs-tag-ink: var(--muted);
     }
 
     .cli-docs-folder-tab {
       position: absolute;
       top: 0;
-      left: 14px;
-      width: 42%;
-      max-width: 72px;
-      height: 8px;
-      border-radius: 0 0 8px 8px;
+      left: 12px;
+      width: 36%;
+      max-width: 56px;
+      height: 4px;
+      border-radius: 0 0 6px 6px;
       background: var(--cli-docs-tag);
-      box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--cli-docs-tag-ink) 12%, transparent);
+      box-shadow: none;
     }
 
     .cli-docs-folder-card:hover {
-      transform: translateY(-2px);
-      border-color: color-mix(in srgb, var(--cli-docs-tag-ink) 22%, var(--border));
-      box-shadow: 0 4px 12px rgba(28, 56, 110, 0.1), 0 8px 22px rgba(28, 56, 110, 0.06);
+      transform: none;
+      border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+      background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+      box-shadow: none;
     }
 
     .cli-docs-folder-card:focus-visible {
-      outline: 2px solid color-mix(in srgb, var(--cli-docs-tag-ink) 55%, transparent);
+      outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
       outline-offset: 2px;
     }
 
@@ -16733,33 +16978,34 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
       color: var(--cli-docs-tag-ink);
       background: var(--cli-docs-tag);
     }
 
     .cli-docs-folder-ico svg {
-      width: 28px;
-      height: 28px;
+      width: 20px;
+      height: 20px;
       fill: none;
       stroke: currentColor;
-      stroke-width: 1.75;
+      stroke-width: 1.85;
     }
 
     .cli-docs-folder-card[data-kind="plain"] .cli-docs-folder-ico svg {
-      fill: color-mix(in srgb, var(--cli-docs-tag-ink) 16%, transparent);
+      fill: color-mix(in srgb, var(--cli-docs-tag-ink) 12%, transparent);
       stroke: currentColor;
     }
 
     .cli-docs-folder-title {
       margin: 0;
       font-size: .78rem;
-      font-weight: 700;
-      letter-spacing: 0.01em;
+      font-weight: 650;
+      letter-spacing: 0;
       line-height: 1.25;
-      color: var(--cli-docs-blue);
+      color: var(--navy-deep);
+      text-transform: none;
       max-width: 100%;
       word-break: break-word;
     }
@@ -16768,12 +17014,12 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: 4px 10px;
+      padding: 2px 8px;
       border-radius: var(--radius-pill);
-      border: 1px solid color-mix(in srgb, var(--cli-docs-tag-ink) 14%, var(--border));
-      background: color-mix(in srgb, var(--cli-docs-tag) 55%, var(--surface-2));
-      color: color-mix(in srgb, var(--cli-docs-tag-ink) 45%, var(--muted));
-      font-size: .68rem;
+      border: 1px solid var(--border);
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+      color: var(--muted);
+      font-size: .66rem;
       font-weight: 600;
       line-height: 1.2;
       white-space: nowrap;
@@ -16940,8 +17186,8 @@
     }
 
     @media (max-width: 720px) {
-      .cli-docs-folders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-      .cli-docs-folder-card { min-height: 148px; padding: 18px 12px 14px; }
+      .cli-docs-folders { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      .cli-docs-folder-card { min-height: 120px; padding: 14px 10px 10px; }
       .cli-docs-toolbar-actions { width: 100%; }
     }
 
@@ -30321,4 +30567,617 @@
       .btn-outline span { display: none; }
       .chip-select-btn .chip-k { display: none; }
       .tool-grid { grid-template-columns: 1fr; }
+    }
+    /* =========================================================
+       Mobile · Processo Ágil (revisão)
+       Breakpoint: 720px
+       Foco: ocultar densidades + adaptar sem quebrar texto
+       ========================================================= */
+
+    @media (max-width: 720px) {
+      /* --- Ocultações --- */
+      .chat-fab,
+      .chat-panel,
+      .chat-panel.open,
+      #chatFab,
+      #chatPanel {
+        display: none !important;
+      }
+
+      .btn-expand,
+      [data-cli-perfil-expand],
+      .modal-head-tools .btn-expand,
+      .fin-header-tools .btn-expand,
+      .fin-conc-toolbar-right .btn-expand {
+        display: none !important;
+      }
+
+      .brand-text small {
+        display: none !important;
+      }
+
+      .user-meta {
+        display: none !important;
+      }
+
+      .page-rich-header .info-chips,
+      #infoChips {
+        display: none !important;
+      }
+
+      .cli-cert-card,
+      .cli-cert-card .cli-cert-text,
+      .cli-cert-card .cli-cert-detail,
+      .cli-cert-card > span:not(.cert-ico) {
+        display: none !important;
+      }
+
+      .cli-dados-btn .cli-dados-btn-label {
+        display: none !important;
+      }
+
+      /* Chips de regime/UF/status no perfil (portal e escritório) */
+      .cli-perfil-chips {
+        display: none !important;
+      }
+
+      /* Data por extenso no quadro de entregas */
+      .agenda-entregas-head .sub,
+      .cli-entregas-espelho .agenda-entregas-head .sub {
+        display: none !important;
+      }
+
+      /* Status duplica Todas/Internas/Externas no portal */
+      .cli-entregas-espelho #cliEntregaStatusWrap,
+      .cli-entregas-espelho .agenda-entregas-filters .proc-filter.agenda-ops-status {
+        display: none !important;
+      }
+
+      /* Abas do topo: só ícone + tooltip (data-tip) */
+      .text-tabs {
+        gap: 4px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+      }
+
+      .text-tab {
+        flex: 0 0 auto !important;
+        min-width: auto !important;
+        max-width: none !important;
+        padding: 8px 10px 10px !important;
+        gap: 0;
+      }
+
+      .text-tab .tab-label {
+        display: none !important;
+      }
+
+      .text-tab .tab-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .text-tab .tab-close {
+        margin-left: 2px;
+      }
+
+      /* Portal: identidade sem certificado */
+      body.is-cliente-portal .cli-perfil-head-main {
+        grid-template-columns: 1fr !important;
+        align-items: start;
+        gap: 8px;
+      }
+
+      body.is-cliente-portal .cli-perfil-identity {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        min-width: 0;
+      }
+
+      body.is-cliente-portal .cli-perfil-identity > h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        line-height: 1.25;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      body.is-cliente-portal .cli-perfil-head-actions {
+        display: none !important;
+      }
+
+      .kanban-wrap,
+      .kanban-wrap.show {
+        display: none !important;
+      }
+
+      .fin-dash-kpis.volume,
+      #procEvolucao,
+      .proc-evolucao,
+      .fin-exec-charts,
+      .cli-fin-report-charts .cli-fin-report-chart-card:nth-child(n + 2),
+      .cli-fin-audit-dash-grid .fin-mini-chart:not(:first-child),
+      .cli-fin-report-meta {
+        display: none !important;
+      }
+
+      .cli-list-kpis > :nth-child(n + 4),
+      .cfg-sess-kpis > :nth-child(n + 4),
+      .proc-kpis > :nth-child(n + 4),
+      .agenda-kpis > :nth-child(n + 4) {
+        display: none !important;
+      }
+
+      /* --- Texto: regras anti-quebra --- */
+      .brand-text h1,
+      .cli-tab,
+      .cli-fin-subnav button,
+      .fin-tabs button,
+      .cfg-tabs button,
+      .proc-badge,
+      .cli-badge,
+      .agenda-tag {
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: unset;
+        word-break: normal;
+        overflow-wrap: normal;
+      }
+
+      .proc-kpi .kpi-top span,
+      .agenda-kpi .kpi-top span,
+      .fin-dash-kpi .kpi-top span,
+      .cli-list-kpis .kpi-top span {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+        hyphens: manual;
+        line-height: 1.25;
+      }
+
+      .proc-kpi .kpi-value,
+      .agenda-kpi .kpi-value,
+      .fin-dash-kpi .kpi-value {
+        white-space: nowrap;
+      }
+
+      /* --- Topbar --- */
+      .topbar {
+        padding-inline: 10px;
+        gap: 8px;
+      }
+
+      .brand-text h1 {
+        font-size: 1rem;
+        letter-spacing: -0.01em;
+      }
+
+      .user-chip {
+        padding-inline: 6px;
+        gap: 0;
+      }
+
+      /* --- Perfil --- */
+      .cli-perfil-tabs-bar {
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        flex-wrap: nowrap !important;
+        gap: 8px;
+      }
+
+      .cli-perfil-tabs-bar .cli-tabs {
+        display: flex;
+        flex-wrap: nowrap !important;
+        width: max-content;
+        min-width: max-content;
+        flex: 0 0 auto;
+        gap: 4px;
+      }
+
+      .cli-perfil-tabs-bar .cli-tab {
+        flex: 0 0 auto !important;
+        width: auto !important;
+        min-width: auto !important;
+        max-width: none !important;
+        padding: 8px 12px;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        white-space: nowrap !important;
+      }
+
+      .cli-perfil-head-main {
+        grid-template-columns: 1fr auto !important;
+        align-items: start;
+        gap: 10px;
+      }
+
+      .cli-perfil-head-actions {
+        display: inline-flex;
+        gap: 8px;
+        justify-self: end;
+      }
+
+      .cli-cert-card {
+        width: 40px;
+        min-width: 40px;
+        height: 40px;
+        padding: 0;
+        justify-content: center;
+        align-items: center;
+        border-radius: var(--radius-sm);
+      }
+
+      .cli-cert-card .cert-ico {
+        margin: 0;
+      }
+
+      .cli-dados-btn {
+        width: 36px;
+        min-width: 36px;
+        height: 36px;
+        padding: 0;
+        justify-content: center;
+      }
+
+      .cli-perfil-head-left .module-empresa-picker,
+      .cli-perfil-head-left .module-empresa-picker.is-perfil {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .cli-perfil-head-left .module-empresa-picker .empresa-wrap,
+      .cli-perfil-head-left .module-empresa-picker .empresa-trigger {
+        width: 100%;
+        max-width: 100%;
+      }
+
+      .cli-perfil-head-left .module-empresa-picker .empresa-trigger .empresa-name {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      .cli-perfil-head-left .module-empresa-picker .empresa-trigger .name-line {
+        white-space: normal;
+        overflow: visible;
+        flex-wrap: wrap;
+      }
+
+      .cli-perfil-ops.is-expanded,
+      .content-panel.is-expanded {
+        inset: 0 !important;
+        border-radius: 0 !important;
+      }
+
+      /* --- KPIs --- */
+      .cli-list-kpis,
+      .cfg-sess-kpis,
+      .proc-kpis,
+      .agenda-kpis,
+      .fin-dash-kpis.health,
+      .fin-exec-kpis,
+      .xml-kpis,
+      .cli-honor-kpis,
+      .cli-fin-report-kpis,
+      .cli-fin-report-kpis.is-exec {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+      }
+
+      .proc-kpi,
+      .agenda-kpi,
+      .fin-dash-kpi {
+        min-width: 0;
+        overflow: hidden;
+      }
+
+      /* --- Filtros: busca + empresa; extras ocultos --- */
+      .cli-list-toolbar .proc-filter.field,
+      .cli-tab-toolbar .proc-filter.field,
+      .proc-filters-like .proc-filter.field,
+      .fin-ofx-filters .proc-filter:not(.search),
+      .fin-op-filters .proc-filter:not(.search),
+      .cli-fin-mov-toolbar .proc-filter:not(.search),
+      .cli-xml-filters .proc-filter:not(.search),
+      .agenda-quick-filters,
+      .cli-list-toolbar .agenda-ops-view,
+      .cli-tab-toolbar .proc-view-toggle,
+      .proc-actions .proc-view-toggle {
+        display: none !important;
+      }
+
+      .cli-list-toolbar .proc-filter.search,
+      .cli-tab-toolbar .proc-filter.search,
+      .proc-filters-like .proc-filter.search {
+        flex: 1 1 auto !important;
+        max-width: none !important;
+        min-width: 140px !important;
+        width: auto;
+      }
+
+      .cli-list-toolbar,
+      .cli-tab-toolbar.proc-filters-like,
+      .proc-filters,
+      .fin-dash-toolbar {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .cli-list-toolbar .module-empresa-picker,
+      .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker {
+        flex: 1 1 100%;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      .cli-list-toolbar .module-empresa-picker .empresa-wrap,
+      .cli-list-toolbar .module-empresa-picker .empresa-trigger {
+        width: 100%;
+      }
+
+      .cli-list-toolbar .module-empresa-picker .empresa-trigger .empresa-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* --- Dual / stack --- */
+      .cli-fin-dual {
+        grid-template-columns: 1fr !important;
+      }
+
+      .fin-pmap-modal .fin-pmap-grid,
+      .fin-gerar-titulo-modal .fin-gerar-grid,
+      .modal.wide .cfg-obr-grid {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cli-fin-report-charts {
+        grid-template-columns: 1fr !important;
+      }
+
+      .etapa-kanban {
+        grid-template-columns: 1fr !important;
+      }
+
+      /* --- Modais --- */
+      .modal,
+      .modal.wide,
+      .modal.cli-fin-audit-modal,
+      .modal.cli-fin-audit-rules-modal,
+      .modal.fin-ofx-import-modal,
+      .modal.fin-pmap-modal,
+      .modal.fin-gerar-titulo-modal,
+      .modal.cfg-obr-modal {
+        width: calc(100vw - 16px) !important;
+        max-width: calc(100vw - 16px) !important;
+        max-height: calc(100dvh - 16px);
+        margin: 8px auto;
+      }
+
+      .modal-body {
+        max-height: min(62dvh, 520px) !important;
+      }
+
+      .modal-title,
+      .modal-sub {
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      .modal.fin-ofx-import-modal .modal-body::before,
+      .modal.fin-pmap-modal .modal-body::before,
+      .modal.fin-gerar-titulo-modal .modal-body::before,
+      .modal.cli-fin-audit-modal .modal-body::before,
+      .modal.cfg-obr-modal .modal-body::before {
+        content: "Versão simplificada no celular. Use o desktop para a operação completa.";
+        display: block;
+        margin: 0 0 12px;
+        padding: 8px 10px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-sm);
+        background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+        color: var(--muted);
+        font-size: .72rem;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      /* --- Abas: scroll horizontal sem truncar rótulo --- */
+      .fin-tabs,
+      .fin-tabs-bar,
+      .fin-report-nav,
+      .fin-config-nav,
+      .cfg-tabs,
+      .cfg-sess-tabs,
+      .cli-fin-subnav,
+      .text-tabs {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        gap: 6px;
+      }
+
+      .fin-tabs button,
+      .fin-report-nav button,
+      .fin-config-nav button,
+      .cfg-tabs button,
+      .cli-fin-subnav button,
+      .text-tabs button {
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        max-width: none !important;
+      }
+
+      /* --- Tabelas: scroll horizontal (não esmagar colunas) --- */
+      .proc-list-head,
+      .sec-list-head,
+      .cli-list-head {
+        display: none !important;
+      }
+
+      .cli-fin-tit-table,
+      .cfg-sess-table,
+      .cfg-table,
+      .laudo-full-table,
+      .agenda-table,
+      .sec-list,
+      .proc-grid.is-list {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .cli-fin-tit-table table,
+      .cfg-sess-table table,
+      .cfg-table table,
+      .laudo-full-table table,
+      .agenda-table table {
+        width: max-content;
+        min-width: 100%;
+        max-width: none;
+      }
+
+      .cli-fin-tit-table th,
+      .cli-fin-tit-table td,
+      .cfg-sess-table th,
+      .cfg-sess-table td,
+      .cfg-table th,
+      .cfg-table td,
+      .laudo-full-table th,
+      .laudo-full-table td {
+        white-space: nowrap;
+      }
+
+      /* Lista de processos em card no mobile */
+      .proc-list-row {
+        grid-template-columns: 1fr auto !important;
+        grid-template-areas:
+          "title actions"
+          "status actions"
+          "empresa empresa"
+          "prog prog"
+          "meta meta" !important;
+        gap: 6px 10px !important;
+        padding: 12px !important;
+        align-items: start;
+      }
+
+      .proc-list-row .title-cell {
+        grid-area: title;
+        min-width: 0;
+      }
+
+      .proc-list-row .title-cell strong {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      .proc-list-row .cell-status { grid-area: status; justify-self: start; }
+      .proc-list-row .cell-actions { grid-area: actions; justify-self: end; }
+      .proc-list-row .cell-empresa { grid-area: empresa; }
+      .proc-list-row .cell-prog { grid-area: prog; }
+      .proc-list-row .cell-dept,
+      .proc-list-row .cell-resp,
+      .proc-list-row .cell-comp,
+      .proc-list-row .cell-inicio,
+      .proc-list-row .cell-fim {
+        grid-area: meta;
+        display: inline;
+      }
+
+      .proc-list-row .cell-dept::after,
+      .proc-list-row .cell-resp::after,
+      .proc-list-row .cell-comp::after,
+      .proc-list-row .cell-inicio::after {
+        content: " · ";
+        color: var(--muted);
+      }
+
+      .proc-list-row .cell-fim::after {
+        content: none;
+      }
+
+      /* --- Calendário --- */
+      .agenda-cal-grid,
+      .cfg-cal-grid {
+        gap: 2px;
+      }
+
+      .agenda-cal-grid .day,
+      .cfg-cal-grid .day {
+        min-height: 34px;
+        font-size: .68rem;
+        padding: 3px;
+        overflow: hidden;
+      }
+
+      /* --- Painel --- */
+      .panel-body {
+        padding: 10px;
+      }
+
+      .panel-toolbar {
+        padding: 8px 10px;
+        min-height: 0;
+      }
+
+      .cli-docs-folders {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px;
+      }
+
+      .cli-docs-folder-title {
+        white-space: normal;
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+
+      .toast {
+        left: 16px;
+        right: 16px;
+        max-width: none;
+      }
+
+      .fake-row strong,
+      .fake-row span {
+        overflow-wrap: break-word;
+        word-break: normal;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .cli-list-kpis,
+      .proc-kpis,
+      .agenda-kpis,
+      .fin-dash-kpis.health {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cli-docs-folders {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cli-perfil-head-main {
+        grid-template-columns: 1fr !important;
+      }
+
+      .cli-perfil-head-actions {
+        justify-self: start;
+      }
     }

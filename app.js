@@ -1454,7 +1454,13 @@
     let recentClientIds = CLIENTES.slice(0, 5).map((c) => c.id);
     let cliView = "lista"; // lista | perfil
     let cliPerfilId = null;
-    let cliPerfilTab = "obrigacoes";
+    let cliPerfilTab = "entregas";
+    /** Expandir área operacional do perfil (abas + conteúdo; sem cabeçalho). */
+    let cliPerfilBodyExpanded = false;
+    /** Sub-aba de Processos no perfil: execucao | recorrencias */
+    let cliProcSubTab = "execucao";
+    /** Sub-aba de Entregas no perfil: execucao | obrigacoes (moldes) */
+    let cliEntregaSubTab = "execucao";
     /** Filtros da aba Entregas no Acesso ao Cliente (IDs próprios · sem conflito com agenda). */
     let cliEntregaQuery = "";
     let cliEntregaStatus = "";
@@ -1673,16 +1679,62 @@
     let cliHonorRelatorioAtualizado = "14/07/2026 17:40";
 
     const CLI_PERFIL_TABS = [
-      { id: "obrigacoes", label: "Obrigações" },
+      { id: "entregas", label: "Entregas" },
       { id: "processos", label: "Processos" },
       { id: "funcionarios", label: "Funcionários" },
       { id: "documentos", label: "Documentos" },
       { id: "comentarios", label: "Notas e senhas" },
-      { id: "entregas", label: "Entregas" },
       { id: "xml", label: "XML" },
       { id: "financeiro", label: "Financeiro" },
       { id: "honorarios", label: "Honorários" },
     ];
+
+    /** Catálogo de processos molde (recorrências). */
+    const PROC_MOLDES_CATALOG = [
+      { id: "pm-cad-emp", nome: "CADASTRO DE EMPRESAS", etapas: 4, obrigatorias: 2 },
+      { id: "pm-pauta", nome: "PAUTA DE DÉBITOS", etapas: 3, obrigatorias: 1 },
+      { id: "pm-efd", nome: "VERIFICAÇÃO EFD ERRONAMENTE ZERADOS - DIA 16", etapas: 5, obrigatorias: 3 },
+      { id: "pm-audit", nome: "Auditoria de Cartões.", etapas: 6, obrigatorias: 2 },
+      { id: "pm-test", nome: "test", etapas: 0, obrigatorias: 0 },
+    ];
+
+    /** Recorrências associadas por cliente: { [clienteId]: [{ moldeId, status, associadaEm }] } */
+    let cliProcRecorrenciasByClient = {};
+
+    function ensureCliProcRecorrencias(clienteId) {
+      if (!clienteId) return [];
+      if (!cliProcRecorrenciasByClient[clienteId]) {
+        const seed = [];
+        if (PROC_MOLDES_CATALOG[0]) seed.push({ moldeId: PROC_MOLDES_CATALOG[0].id, status: "ativa", associadaEm: "01/07/2026" });
+        if (PROC_MOLDES_CATALOG[1] && String(clienteId).length % 2 === 0) {
+          seed.push({ moldeId: PROC_MOLDES_CATALOG[1].id, status: "ativa", associadaEm: "08/07/2026" });
+        }
+        cliProcRecorrenciasByClient[clienteId] = seed;
+      }
+      return cliProcRecorrenciasByClient[clienteId];
+    }
+
+    function getProcMoldeById(id) {
+      return PROC_MOLDES_CATALOG.find((m) => m.id === id) || null;
+    }
+
+    function getCliProcRecorrenciasDetalhe(clienteId) {
+      return ensureCliProcRecorrencias(clienteId)
+        .map((r) => {
+          const molde = getProcMoldeById(r.moldeId);
+          if (!molde) return null;
+          return { ...r, molde };
+        })
+        .filter(Boolean);
+    }
+
+    function associateCliProcRecorrencia(clienteId, moldeId) {
+      if (!clienteId || !moldeId || !getProcMoldeById(moldeId)) return { ok: false, reason: "invalid" };
+      const list = ensureCliProcRecorrencias(clienteId);
+      if (list.some((r) => r.moldeId === moldeId)) return { ok: false, reason: "exists" };
+      list.push({ moldeId, status: "ativa", associadaEm: "14/07/2026" });
+      return { ok: true };
+    }
 
     function resolveSection(id) {
       if (isClientePortal()) {
@@ -1800,7 +1852,14 @@
       cliListMenuId = null;
       cliView = "perfil";
       cliPerfilId = c.id;
-      cliPerfilTab = (tab && CLI_PERFIL_TABS.some((t) => t.id === tab)) ? tab : "obrigacoes";
+      /* legado: "obrigacoes" abre Entregas → subtela moldes */
+      if (tab === "obrigacoes") {
+        cliPerfilTab = "entregas";
+        cliEntregaSubTab = "obrigacoes";
+      } else {
+        cliPerfilTab = (tab && CLI_PERFIL_TABS.some((t) => t.id === tab)) ? tab : "entregas";
+        if (tab === "entregas") cliEntregaSubTab = "execucao";
+      }
       renderClientes();
     }
 
@@ -1809,6 +1868,8 @@
         toast("No acesso cliente você permanece no perfil da sua empresa");
         return;
       }
+      if (typeof setCliPerfilBodyExpanded === "function") setCliPerfilBodyExpanded(false);
+      else cliPerfilBodyExpanded = false;
       cliView = "lista";
       cliPerfilId = null;
       renderClientes();
@@ -4701,6 +4762,11 @@
       }
       const closeBtn = document.getElementById("modalClose");
       if (closeBtn) closeBtn.hidden = true;
+      if (modal?.dataset) {
+        delete modal.dataset.cliProcRecCliente;
+        delete modal.dataset.procAddMolde;
+        delete modal.dataset.procAddCliente;
+      }
       backdrop.classList.remove("open");
       if (wasReport) {
         destroyCliFinReportCharts();
@@ -5527,6 +5593,10 @@
     }
 
     function renderProcessos() {
+      if (window.matchMedia("(max-width: 720px)").matches) {
+        procFiltros.view = "list";
+        if (procFiltros.groupBy === "empresa") procFiltros.groupBy = "lista";
+      }
       const list = getProcessosFiltrados();
       renderProcessosQuantidade(list);
       renderProcessosEvolucao(list);
@@ -5578,47 +5648,151 @@
       });
     }
 
+    function resolveProcAddClienteId() {
+      if (cliView === "perfil" && cliPerfilId) return cliPerfilId;
+      if (typeof procEmpresaFilter === "string" && procEmpresaFilter && procEmpresaFilter !== "all") {
+        return procEmpresaFilter;
+      }
+      return CLIENTES[0]?.id || null;
+    }
+
+    function renderProcMoldeAvulsoPickHtml(query = "") {
+      const q = normalizeSearchText(query);
+      const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
+      const check = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>`;
+      const list = PROC_MOLDES_CATALOG.filter((m) => !q || normalizeSearchText(m.nome).includes(q));
+      return `
+        <div class="cli-proc-molde-pick-wrap">
+          <div class="proc-filter search cli-proc-molde-search">
+            <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" id="procMoldeAvulsoSearch" placeholder="Pesquisar processo molde..." value="${String(query || "").replace(/"/g, "&quot;")}" aria-label="Pesquisar processo molde" />
+          </div>
+          <div class="cli-proc-molde-pick" id="procMoldeAvulsoList">
+            ${list.length ? list.map((m) => `
+              <div class="cli-proc-molde-row">
+                <span class="cli-proc-molde-ico">${ico}</span>
+                <div class="cli-proc-molde-info">
+                  <strong>${m.nome}</strong>
+                  <span>${m.etapas} etapas · ${m.obrigatorias} obrigatórias</span>
+                </div>
+                <button type="button" class="btn-primary cli-proc-molde-criar" data-cli-proc-molde-associar="${m.id}" aria-label="Associar ${m.nome}">
+                  ${check}
+                  <span>Associar</span>
+                </button>
+              </div>`).join("") : `<div class="cli-empty-panel">Nenhum processo molde encontrado</div>`}
+          </div>
+        </div>`;
+    }
+
     function openAddProcessoModal() {
+      const clienteId = resolveProcAddClienteId();
+      modal.dataset.procAddCliente = clienteId || "";
+      delete modal.dataset.procAddMolde;
       openModal({
-        title: "Adicionar processo",
-        sub: "Seleção de molde (simulação)",
+        title: "Selecionar Processo Molde",
+        sub: "Selecione um processo molde para criar um processo avulso:",
+        wide: true,
+        body: renderProcMoldeAvulsoPickHtml(""),
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
+      });
+    }
+
+    function openCriarProcessoFromMoldeModal(moldeId) {
+      const molde = getProcMoldeById(moldeId);
+      if (!molde) {
+        toast("Molde não encontrado");
+        return;
+      }
+      if (!modal.dataset.procAddCliente) {
+        modal.dataset.procAddCliente = resolveProcAddClienteId() || "";
+      }
+      modal.dataset.procAddMolde = molde.id;
+      const compDefault = "2026-06";
+      openModal({
+        title: "Criar Processo",
+        sub: `Molde selecionado: ${molde.nome}`,
         body: `
-          <p style="margin-bottom:12px;font-size:.84rem;color:var(--muted)">Escolha um molde para duplicar neste cliente.</p>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            ${["Abertura de empresa", "Alteração cadastral", "Baixa de inscrição", "Encerramento anual"].map((n, i) => `
-              <label class="filter-option" style="justify-content:flex-start">
-                <input type="radio" name="moldeProc" value="${i}" ${i === 0 ? "checked" : ""}>
-                <span><strong style="display:block;font-size:.84rem">${n}</strong>
-                <span style="font-size:.74rem;color:var(--muted)">Molde padrão</span></span>
-              </label>`).join("")}
+          <div class="cli-proc-criar-form">
+            <div class="field">
+              <label for="procCriarCompetencia">Competência</label>
+              <div class="cli-proc-criar-comp">
+                <input type="month" id="procCriarCompetencia" value="${compDefault}" aria-label="Competência" />
+              </div>
+            </div>
+            <label class="cfg-molde-check wrap" for="procCriarNomeCustom">
+              <input type="checkbox" id="procCriarNomeCustom" />
+              <span>Atribuir nome personalizado</span>
+            </label>
+            <div class="field" id="procCriarNomeWrap" hidden>
+              <label for="procCriarNome">Nome do processo</label>
+              <input type="text" id="procCriarNome" value="${molde.nome.replace(/"/g, "&quot;")}" maxlength="120" />
+            </div>
+            <label class="cfg-molde-check wrap" for="procCriarChat">
+              <input type="checkbox" id="procCriarChat" />
+              <span>É uma Solicitação do Chat?<small>Marque quando o processo veio de uma solicitação do chat.</small></span>
+            </label>
           </div>`,
         foot: `
-          <button type="button" class="btn-ghost" data-close>Cancelar</button>
-          <button type="button" class="btn-primary" id="procAddConfirm">Duplicar molde</button>`,
+          <button type="button" class="btn-ghost" data-cli-proc-criar="voltar">Cancelar</button>
+          <button type="button" class="btn-primary" data-cli-proc-criar="associar">Associar</button>`,
       });
-      document.getElementById("procAddConfirm")?.addEventListener("click", () => {
-        const section = sections.find((s) => s.id === "processos");
-        const nome = document.querySelector('input[name="moldeProc"]:checked')?.closest("label")?.querySelector("strong")?.textContent || "Novo processo";
-        const id = 1100 + section.items.length;
-        section.items.unshift({
-          id,
-          title: nome,
-          status: "em-andamento",
-          sucesso: null,
-          dept: "Comercial",
-          responsavel: "Ana Costa",
-          criado: "2026-07-13",
-          competencia: "2026-07",
-          arquivado: false,
-          etapas: [
-            { id: id * 10 + 1, nome: "Início", status: "em_andamento", ordem: 1, obrigatorio: true, responsavel: "Ana Costa" },
-            { id: id * 10 + 2, nome: "Conclusão", status: "pendente", ordem: 2, obrigatorio: true, responsavel: "Ana Costa" },
-          ],
-        });
-        closeModal();
+    }
+
+    function confirmCriarProcessoFromMolde() {
+      const moldeId = modal.dataset.procAddMolde;
+      const molde = getProcMoldeById(moldeId);
+      if (!molde) {
+        toast("Molde não encontrado");
+        return;
+      }
+      const section = sections.find((s) => s.id === "processos");
+      if (!section) return;
+      const clienteId = modal.dataset.procAddCliente || resolveProcAddClienteId();
+      const cliente = CLIENTES.find((c) => c.id === clienteId);
+      const useCustom = !!document.getElementById("procCriarNomeCustom")?.checked;
+      const customName = (document.getElementById("procCriarNome")?.value || "").trim();
+      const title = useCustom && customName ? customName : molde.nome;
+      const compRaw = document.getElementById("procCriarCompetencia")?.value || "2026-06";
+      const competencia = /^\d{4}-\d{2}$/.test(compRaw) ? compRaw : "2026-06";
+      const fromChat = !!document.getElementById("procCriarChat")?.checked;
+      const id = 1100 + section.items.length + Math.floor(Math.random() * 80);
+      const etapas = Array.from({ length: Math.max(2, molde.etapas || 2) }, (_, i) => ({
+        id: id * 10 + i + 1,
+        nome: i === 0 ? "Início" : (i === Math.max(1, (molde.etapas || 2) - 1) ? "Conclusão" : `Etapa ${i + 1}`),
+        status: i === 0 ? "em_andamento" : "pendente",
+        ordem: i + 1,
+        obrigatorio: i < Math.max(1, molde.obrigatorias || 1),
+        responsavel: "Ana Costa",
+      }));
+      section.items.unshift({
+        id,
+        title,
+        status: "em-andamento",
+        sucesso: null,
+        dept: "Comercial",
+        clienteId: cliente?.id || null,
+        cliente: cliente?.fantasia || cliente?.nome || "—",
+        responsavel: "Ana Costa",
+        criado: "2026-07-14",
+        inicio: "2026-07-14",
+        fim: null,
+        previsaoFim: null,
+        competencia,
+        arquivado: false,
+        origemChat: fromChat,
+        moldeId: molde.id,
+        etapas,
+      });
+      delete modal.dataset.procAddMolde;
+      delete modal.dataset.procAddCliente;
+      closeModal();
+      if (cliView === "perfil" && cliPerfilId) {
+        cliProcSubTab = "execucao";
+        renderClientes();
+      } else {
         renderProcessos();
-        toast("Processo duplicado com sucesso!");
-      });
+      }
+      toast(fromChat ? "Processo associado (solicitação do chat)" : "Processo associado com sucesso");
     }
 
     function getCliGestaoPendenciasCount(c) {
@@ -6427,10 +6601,6 @@
           <button type="button" class="btn-ghost tip-bottom" data-cli-com-report data-tip="Relatório comercial do filtro atual">
             Relatório
           </button>
-          <button type="button" class="btn-primary cli-add-btn" data-cli-add-empresa>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-            Nova empresa
-          </button>
         </div>
         <div class="cli-list-kpis" aria-label="Indicadores da carteira filtrada">
           <button type="button" class="cli-list-kpi${!kpiActive ? " is-active" : ""}" data-cli-list-kpi="" aria-pressed="${!kpiActive}">
@@ -6563,7 +6733,8 @@
       ].join("");
     }
 
-    function renderCliPerfilProcessos(c) {
+    function renderCliPerfilProcessosExecucao(c) {
+      if (window.matchMedia("(max-width: 720px)").matches) cliProcView = "list";
       const all = getCliProcessos(c, false);
       const procs = getCliProcessos(c, true);
       const resps = [...new Set(all.map((p) => p.responsavel).filter(Boolean))];
@@ -6714,6 +6885,82 @@
               </div>`;
           }).join("")}
         </div>`;
+    }
+
+    function renderProcMoldePickListHtml(clienteId) {
+      const associated = new Set(ensureCliProcRecorrencias(clienteId).map((r) => r.moldeId));
+      const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
+      const sync = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 0 0-14.3-7.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 14.3 7.2L21 16"/><path d="M16 21h5v-5"/></svg>`;
+      return `
+        <div class="cli-proc-molde-pick">
+          ${PROC_MOLDES_CATALOG.map((m) => {
+            const done = associated.has(m.id);
+            return `
+              <div class="cli-proc-molde-row${done ? " is-associated" : ""}">
+                <span class="cli-proc-molde-ico">${ico}</span>
+                <div class="cli-proc-molde-info">
+                  <strong>${m.nome}</strong>
+                  <span>${m.etapas} etapas · ${m.obrigatorias} obrigatórias</span>
+                </div>
+                <button type="button" class="btn-primary cli-proc-molde-criar" data-cli-proc-molde-criar="${m.id}" ${done ? "disabled" : ""} aria-label="${done ? "Já associada" : `Criar recorrência: ${m.nome}`}">
+                  ${sync}
+                  <span>${done ? "Associada" : "Criar"}</span>
+                </button>
+              </div>`;
+          }).join("")}
+        </div>`;
+    }
+
+    function openProcRecorrenciaModal(clienteId) {
+      const cid = clienteId || cliPerfilId || null;
+      if (!cid) {
+        toast("Selecione uma empresa para criar a recorrência");
+        return;
+      }
+      openModal({
+        title: "Criar Recorrência de Processo",
+        sub: "Selecione um processo molde para criar uma recorrência:",
+        wide: true,
+        body: renderProcMoldePickListHtml(cid),
+        foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>`,
+      });
+      modal.dataset.cliProcRecCliente = cid;
+    }
+
+    function renderCliPerfilProcessosRecorrencias(c) {
+      const items = getCliProcRecorrenciasDetalhe(c.id);
+      const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
+      return `
+        <div class="cli-proc-rec-panel">
+          <div class="cli-obr-actions">
+            <button type="button" class="btn-primary" data-cli-proc-rec="criar">Criar recorrência</button>
+          </div>
+          <div class="cli-proc-rec-list">
+            ${items.length ? items.map((r) => `
+              <article class="cli-proc-rec-card">
+                <span class="cli-proc-molde-ico">${ico}</span>
+                <div class="cli-proc-molde-info">
+                  <strong>${r.molde.nome}</strong>
+                  <span>${r.molde.etapas} etapas · ${r.molde.obrigatorias} obrigatórias${r.associadaEm ? ` · desde ${r.associadaEm}` : ""}</span>
+                </div>
+                <span class="cli-badge ${r.status === "pausada" ? "filial" : "matriz"}">${r.status === "pausada" ? "Pausada" : "Ativa"}</span>
+              </article>`).join("") : `<div class="cli-empty-panel">Nenhuma recorrência associada a este cliente</div>`}
+          </div>
+        </div>`;
+    }
+
+    function renderCliPerfilProcessos(c) {
+      const portal = isClientePortal();
+      const sub = portal ? "execucao" : (cliProcSubTab === "recorrencias" ? "recorrencias" : "execucao");
+      const subnav = portal ? "" : `
+        <div class="cli-fin-subnav" role="tablist" aria-label="Processos e recorrências">
+          <button type="button" role="tab" class="${sub === "execucao" ? "active" : ""}" aria-selected="${sub === "execucao"}" data-cli-proc-sub="execucao">Em execução</button>
+          <button type="button" role="tab" class="${sub === "recorrencias" ? "active" : ""}" aria-selected="${sub === "recorrencias"}" data-cli-proc-sub="recorrencias">Recorrências</button>
+        </div>`;
+      const body = sub === "recorrencias" && !portal
+        ? renderCliPerfilProcessosRecorrencias(c)
+        : renderCliPerfilProcessosExecucao(c);
+      return `${subnav}${body}`;
     }
 
     function cliFeedEsc(s) {
@@ -7409,13 +7656,13 @@
 
     const CLI_DOCS_FOLDERS = [
       { id: "recentes", title: "Recentes", badgeUnit: "items", icon: "clock", kind: "recent", tag: "accent" },
-      { id: "certificado-digital", title: "CERTIFICADO DIGITAL", badgeUnit: "arquivos", icon: "shield-check", kind: "dept", tag: "navy" },
-      { id: "contabil", title: "CONTABIL", badgeUnit: "arquivos", icon: "calculator", kind: "dept", tag: "secondary" },
-      { id: "departamento-pessoal", title: "DEPARTAMENTO PESSOAL", badgeUnit: "arquivos", icon: "users", kind: "dept", tag: "ok" },
-      { id: "financeiro", title: "FINANCEIRO", badgeUnit: "arquivos", icon: "wallet", kind: "dept", tag: "accent" },
-      { id: "fiscal", title: "FISCAL", badgeUnit: "arquivos", icon: "receipt", kind: "dept", tag: "navy" },
-      { id: "implantacao", title: "IMPLANTAÇÃO", badgeUnit: "arquivos", icon: "rocket", kind: "dept", tag: "secondary" },
-      { id: "paralegal", title: "PARALEGAL", badgeUnit: "arquivos", icon: "scale", kind: "dept", tag: "ok" },
+      { id: "certificado-digital", title: "Certificado digital", badgeUnit: "arquivos", icon: "shield-check", kind: "dept", tag: "navy" },
+      { id: "contabil", title: "Contábil", badgeUnit: "arquivos", icon: "calculator", kind: "dept", tag: "secondary" },
+      { id: "departamento-pessoal", title: "Departamento pessoal", badgeUnit: "arquivos", icon: "users", kind: "dept", tag: "ok" },
+      { id: "financeiro", title: "Financeiro", badgeUnit: "arquivos", icon: "wallet", kind: "dept", tag: "accent" },
+      { id: "fiscal", title: "Fiscal", badgeUnit: "arquivos", icon: "receipt", kind: "dept", tag: "navy" },
+      { id: "implantacao", title: "Implantação", badgeUnit: "arquivos", icon: "rocket", kind: "dept", tag: "secondary" },
+      { id: "paralegal", title: "Paralegal", badgeUnit: "arquivos", icon: "scale", kind: "dept", tag: "ok" },
       { id: "outros", title: "Outros", badgeUnit: "arquivos", icon: "folder", kind: "plain", tag: "muted" },
     ];
 
@@ -7665,11 +7912,10 @@
       lucide.createIcons({ attrs: { "stroke-width": 1.75 } });
     }
 
-    function renderCliPerfilTabBody(c) {
-      const metrics = empresaMetrics[c.id] || {};
-      if (cliPerfilTab === "obrigacoes") {
-        const items = obrigacoesItems.filter((o) => !o.interna).slice(0, 8);
-        return `
+    function renderCliPerfilObrigacoes(c) {
+      const items = obrigacoesItems.filter((o) => !o.interna).slice(0, 8);
+      return `
+        <div class="cli-obr-panel">
           <div class="cli-obr-actions">
             <button type="button" class="btn-primary" data-cli-action="iniciar-obrigacoes">Iniciar obrigações</button>
             <button type="button" class="btn-ghost" data-cli-action="obrigacao-interna">Obrigação interna</button>
@@ -7683,8 +7929,65 @@
               </div>
               <span class="proc-badge dept">${o.grupo ? "Grupo" : "Avulsa"}</span>
             </article>`).join("") : `<div class="cli-empty-panel">Nenhuma obrigação listada</div>`}
+          </div>
+        </div>`;
+    }
+
+    function renderCliPerfilEntregasExecucao(c) {
+      if (isClientePortal()) return renderCliEntregasEspelhada(c);
+      const entregas = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && matchesCliEntregaOrigem(t));
+      const origemToggle = renderCliEntregaOrigemToggle();
+      if (!entregas.length) {
+        return `
+          <div class="cli-entregas-wrap">
+            <div class="cli-entregas-toolbar">${origemToggle}</div>
+            <div class="cli-empty-panel">${cliEntregaOrigem ? "Nenhuma entrega neste filtro" : "Nenhuma entrega vinculada"}</div>
           </div>`;
       }
+      return `
+        <div class="cli-entregas-wrap">
+          <div class="cli-entregas-toolbar">${origemToggle}</div>
+          <div class="cli-entregas-grid">${entregas.map((t) => {
+            const stCls = t.status === "atrasada" ? "atrasada" : "no-prazo";
+            const stLabel = stCls === "atrasada" ? "Atrasada" : "No Prazo";
+            const origem = getEntregaOrigem(t);
+            const origemLabel = origem === "solicitacao" ? "Solicitação" : "Interna";
+            return `
+            <div class="agenda-entregas-card is-${stCls} tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
+              <div class="row">
+                <h5>${t.nome}</h5>
+                <span class="cli-entrega-tags">
+                  <span class="agenda-tag ${origem === "solicitacao" ? "solicitacao" : "interna"}">${origemLabel}</span>
+                  <span class="agenda-tag ${stCls}">${stLabel}</span>
+                </span>
+              </div>
+              <div class="detail">
+                <div class="meta"><b>Empresa</b><span class="val" title="${t.razaoSocial || ""}">${(CLIENTES.find((x) => x.id === t.clienteId)?.fantasia || CLIENTES.find((x) => x.id === t.clienteId)?.nome || t.razaoSocial || "—")}</span></div>
+                <div class="meta"><b>Responsável</b><span class="val">${t.responsavel}</span></div>
+                <div class="meta"><b>Prazo</b><span class="val">${t.prazoLegal}</span></div>
+                <div class="meta"><b>Competência</b><span class="val">${t.competencia}</span></div>
+              </div>
+            </div>`;
+          }).join("")}</div>
+        </div>`;
+    }
+
+    function renderCliPerfilEntregas(c) {
+      const portal = isClientePortal();
+      const sub = portal ? "execucao" : (cliEntregaSubTab === "obrigacoes" ? "obrigacoes" : "execucao");
+      const subnav = portal ? "" : `
+        <div class="cli-fin-subnav" role="tablist" aria-label="Entregas e obrigações">
+          <button type="button" role="tab" class="${sub === "execucao" ? "active" : ""}" aria-selected="${sub === "execucao"}" data-cli-ent-sub="execucao">Em execução</button>
+          <button type="button" role="tab" class="${sub === "obrigacoes" ? "active" : ""}" aria-selected="${sub === "obrigacoes"}" data-cli-ent-sub="obrigacoes">Obrigações</button>
+        </div>`;
+      const body = sub === "obrigacoes" && !portal
+        ? renderCliPerfilObrigacoes(c)
+        : renderCliPerfilEntregasExecucao(c);
+      return `${subnav}${body}`;
+    }
+
+    function renderCliPerfilTabBody(c) {
+      const metrics = empresaMetrics[c.id] || {};
       if (cliPerfilTab === "processos") return renderCliPerfilProcessos(c);
       if (cliPerfilTab === "funcionarios") {
         const internos = c.funcInternos ?? 0;
@@ -7755,42 +8058,7 @@
         return renderCliFeed(c);
       }
       if (cliPerfilTab === "entregas") {
-        if (isClientePortal()) return renderCliEntregasEspelhada(c);
-        const entregas = agendaTasks.filter((t) => t.clienteId === c.id && !t.arquivada && matchesCliEntregaOrigem(t));
-        const origemToggle = renderCliEntregaOrigemToggle();
-        if (!entregas.length) {
-          return `
-            <div class="cli-entregas-wrap">
-              <div class="cli-entregas-toolbar">${origemToggle}</div>
-              <div class="cli-empty-panel">${cliEntregaOrigem ? "Nenhuma entrega neste filtro" : "Nenhuma entrega vinculada"}</div>
-            </div>`;
-        }
-        return `
-          <div class="cli-entregas-wrap">
-            <div class="cli-entregas-toolbar">${origemToggle}</div>
-            <div class="cli-entregas-grid">${entregas.map((t) => {
-              const stCls = t.status === "atrasada" ? "atrasada" : "no-prazo";
-              const stLabel = stCls === "atrasada" ? "Atrasada" : "No Prazo";
-              const origem = getEntregaOrigem(t);
-              const origemLabel = origem === "solicitacao" ? "Solicitação" : "Interna";
-              return `
-              <div class="agenda-entregas-card is-${stCls} tip-bottom" data-tip="Detalhe da entrega" data-cli-entrega-id="${t.id}" role="button" tabindex="0">
-                <div class="row">
-                  <h5>${t.nome}</h5>
-                  <span class="cli-entrega-tags">
-                    <span class="agenda-tag ${origem === "solicitacao" ? "solicitacao" : "interna"}">${origemLabel}</span>
-                    <span class="agenda-tag ${stCls}">${stLabel}</span>
-                  </span>
-                </div>
-                <div class="detail">
-                  <div class="meta"><b>Empresa</b><span class="val" title="${t.razaoSocial || ""}">${(CLIENTES.find((x) => x.id === t.clienteId)?.fantasia || CLIENTES.find((x) => x.id === t.clienteId)?.nome || t.razaoSocial || "—")}</span></div>
-                  <div class="meta"><b>Responsável</b><span class="val">${t.responsavel}</span></div>
-                  <div class="meta"><b>Prazo</b><span class="val">${t.prazoLegal}</span></div>
-                  <div class="meta"><b>Competência</b><span class="val">${t.competencia}</span></div>
-                </div>
-              </div>`;
-            }).join("")}</div>
-          </div>`;
+        return renderCliPerfilEntregas(c);
       }
       if (cliPerfilTab === "xml") {
         return renderCliXmlAnaliseModule(c);
@@ -7909,9 +8177,10 @@
         renderClientesList();
         return;
       }
-      if (!CLI_PERFIL_TABS.some((t) => t.id === cliPerfilTab)) cliPerfilTab = "obrigacoes";
+      if (!CLI_PERFIL_TABS.some((t) => t.id === cliPerfilTab)) cliPerfilTab = "entregas";
       const certRow = getCertificadoRow(c);
       const cert = certRow.meta;
+      const opsExpanded = !!cliPerfilBodyExpanded;
       wrap.innerHTML = `
         <div class="cli-perfil">
           <div class="cli-perfil-head">
@@ -7944,15 +8213,21 @@
               </div>
             </div>
           </div>
-          <div class="cli-perfil-tabs-bar">
-            <div class="cli-tabs" role="tablist" aria-label="Abas do perfil">
-              ${CLI_PERFIL_TABS.map((t) => `
-                <button type="button" class="cli-tab${cliPerfilTab === t.id ? " active" : ""}" role="tab" aria-selected="${cliPerfilTab === t.id}" data-cli-tab="${t.id}">${t.label}</button>
-              `).join("")}
+          <div class="cli-perfil-ops${opsExpanded ? " is-expanded" : ""}" id="cliPerfilOps">
+            <div class="cli-perfil-tabs-bar">
+              <div class="cli-tabs" role="tablist" aria-label="Abas do perfil">
+                ${CLI_PERFIL_TABS.map((t) => `
+                  <button type="button" class="cli-tab${cliPerfilTab === t.id ? " active" : ""}" role="tab" aria-selected="${cliPerfilTab === t.id}" data-cli-tab="${t.id}">${t.label}</button>
+                `).join("")}
+              </div>
+              <button type="button" class="btn-expand tip-bottom" data-cli-perfil-expand data-tip="${opsExpanded ? "Sair da tela toda" : "Expandir área operacional"}" aria-label="${opsExpanded ? "Sair da tela toda" : "Expandir área operacional"}" aria-pressed="${opsExpanded ? "true" : "false"}">
+                <svg class="icon-expand" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${opsExpanded ? "hidden" : ""}><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                <svg class="icon-collapse" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ${opsExpanded ? "" : "hidden"}><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/></svg>
+              </button>
             </div>
-          </div>
-          <div class="cli-perfil-body" id="cliPerfilBody">
-            ${renderCliPerfilTabBody(c)}
+            <div class="cli-perfil-body" id="cliPerfilBody">
+              ${renderCliPerfilTabBody(c)}
+            </div>
           </div>
         </div>`;
       enhanceUiSelects(wrap);
@@ -22571,9 +22846,9 @@
                   <span class="cert-ico" aria-hidden="true">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                   </span>
-                  <span>
+                  <span class="cli-cert-text">
                     <strong>Certificado digital</strong>
-                    <span>${cert.label} · ${certRow.validadeLabel}</span>
+                    <span class="cli-cert-detail">${cert.label} · ${certRow.validadeLabel}</span>
                   </span>
                 </button>
               </div>
@@ -22758,6 +23033,25 @@
       const hasItems = section.items && section.items.length > 0;
 
       if (section.kanban) {
+        if (typeof isMobileUi === "function" ? isMobileUi() : window.matchMedia("(max-width: 720px)").matches) {
+          kanbanWrap.classList.remove("show");
+          kanbanBoard.innerHTML = "";
+          emptyState.classList.toggle("hide", hasItems);
+          fakeList.classList.toggle("show", hasItems);
+          if (!hasItems) {
+            fakeList.innerHTML = "";
+            return;
+          }
+          fakeList.innerHTML = (section.items || []).map((item, i) => `
+            <button type="button" class="fake-row tip-bottom" data-tip="Abrir: ${item.title}" data-item="${i}">
+              <div>
+                <strong>${item.title}</strong><br>
+                <span>${item.meta || ""}</span>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            </button>`).join("");
+          return;
+        }
         fakeList.classList.remove("show");
         fakeList.innerHTML = "";
         emptyState.classList.add("hide");
@@ -22784,9 +23078,52 @@
         </button>`).join("");
     }
 
+    function syncExpandButtonUi(btn, on, tipExpand = "Expandir para tela toda") {
+      if (!btn) return;
+      const expandIcon = btn.querySelector(".icon-expand");
+      const collapseIcon = btn.querySelector(".icon-collapse");
+      if (expandIcon) expandIcon.hidden = on;
+      if (collapseIcon) collapseIcon.hidden = !on;
+      btn.setAttribute("data-tip", on ? "Sair da tela toda" : tipExpand);
+      btn.setAttribute("aria-label", on ? "Sair da tela toda" : tipExpand);
+      btn.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+
+    function setCliPerfilBodyExpanded(on) {
+      const active = !!on && cliView === "perfil";
+      cliPerfilBodyExpanded = active;
+      if (active && contentPanel.classList.contains("is-expanded")) {
+        contentPanel.classList.remove("is-expanded");
+        syncExpandButtonUi(expandBtn, false);
+      }
+      if (active && typeof setFinConcOpsExpanded === "function" && finDash?.conc?.opsExpanded) {
+        setFinConcOpsExpanded(false);
+      }
+      const ops = document.getElementById("cliPerfilOps");
+      ops?.classList.toggle("is-expanded", active);
+      document.getElementById("cliPerfilBody")?.classList.remove("is-expanded");
+      expandBackdrop.classList.toggle("show", active || contentPanel.classList.contains("is-expanded"));
+      document.body.classList.toggle("cli-perfil-body-expanded", active);
+      document.body.classList.toggle("panel-expanded", active || contentPanel.classList.contains("is-expanded"));
+      document.body.classList.remove("fin-conc-ops-expanded");
+      document.body.style.overflow = (active || contentPanel.classList.contains("is-expanded")) ? "hidden" : "";
+      document.querySelectorAll("[data-cli-perfil-expand]").forEach((btn) => {
+        syncExpandButtonUi(btn, active, "Expandir área operacional");
+      });
+    }
+
     function setExpanded(on) {
       if (on && typeof setFinConcOpsExpanded === "function" && finDash?.conc?.opsExpanded) {
         setFinConcOpsExpanded(false);
+      }
+      if (on && cliPerfilBodyExpanded) {
+        cliPerfilBodyExpanded = false;
+        document.getElementById("cliPerfilOps")?.classList.remove("is-expanded");
+        document.getElementById("cliPerfilBody")?.classList.remove("is-expanded");
+        document.body.classList.remove("cli-perfil-body-expanded");
+        document.querySelectorAll("[data-cli-perfil-expand]").forEach((btn) => {
+          syncExpandButtonUi(btn, false, "Expandir área operacional");
+        });
       }
       contentPanel.classList.toggle("is-expanded", on);
       expandBackdrop.classList.toggle("show", on);
@@ -22798,12 +23135,7 @@
       document.getElementById("tabSwitcherBtn")?.setAttribute("aria-expanded", "false");
       filterWrap?.classList.remove("open");
       filterBtn?.setAttribute("aria-expanded", "false");
-      const expandIcon = expandBtn.querySelector(".icon-expand");
-      const collapseIcon = expandBtn.querySelector(".icon-collapse");
-      expandIcon.hidden = on;
-      collapseIcon.hidden = !on;
-      expandBtn.setAttribute("data-tip", on ? "Sair da tela toda" : "Expandir para tela toda");
-      expandBtn.setAttribute("aria-label", on ? "Sair da tela toda" : "Expandir");
+      syncExpandButtonUi(expandBtn, on);
       document.body.style.overflow = on ? "hidden" : "";
       if (on) renderTabSwitcher();
     }
@@ -23323,12 +23655,23 @@
       }
       const tab = e.target.closest("[data-cli-tab]");
       if (tab) {
-        cliPerfilTab = tab.dataset.cliTab || "obrigacoes";
+        const next = tab.dataset.cliTab || "entregas";
+        if (next === "obrigacoes") {
+          cliPerfilTab = "entregas";
+          cliEntregaSubTab = "obrigacoes";
+        } else {
+          cliPerfilTab = next;
+        }
         if (cliPerfilTab !== "documentos") {
           cliDocsFolderId = null;
           cliDocsFileMenuId = null;
         }
         renderClientes();
+        return;
+      }
+      const perfilExpand = e.target.closest("[data-cli-perfil-expand]");
+      if (perfilExpand) {
+        setCliPerfilBodyExpanded(!cliPerfilBodyExpanded);
         return;
       }
       if (e.target.closest("[data-cli-doc-back]")) {
@@ -23660,6 +24003,27 @@
         renderClientes();
         return;
       }
+      const entSub = e.target.closest("[data-cli-ent-sub]");
+      if (entSub) {
+        cliPerfilTab = "entregas";
+        cliEntregaSubTab = entSub.dataset.cliEntSub === "obrigacoes" ? "obrigacoes" : "execucao";
+        renderClientes();
+        return;
+      }
+      const procSub = e.target.closest("[data-cli-proc-sub]");
+      if (procSub) {
+        cliPerfilTab = "processos";
+        cliProcSubTab = procSub.dataset.cliProcSub === "recorrencias" ? "recorrencias" : "execucao";
+        renderClientes();
+        return;
+      }
+      const procRecAct = e.target.closest("[data-cli-proc-rec]");
+      if (procRecAct) {
+        if (procRecAct.dataset.cliProcRec === "criar") {
+          openProcRecorrenciaModal(cliPerfilId);
+        }
+        return;
+      }
       const cliAuditAct = e.target.closest("[data-cli-fin-audit]");
       if (cliAuditAct) {
         const act = cliAuditAct.dataset.cliFinAudit;
@@ -23793,7 +24157,8 @@
               interna: true,
             });
             closeModal();
-            cliPerfilTab = "obrigacoes";
+            cliPerfilTab = "entregas";
+            cliEntregaSubTab = "obrigacoes";
             renderClientes();
             toast("Obrigação interna criada");
           });
@@ -24917,13 +25282,10 @@
       const kind = action.dataset.procAction;
       if (kind === "add") openAddProcessoModal();
       else if (kind === "recorrencia") {
-        openModal({
-          title: "Criar recorrência",
-          sub: "Molde com recorrência (simulação)",
-          body: `<p style="font-size:.84rem;color:var(--muted)">Simulação do <code>SelecaoProcessoMoldeRecorrenciaDialog</code>.</p>`,
-          foot: `<button type="button" class="btn-ghost" data-close>Cancelar</button>
-            <button type="button" class="btn-primary" data-close onclick="toast('Recorrência criada')">Confirmar</button>`,
-        });
+        const empresaId = (typeof procEmpresaFilter === "string" && procEmpresaFilter && procEmpresaFilter !== "all")
+          ? procEmpresaFilter
+          : (cliPerfilId || null);
+        openProcRecorrenciaModal(empresaId);
       } else if (kind === "arquivados") {
         procFiltros.arquivados = !procFiltros.arquivados;
         renderProcessos();
@@ -24938,12 +25300,65 @@
     });
 
     modalBody.addEventListener("click", (e) => {
+      const moldeAssociar = e.target.closest("[data-cli-proc-molde-associar]");
+      if (moldeAssociar) {
+        openCriarProcessoFromMoldeModal(moldeAssociar.dataset.cliProcMoldeAssociar);
+        return;
+      }
+      const moldeCriar = e.target.closest("[data-cli-proc-molde-criar]");
+      if (moldeCriar) {
+        if (moldeCriar.disabled) return;
+        const moldeId = moldeCriar.dataset.cliProcMoldeCriar;
+        const cid = modal?.dataset?.cliProcRecCliente || cliPerfilId;
+        const res = associateCliProcRecorrencia(cid, moldeId);
+        if (!res.ok) {
+          toast(res.reason === "exists" ? "Recorrência já associada" : "Não foi possível criar a recorrência");
+          return;
+        }
+        const molde = getProcMoldeById(moldeId);
+        toast(`Recorrência criada: ${molde?.nome || "molde"}`);
+        closeModal();
+        cliProcSubTab = "recorrencias";
+        if (cliView === "perfil") renderClientes();
+        return;
+      }
       const etapa = e.target.closest("[data-etapa-id]");
       if (!etapa) return;
       const proc = sections.find((s) => s.id === "processos")?.items.find((p) => String(p.id) === etapa.dataset.procId);
       const et = proc?.etapas?.find((x) => String(x.id) === etapa.dataset.etapaId);
       if (!et) return;
       toast(`Etapa: ${et.nome}`);
+    });
+
+    modalBody.addEventListener("input", (e) => {
+      if (e.target?.id === "procMoldeAvulsoSearch") {
+        const list = document.getElementById("procMoldeAvulsoList");
+        if (!list) return;
+        const wrap = list.parentElement;
+        const q = e.target.value || "";
+        const html = renderProcMoldeAvulsoPickHtml(q);
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        const nextList = tmp.querySelector("#procMoldeAvulsoList");
+        if (nextList) list.replaceWith(nextList);
+        const search = wrap?.querySelector("#procMoldeAvulsoSearch");
+        if (search && document.activeElement !== search) {
+          search.value = q;
+        }
+        return;
+      }
+      if (e.target?.id === "procCriarNomeCustom") {
+        const wrap = document.getElementById("procCriarNomeWrap");
+        if (wrap) wrap.hidden = !e.target.checked;
+      }
+    });
+
+    modalBody.addEventListener("change", (e) => {
+      if (e.target?.id === "procCriarNomeCustom") {
+        const wrap = document.getElementById("procCriarNomeWrap");
+        if (wrap) wrap.hidden = !e.target.checked;
+        if (e.target.checked) document.getElementById("procCriarNome")?.focus();
+      }
     });
 
     const empresaSearch = document.getElementById("empresaSearch");
@@ -25357,6 +25772,20 @@
         }
         return;
       }
+      const criarAct = e.target.closest("[data-cli-proc-criar]");
+      if (criarAct) {
+        const act = criarAct.dataset.cliProcCriar;
+        if (act === "voltar") {
+          const clienteId = modal.dataset.procAddCliente || resolveProcAddClienteId();
+          modal.dataset.procAddCliente = clienteId || "";
+          openAddProcessoModal();
+          return;
+        }
+        if (act === "associar") {
+          confirmCriarProcessoFromMolde();
+          return;
+        }
+      }
       if (e.target === backdrop || e.target.closest("[data-close]")) closeModal();
     });
     backdrop.addEventListener("change", (e) => {
@@ -25418,6 +25847,10 @@
     expandBackdrop.addEventListener("click", () => {
       if (finDash?.conc?.opsExpanded && typeof setFinConcOpsExpanded === "function") {
         setFinConcOpsExpanded(false);
+        return;
+      }
+      if (cliPerfilBodyExpanded) {
+        setCliPerfilBodyExpanded(false);
         return;
       }
       setExpanded(false);
@@ -25712,6 +26145,10 @@
           setExpanded(false);
           return;
         }
+        if (cliPerfilBodyExpanded) {
+          setCliPerfilBodyExpanded(false);
+          return;
+        }
         closeModal();
         empresaWrap.classList.remove("open");
         document.getElementById("tabAddWrap")?.classList.remove("open");
@@ -25810,6 +26247,61 @@
     });
 
     enhanceUiSelects(document);
+
+    function isMobileUi() {
+      return window.matchMedia("(max-width: 720px)").matches;
+    }
+
+    function syncMobileUi() {
+      const mobile = isMobileUi();
+      document.body.classList.toggle("is-mobile-ui", mobile);
+      if (!mobile) return;
+
+      document.getElementById("chatPanel")?.classList.remove("open");
+      if (cliPerfilBodyExpanded && typeof setCliPerfilBodyExpanded === "function") {
+        setCliPerfilBodyExpanded(false);
+      }
+      if (contentPanel?.classList.contains("is-expanded") && typeof setExpanded === "function") {
+        setExpanded(false);
+      }
+      if (typeof setFinConcOpsExpanded === "function" && finDash?.conc?.opsExpanded) {
+        setFinConcOpsExpanded(false);
+      }
+
+      if (typeof cliEntregaStatus === "string" && cliEntregaStatus) {
+        cliEntregaStatus = "";
+        if (cliView === "perfil" && (cliPerfilTab === "entregas" || isClientePortal())) {
+          renderClientes();
+        }
+      }
+
+      let needProc = false;
+      if (typeof procFiltros === "object" && procFiltros) {
+        if (procFiltros.view !== "list") {
+          procFiltros.view = "list";
+          needProc = true;
+        }
+        if (procFiltros.groupBy === "empresa") {
+          procFiltros.groupBy = "lista";
+          needProc = true;
+        }
+      }
+      if (typeof cliProcView === "string" && cliProcView !== "list") {
+        cliProcView = "list";
+        if (cliView === "perfil" && cliPerfilTab === "processos") renderClientes();
+      }
+      if (needProc && typeof renderProcessos === "function" && processosWrap?.classList.contains("show")) {
+        renderProcessos();
+      }
+
+      const section = typeof resolveSection === "function" ? resolveSection(current) : null;
+      if (section?.kanban && kanbanWrap?.classList.contains("show") && typeof setSection === "function") {
+        setSection(current, true);
+      }
+    }
+
+    syncMobileUi();
+    window.matchMedia("(max-width: 720px)").addEventListener("change", syncMobileUi);
     /* —— Extrator XML · Análise de Notas Fiscais (Acesso ao Cliente) —— */
 
     function xmlOnlyDigits(v) {
