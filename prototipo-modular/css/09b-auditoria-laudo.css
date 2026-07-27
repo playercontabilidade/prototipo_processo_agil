@@ -1055,6 +1055,46 @@
       box-shadow: none;
     }
 
+    .modal.cli-cad-modal .cli-cad-form .cli-input-adorn > svg,
+    .modal.cli-cad-modal .cli-cad-form .cli-input-adorn .adorn-ico {
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 11px;
+      width: 15px;
+      height: 15px;
+      opacity: .55;
+      z-index: 1;
+      pointer-events: none;
+      transform: none;
+    }
+
+    .modal.cli-cad-modal .cli-cad-form .cli-input-adorn > input {
+      padding: 0 11px 0 36px;
+      margin-bottom: 0;
+      line-height: normal;
+    }
+
+    .modal.cli-cad-modal .cli-cad-form .cli-input-prefix .pfx {
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 12px;
+      font-size: .8125rem;
+      font-weight: 650;
+      line-height: 1;
+      opacity: .65;
+      z-index: 1;
+      pointer-events: none;
+      transform: none;
+    }
+
+    .modal.cli-cad-modal .cli-cad-form .cli-input-prefix > input {
+      padding: 0 11px 0 28px;
+      margin-bottom: 0;
+      line-height: normal;
+    }
+
     .modal.cli-cad-modal .cli-cad-form input:hover,
     .modal.cli-cad-modal .cli-cad-form select:hover {
       border-color: color-mix(in srgb, var(--muted) 35%, var(--border));
@@ -1150,25 +1190,6 @@
       font-weight: 500;
       margin-top: 5px;
     }
-
-    .modal.cli-cad-modal .cli-input-adorn > svg,
-    .modal.cli-cad-modal .cli-input-adorn .adorn-ico {
-      left: 10px;
-      width: 14px;
-      height: 14px;
-      opacity: .45;
-    }
-
-    .modal.cli-cad-modal .cli-input-adorn > input { padding-left: 32px; }
-
-    .modal.cli-cad-modal .cli-input-prefix .pfx {
-      left: 11px;
-      font-size: .8125rem;
-      font-weight: 500;
-      opacity: .55;
-    }
-
-    .modal.cli-cad-modal .cli-input-prefix > input { padding-left: 26px; }
 
     .modal.cli-cad-modal .ui-select-btn {
       height: 36px;

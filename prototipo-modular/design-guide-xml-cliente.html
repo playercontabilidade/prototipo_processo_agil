@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Design Guide — XML do Cliente · Processo Ágil</title>
+  <!--
+    Design Guide XML · v1 — documentação visual estática da aba XML.
+    NÃO faz parte da aplicação. NÃO importar em telas.
+    Fonte visual: css/06b-xml-analise.css (+ tokens 01-base.css via styles.css).
+    Markup: js/06-xml-analise.js
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+  <script>
+    try {
+      if (localStorage.getItem("pa-theme") === "dark") {
+        document.documentElement.classList.add("dark");
+      }
+    } catch (_) {}
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .dg-page { max-width: 1040px; margin: 0 auto; padding: 36px 22px 64px; }
+    .dg-toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 36px; }
+    .dg-toc a {
+      text-decoration: none; font-size: .74rem; font-weight: 650; color: var(--navy);
+      padding: 7px 12px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border);
+    }
+    .dg-toc a:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); color: var(--accent); }
+    .dg-section { margin-bottom: 40px; scroll-margin-top: 20px; }
+    .dg-section > h2 {
+      font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; color: var(--navy-deep); margin: 0 0 6px;
+    }
+    .dg-section > .dg-lead { font-size: .8rem; color: var(--muted); margin: 0 0 16px; max-width: 72ch; }
+    .dg-hero {
+      margin-bottom: 28px; padding-bottom: 24px;
+      border-bottom: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+    }
+    .dg-hero-kicker {
+      font-size: .72rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 6px;
+    }
+    .dg-hero h1 {
+      font-size: 1.7rem; font-weight: 700; letter-spacing: -0.03em; color: var(--navy-deep);
+      line-height: 1.15; margin: 0;
+    }
+    .dg-hero p { margin: 12px 0 0; max-width: 64ch; font-size: .9rem; color: var(--muted); line-height: 1.45; }
+    .dg-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; align-items: center; }
+    .dg-chip {
+      display: inline-flex; align-items: center; padding: 5px 10px; border-radius: var(--radius-pill);
+      font-size: .7rem; font-weight: 650; border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+      background: var(--surface); color: var(--navy);
+    }
+    .dg-theme-btn {
+      margin-left: auto; height: 32px; padding: 0 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border); background: var(--surface); color: var(--navy);
+      font: inherit; font-size: .74rem; font-weight: 650; cursor: pointer;
+    }
+    .dg-theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .dg-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .dg-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .dg-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .dg-grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+    @media (max-width: 900px) { .dg-grid-5 { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 800px) { .dg-grid-3, .dg-grid-4 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 520px) {
+      .dg-grid-2, .dg-grid-3, .dg-grid-4, .dg-grid-5 { grid-template-columns: 1fr; }
+      .dg-theme-btn { margin-left: 0; }
+    }
+    .dg-card {
+      background: var(--surface);
+      border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border));
+      border-radius: var(--radius);
+      box-shadow: 0 1px 2px rgba(26, 58, 110, 0.04), 0 8px 24px rgba(59, 111, 212, 0.07);
+      padding: 14px 16px;
+    }
+    .dg-card > strong { display: block; font-size: .84rem; font-weight: 700; color: var(--navy-deep); margin-bottom: 4px; }
+    .dg-card > span, .dg-card > p { font-size: .76rem; color: var(--muted); line-height: 1.4; margin: 0; }
+    .dg-card h3 {
+      margin: 0 0 10px; font-size: .78rem; font-weight: 700; color: var(--navy-deep);
+      letter-spacing: .02em; text-transform: uppercase;
+    }
+    .dg-swatch { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
+    .dg-swatch-color { height: 48px; }
+    .dg-swatch-meta { padding: 10px 12px; }
+    .dg-swatch-meta strong { display: block; font-size: .76rem; font-weight: 700; color: var(--navy-deep); }
+    .dg-swatch-meta .dg-swatch-name { display: block; font-size: .66rem; color: var(--muted); margin: 2px 0 6px; }
+    .dg-swatch-meta code {
+      display: block; font-size: .66rem; color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.45;
+    }
+    .dg-swatch-meta .dg-hex { color: var(--navy); font-weight: 650; }
+    .dg-swatch-meta .dg-flutter {
+      color: var(--accent); font-weight: 650; margin-top: 2px;
+    }
+    .dg-spec {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .7rem; background: var(--surface-2); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 10px 12px; color: var(--navy); margin-top: 10px; line-height: 1.45;
+    }
+    .dg-flutter-note {
+      margin: 0 0 14px; padding: 10px 12px; border-radius: var(--radius-sm);
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+      font-size: .74rem; color: var(--navy); line-height: 1.45;
+    }
+    .dg-flutter-note code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .7rem; color: var(--navy-deep);
+    }
+    .dg-type-spec {
+      display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .64rem; color: var(--muted);
+    }
+    .dg-type-spec span {
+      display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 6px;
+      background: var(--surface-2); border: 1px solid var(--border);
+    }
+    .dg-type-spec .dg-flutter {
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+      border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+      color: var(--accent); font-weight: 650;
+    }
+    .dg-type-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+      border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    }
+    .dg-demo {
+      margin-top: 12px; padding: 14px; border-radius: var(--radius);
+      border: 1px dashed color-mix(in srgb, var(--accent) 25%, var(--border));
+      background: color-mix(in srgb, var(--surface-2) 70%, var(--surface));
+    }
+    .dg-demo-label {
+      font-size: .66rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 10px;
+    }
+    .dg-stack { display: flex; flex-direction: column; gap: 12px; }
+    .dg-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .dg-rules { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px) { .dg-rules { grid-template-columns: 1fr; } }
+    .dg-rule {
+      border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--border); background: var(--surface);
+    }
+    .dg-rule.do {
+      border-color: color-mix(in srgb, #1b6b3a 25%, var(--border));
+      background: color-mix(in srgb, #1b6b3a 4%, var(--surface));
+    }
+    .dg-rule.dont {
+      border-color: color-mix(in srgb, var(--danger) 25%, var(--border));
+      background: color-mix(in srgb, var(--danger) 4%, var(--surface));
+    }
+    .dg-rule h3 { font-size: .78rem; font-weight: 700; margin: 0 0 10px; }
+    .dg-rule.do h3 { color: #1b6b3a; }
+    .dg-rule.dont h3 { color: var(--danger); }
+    .dg-rule ul { margin: 0; padding-left: 18px; font-size: .78rem; color: var(--navy); }
+    .dg-rule li + li { margin-top: 5px; }
+    .dg-map {
+      display: flex; flex-direction: column; gap: 6px; max-width: 480px;
+      font-size: .78rem; color: var(--navy-deep);
+    }
+    .dg-map-step {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
+    }
+    .dg-map-step b {
+      flex: 0 0 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--accent); color: #fff; font-size: .68rem;
+    }
+    .dg-map-arrow { text-align: center; color: var(--muted); font-size: .75rem; }
+    .dg-table-scale { width: 100%; border-collapse: collapse; font-size: .74rem; }
+    .dg-table-scale th, .dg-table-scale td {
+      padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top;
+    }
+    .dg-table-scale th {
+      font-size: .66rem; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); font-weight: 750;
+    }
+    .dg-table-scale code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .68rem; color: var(--navy);
+    }
+    .dg-table-scale .fl { color: var(--accent); font-weight: 650; }
+    .dg-foot {
+      margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border);
+      font-size: .72rem; color: var(--muted);
+    }
+    .dg-foot a { color: var(--accent); font-weight: 650; text-decoration: none; }
+    /* Isola demos do módulo sem herdar layout quebrado do page */
+    .dg-xml-frame .cli-xml-mod { max-width: none; }
+    .dg-xml-frame .cli-xml-mod-body { min-height: 0; }
+    .dg-xml-frame .cli-xml-kpi-grid { margin: 0; }
+    .dg-xml-frame .cli-xml-chart { min-height: 80px; display: grid; place-items: center; color: var(--muted); font-size: .74rem; }
+  </style>
+</head>
+<body>
+  <div class="dg-page">
+
+    <header class="dg-hero">
+      <div class="dg-hero-kicker">Design Guide · Módulo</div>
+      <h1>XML do Cliente</h1>
+      <p>
+        Padrões visuais do <strong>Extrator XML · Análise de Notas Fiscais</strong>
+        (perfil do cliente e portal). Fonte canônica:
+        <code>css/06b-xml-analise.css</code> + <code>js/06-xml-analise.js</code>.
+      </p>
+      <div class="dg-chips">
+        <span class="dg-chip">DM Sans</span>
+        <span class="dg-chip">Tabs Solid</span>
+        <span class="dg-chip">4 sub-abas</span>
+        <span class="dg-chip">Flutter scale</span>
+        <a class="dg-chip" href="design-guide.html">← Guide geral</a>
+        <button type="button" class="dg-theme-btn" id="dgThemeToggle" aria-label="Alternar tema">Tema escuro</button>
+      </div>
+    </header>
+
+    <nav class="dg-toc" aria-label="Seções do guia XML">
+      <a href="#mapa">Mapa</a>
+      <a href="#shell">Shell</a>
+      <a href="#tabs">Tabs</a>
+      <a href="#cores">Cores</a>
+      <a href="#tipo">Tipografia</a>
+      <a href="#importar">Importar</a>
+      <a href="#dashboard">Dashboard</a>
+      <a href="#produtos">Produtos</a>
+      <a href="#cv">Compra × Venda</a>
+      <a href="#modal">Modal</a>
+      <a href="#config">Config</a>
+      <a href="#flutter">Flutter</a>
+      <a href="#regras">Fazer / Não</a>
+    </nav>
+
+    <!-- MAPA -->
+    <section class="dg-section" id="mapa">
+      <h2>Onde vive no app</h2>
+      <p class="dg-lead">Mesmo módulo nos dois contextos. Estado: <code>cliXmlAnalise</code> em <code>01-core-data.js</code>.</p>
+      <div class="dg-grid-2">
+        <div class="dg-card">
+          <strong>Escritório · Acesso ao Cliente</strong>
+          <div class="dg-map" style="margin-top:12px">
+            <div class="dg-map-step"><b>1</b> Clientes → perfil</div>
+            <div class="dg-map-arrow">↓</div>
+            <div class="dg-map-step"><b>2</b> Soft tabs <code>.cli-tab</code> → <strong>XML</strong></div>
+            <div class="dg-map-arrow">↓</div>
+            <div class="dg-map-step"><b>3</b> <code>renderCliXmlAnaliseModule</code></div>
+          </div>
+        </div>
+        <div class="dg-card">
+          <strong>Portal do cliente</strong>
+          <div class="dg-map" style="margin-top:12px">
+            <div class="dg-map-step"><b>1</b> Modo <code>appAccessMode = cliente</code></div>
+            <div class="dg-map-arrow">↓</div>
+            <div class="dg-map-step"><b>2</b> Aba topo pool → <strong>XML</strong></div>
+            <div class="dg-map-arrow">↓</div>
+            <div class="dg-map-step"><b>3</b> Mesmo shell <code>.cli-xml-mod</code></div>
+          </div>
+        </div>
+      </div>
+      <div class="dg-spec" style="margin-top:12px">
+        Sub-abas: importar · dashboard · produtos · config<br />
+        Arquivos: 06b-xml-analise.css (ativo) · 06-xml-analise.js · 06-xml-cliente.css (legado .cli-xml-visao — não usar)
+      </div>
+    </section>
+
+    <!-- SHELL -->
+    <section class="dg-section" id="shell">
+      <h2>Shell do módulo</h2>
+      <p class="dg-lead">Chrome compartilhado por todas as sub-abas. Classe raiz: <code>.cli-xml-mod</code>.</p>
+      <div class="dg-demo dg-xml-frame">
+        <div class="dg-demo-label">Demo ao vivo</div>
+        <div class="cli-xml-mod" data-cli-xml-mod="1">
+          <div class="cli-xml-mod-head">
+            <div>
+              <p class="kicker">Extrator XML · Análise gerencial</p>
+              <h3>Análise de Notas Fiscais</h3>
+              <p class="sub">Foco analítico — não substitui escrituração fiscal.</p>
+            </div>
+            <div class="cli-xml-mod-badge">
+              <span class="cli-xml-pill">Base carregada</span>
+            </div>
+          </div>
+          <div class="cli-xml-mod-tabs" role="tablist" aria-label="Módulo XML">
+            <button type="button" role="tab">Importar</button>
+            <button type="button" role="tab" class="active" aria-selected="true">Dashboard</button>
+            <button type="button" role="tab">Produtos</button>
+            <button type="button" role="tab">Configurações</button>
+          </div>
+          <div class="cli-xml-mod-body">
+            <p class="cli-xml-dash-note" style="margin:0">Corpo da aba ativa · min-height 280px</p>
+          </div>
+        </div>
+      </div>
+      <div class="dg-type-spec">
+        <span>Kicker .66rem / 700 / accent</span>
+        <span class="dg-flutter">Flutter 11.sp</span>
+        <span>H3 1.08rem / 750 / navy-deep</span>
+        <span class="dg-flutter">Flutter 17.sp</span>
+        <span>Sub .78rem / muted</span>
+        <span class="dg-flutter">Flutter 12.sp</span>
+        <span>Pill soft accent</span>
+      </div>
+    </section>
+
+    <!-- TABS -->
+    <section class="dg-section" id="tabs">
+      <h2>Abas — padrão Solid</h2>
+      <p class="dg-lead">
+        Sub-abas do XML usam o padrão canônico <strong>Solid</strong>
+        (<code>(--tab-solid-bg / --tab-solid-fg)</code>.
+        As abas do perfil do cliente (Obrigações, XML…) continuam <strong>Soft</strong> (<code>.cli-tab</code>) — não misturar.
+      </p>
+      <div class="dg-grid-2">
+        <div class="dg-card">
+          <strong>.cli-xml-mod-tabs · Solid</strong>
+          <span>Track com borda, padding 4px, gap 4px, radius-sm. Ativo = fundo accent + texto branco.</span>
+          <div class="dg-demo" style="margin-top:10px">
+            <div class="cli-xml-mod-tabs" role="tablist">
+              <button type="button" class="active">Dashboard</button>
+              <button type="button">Produtos</button>
+              <button type="button">Config</button>
+            </div>
+          </div>
+          <div class="dg-spec">button .86rem / 650 · height implícita · ≤560px grid 2×2<br />Flutter: fontSize 14.sp · BorderRadius.circular(8) · padding 4</div>
+        </div>
+        <div class="dg-card">
+          <strong>Contrato de dados</strong>
+          <span>Não alterar IDs de fluxo sem pedido explícito.</span>
+          <div class="dg-spec" style="margin-top:10px">
+            data-cli-xml-tab = importar | dashboard | produtos | config<br />
+            data-cli-xml-mod="1" no shell
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CORES -->
+    <section class="dg-section" id="cores">
+      <h2>Cores do módulo</h2>
+      <p class="dg-lead">Tokens globais + semântica tributária / margem. Preferir <code>var(--ok)</code> / <code>var(--warn)</code> quando possível; dots IBS/CBS usam hex alinhados ao guide.</p>
+
+      <h3 style="font-size:.84rem;color:var(--navy-deep);margin:0 0 10px">Identidade (tokens)</h3>
+      <div class="dg-grid-4" style="margin-bottom:18px">
+        <div class="dg-swatch" data-token="--accent">
+          <div class="dg-swatch-color" style="background:var(--accent)"></div>
+          <div class="dg-swatch-meta">
+            <strong>Accent</strong>
+            <span class="dg-swatch-name">CTA, tabs ativas, venda</span>
+            <code>--accent</code>
+            <code class="dg-hex" data-hex></code>
+            <code class="dg-flutter" data-flutter-color></code>
+          </div>
+        </div>
+        <div class="dg-swatch" data-token="--navy-deep">
+          <div class="dg-swatch-color" style="background:var(--navy-deep)"></div>
+          <div class="dg-swatch-meta">
+            <strong>Navy deep</strong>
+            <span class="dg-swatch-name">Títulos e valores</span>
+            <code>--navy-deep</code>
+            <code class="dg-hex" data-hex></code>
+            <code class="dg-flutter" data-flutter-color></code>
+          </div>
+        </div>
+        <div class="dg-swatch" data-token="--muted">
+          <div class="dg-swatch-color" style="background:var(--muted)"></div>
+          <div class="dg-swatch-meta">
+            <strong>Muted</strong>
+            <span class="dg-swatch-name">Hints, labels, meta</span>
+            <code>--muted</code>
+            <code class="dg-hex" data-hex></code>
+            <code class="dg-flutter" data-flutter-color></code>
+          </div>
+        </div>
+        <div class="dg-swatch" data-token="--border">
+          <div class="dg-swatch-color" style="background:var(--border)"></div>
+          <div class="dg-swatch-meta">
+            <strong>Border</strong>
+            <span class="dg-swatch-name">Cards e tabela</span>
+            <code>--border</code>
+            <code class="dg-hex" data-hex></code>
+            <code class="dg-flutter" data-flutter-color></code>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size:.84rem;color:var(--navy-deep);margin:0 0 10px">Semântica XML</h3>
+      <div class="dg-grid-5">
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background:#2f9e6b"></div>
+          <div class="dg-swatch-meta">
+            <strong>Ok / positivo</strong>
+            <span class="dg-swatch-name">Dot ok · status Saudável · fill</span>
+            <code>#2f9e6b</code>
+            <code>texto #1a6b45</code>
+            <code class="dg-flutter">Color(0xFF2F9E6B)</code>
+          </div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background:#eab308"></div>
+          <div class="dg-swatch-meta">
+            <strong>Warn alíquota</strong>
+            <span class="dg-swatch-name">Dot wrong · IBS/CBS</span>
+            <code>#eab308</code>
+            <code>status Atenção #854d0e</code>
+            <code class="dg-flutter">Color(0xFFEAB308)</code>
+          </div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background:#c47f16"></div>
+          <div class="dg-swatch-meta">
+            <strong>Warn / compra</strong>
+            <span class="dg-swatch-name">KPI tax · lado compra · Baixa</span>
+            <code>#c47f16</code>
+            <code>texto #9a5f0c</code>
+            <code class="dg-flutter">Color(0xFFC47F16)</code>
+          </div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background:#b33a4a"></div>
+          <div class="dg-swatch-meta">
+            <strong>Neg / missing</strong>
+            <span class="dg-swatch-name">Dot bad · Prejuízo · KPI neg</span>
+            <code>#b33a4a</code>
+            <code>texto #9a2f3c</code>
+            <code class="dg-flutter">Color(0xFFB33A4A)</code>
+          </div>
+        </div>
+        <div class="dg-swatch">
+          <div class="dg-swatch-color" style="background:#475569"></div>
+          <div class="dg-swatch-meta">
+            <strong>Muted / skip</strong>
+            <span class="dg-swatch-name">Sem venda · skip esteira</span>
+            <code>#475569</code>
+            <code class="dg-flutter">Color(0xFF475569)</code>
+          </div>
+        </div>
+      </div>
+
+      <div class="dg-demo" style="margin-top:14px">
+        <div class="dg-demo-label">Dots IBS / CBS · E = entrada · S = saída</div>
+        <div class="dg-row">
+          <div class="cli-xml-trib-cad" role="group" aria-label="Exemplo ok">
+            <span class="cli-xml-trib-cad-item"><span class="lab">E</span><i class="cli-xml-trib-dot is-ok"></i></span>
+            <span class="cli-xml-trib-cad-item"><span class="lab">S</span><i class="cli-xml-trib-dot is-ok"></i></span>
+          </div>
+          <div class="cli-xml-trib-cad" role="group" aria-label="Exemplo warn">
+            <span class="cli-xml-trib-cad-item"><span class="lab">E</span><i class="cli-xml-trib-dot is-warn"></i></span>
+            <span class="cli-xml-trib-cad-item"><span class="lab">S</span><i class="cli-xml-trib-dot is-bad"></i></span>
+          </div>
+          <span class="cli-xml-status is-ok">Saudável</span>
+          <span class="cli-xml-status is-warn">Baixa</span>
+          <span class="cli-xml-status is-warn2">Atenção</span>
+          <span class="cli-xml-status is-bad">Prejuízo</span>
+          <span class="cli-xml-status is-muted">Sem venda</span>
+        </div>
+        <div class="dg-spec">
+          .cli-xml-trib-dot 10×10 · is-ok | is-warn | is-bad<br />
+          .cli-xml-status is-ok | is-warn | is-warn2 | is-bad | is-muted
+        </div>
+      </div>
+    </section>
+
+    <!-- TIPOGRAFIA -->
+    <section class="dg-section" id="tipo">
+      <h2>Tipografia do módulo</h2>
+      <p class="dg-lead">Família única <strong>DM Sans</strong>. Base <code>1rem = 16px</code> → Flutter <code>.sp</code>.</p>
+      <div class="dg-flutter-note">
+        Texto → <code>GoogleFonts.dmSans(fontSize: N.sp)</code>.
+        Layout (altura, raio, gap) → logical px sem <code>.sp</code>.
+      </div>
+      <div class="dg-card" style="overflow:auto">
+        <table class="dg-table-scale">
+          <thead>
+            <tr>
+              <th>Uso</th>
+              <th>CSS</th>
+              <th>px</th>
+              <th>Flutter</th>
+              <th>Cor</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Kicker módulo</td>
+              <td><code>.66rem / 700</code></td>
+              <td>10.56</td>
+              <td class="fl">11.sp</td>
+              <td>Accent</td>
+            </tr>
+            <tr>
+              <td>Título módulo (h3)</td>
+              <td><code>1.08rem / 750</code></td>
+              <td>17.28</td>
+              <td class="fl">17.sp</td>
+              <td>Navy deep</td>
+            </tr>
+            <tr>
+              <td>Card h4 / chart</td>
+              <td><code>.88–.92rem / 750</code></td>
+              <td>14–14.7</td>
+              <td class="fl">14.sp</td>
+              <td>Navy deep</td>
+            </tr>
+            <tr>
+              <td>Tab Solid</td>
+              <td><code>.86rem / 650</code></td>
+              <td>13.76</td>
+              <td class="fl">14.sp</td>
+              <td>Muted → branco ativo</td>
+            </tr>
+            <tr>
+              <td>KPI valor</td>
+              <td><code>1.2rem / 800</code></td>
+              <td>19.2</td>
+              <td class="fl">19.sp</td>
+              <td>Navy deep / semântica</td>
+            </tr>
+            <tr>
+              <td>KPI label</td>
+              <td><code>.64–.66rem / 700</code></td>
+              <td>~10.5</td>
+              <td class="fl">10–11.sp</td>
+              <td>Muted</td>
+            </tr>
+            <tr>
+              <td>Tabela body</td>
+              <td><code>.80rem</code></td>
+              <td>12.8</td>
+              <td class="fl">13.sp</td>
+              <td>Navy deep</td>
+            </tr>
+            <tr>
+              <td>Tabela th</td>
+              <td><code>.70rem / 750 / caps</code></td>
+              <td>11.2</td>
+              <td class="fl">11.sp</td>
+              <td>Muted</td>
+            </tr>
+            <tr>
+              <td>Hint / legend / mem</td>
+              <td><code>.70–.78rem</code></td>
+              <td>11–12.5</td>
+              <td class="fl">11–12.sp</td>
+              <td>Muted</td>
+            </tr>
+            <tr>
+              <td>Campo config</td>
+              <td><code>.90rem</code> · h 40px</td>
+              <td>14.4 / 40</td>
+              <td class="fl">14.sp · h 40</td>
+              <td>Navy</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- IMPORTAR -->
+    <section class="dg-section" id="importar">
+      <h2>Aba Importar</h2>
+      <p class="dg-lead">Section <code>.cli-xml-import</code> · grid regras + upload · esteira + log.</p>
+      <div class="dg-demo dg-xml-frame">
+        <div class="dg-demo-label">Dropzone + ações</div>
+        <div class="cli-xml-card cli-xml-card-upload" style="max-width:420px">
+          <div class="cli-xml-card-inner">
+            <h4>Upload</h4>
+            <p class="hint">XML individual, pasta estruturada ou ZIP.</p>
+            <div class="cli-xml-drop" tabindex="0" role="button" aria-label="Área de upload">
+              <strong>Arraste XMLs ou ZIP aqui</strong>
+              <span>ou clique · .xml · .zip</span>
+            </div>
+            <div class="cli-xml-import-acts">
+              <button type="button" class="btn-primary">Iniciar esteira</button>
+              <button type="button" class="btn-ghost">Simular lote demo</button>
+            </div>
+          </div>
+        </div>
+        <div class="cli-xml-card cli-xml-esteira" style="margin-top:12px;max-width:520px">
+          <div class="cli-xml-esteira-top">
+            <div>
+              <strong>Esteira de processamento</strong>
+              <p class="hint">Lote demo · em andamento</p>
+            </div>
+            <strong class="cli-xml-esteira-pct">62%</strong>
+          </div>
+          <div class="cli-xml-esteira-bar" aria-hidden="true"><i style="width:62%"></i></div>
+          <div class="cli-xml-esteira-counters">
+            <span class="ok">Ok <b>18</b></span>
+            <span class="dup">Dup <b>2</b></span>
+            <span class="bad">Erro <b>1</b></span>
+            <span class="skip">Skip <b>3</b></span>
+          </div>
+        </div>
+      </div>
+      <div class="dg-type-spec">
+        <span>Drop min-h 120px · dashed accent</span>
+        <span class="dg-flutter">Flutter 120</span>
+        <span>Botões min-h 36px</span>
+        <span class="dg-flutter">Flutter height 36</span>
+        <span>Barra esteira h 8px</span>
+        <span class="dg-flutter">Flutter 8</span>
+        <span>data-cli-xml="drop-zone|start-import|demo-lote"</span>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section class="dg-section" id="dashboard">
+      <h2>Aba Dashboard</h2>
+      <p class="dg-lead">Section <code>.cli-xml-dash</code> · KPIs (borda esquerda 4px) · charts 2×2 · mini-tabelas.</p>
+      <div class="dg-demo dg-xml-frame">
+        <div class="dg-demo-label">KPI grid</div>
+        <div class="cli-xml-kpi-grid">
+          <article class="cli-xml-kpi is-tax">
+            <p class="lab">Impostos na Entrada</p>
+            <p class="val">R$ 12.480</p>
+            <p class="mem">Tributos destacados nas NF-e de compra</p>
+          </article>
+          <article class="cli-xml-kpi is-ok">
+            <p class="lab">Margem líquida</p>
+            <p class="val">18,4%</p>
+            <p class="mem">Após C_op e tributos de saída</p>
+          </article>
+          <article class="cli-xml-kpi is-neg">
+            <p class="lab">Produtos em prejuízo</p>
+            <p class="val">3</p>
+            <p class="mem">Margem líquida &lt; 0%</p>
+          </article>
+          <article class="cli-xml-kpi is-warn">
+            <p class="lab">Abaixo da meta</p>
+            <p class="val">7</p>
+            <p class="mem">Entre min e atenção</p>
+          </article>
+        </div>
+        <div class="cli-xml-charts" style="margin-top:12px">
+          <article class="cli-xml-chart-card">
+            <h4>Top produtos</h4>
+            <p class="hint">Por volume de compra</p>
+            <div class="cli-xml-chart">ApexCharts · min-h 220</div>
+          </article>
+          <article class="cli-xml-chart-card">
+            <h4>Margem</h4>
+            <p class="hint">Distribuição</p>
+            <div class="cli-xml-chart">#cliXmlChartMargem</div>
+          </article>
+        </div>
+      </div>
+      <div class="dg-spec">
+        Tones KPI: is-tax | is-ok | is-neg | is-warn · border-left 4px<br />
+        Charts IDs: #cliXmlChartTop · #cliXmlChartMargem · #cliXmlChartComp · #cliXmlChartTrib<br />
+        Flutter KPI: border Left 4 · padding ~12–14 · val 19.sp · lab 10.sp
+      </div>
+    </section>
+
+    <!-- PRODUTOS -->
+    <section class="dg-section" id="produtos">
+      <h2>Aba Produtos</h2>
+      <p class="dg-lead">
+        Section <code>.cli-xml-produtos</code>.
+        Filtros reutilizam <code>.proc-filter</code>. Tabela clicável abre modal.
+        Bloco fiscal: NCM → CFOP → CST → Regime → <strong>IBS/CBS</strong> (dots E/S).
+      </p>
+      <div class="dg-demo dg-xml-frame">
+        <div class="dg-demo-label">Filtros + tabela (trecho)</div>
+        <div class="cli-xml-filters">
+          <div class="proc-filter search">
+            <input type="search" placeholder="Buscar produto, NCM…" readonly style="pointer-events:none" />
+          </div>
+          <div class="proc-filter field">
+            <select disabled aria-label="Status"><option>Status</option></select>
+          </div>
+        </div>
+        <div class="cli-xml-table-wrap">
+          <table class="cli-xml-table">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>NCM</th>
+                <th>IBS</th>
+                <th>CBS</th>
+                <th class="num">Margem</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-cli-xml-prod="demo" tabindex="0" role="button">
+                <td><strong>Analgésico 500mg</strong><div style="font-size:.72rem;color:var(--muted)">COD-1042</div></td>
+                <td>3004.90.69</td>
+                <td>
+                  <div class="cli-xml-trib-cad">
+                    <span class="cli-xml-trib-cad-item"><span class="lab">E</span><i class="cli-xml-trib-dot is-ok"></i></span>
+                    <span class="cli-xml-trib-cad-item"><span class="lab">S</span><i class="cli-xml-trib-dot is-ok"></i></span>
+                  </div>
+                </td>
+                <td>
+                  <div class="cli-xml-trib-cad">
+                    <span class="cli-xml-trib-cad-item"><span class="lab">E</span><i class="cli-xml-trib-dot is-warn"></i></span>
+                    <span class="cli-xml-trib-cad-item"><span class="lab">S</span><i class="cli-xml-trib-dot is-bad"></i></span>
+                  </div>
+                </td>
+                <td class="num">12,8%</td>
+                <td><span class="cli-xml-status is-warn2">Atenção</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="cli-xml-legend" style="margin-top:10px">
+          IBS/CBS: verde ok · amarelo alíquota incorreta · vermelho inexistente.
+        </p>
+      </div>
+    </section>
+
+    <!-- CV -->
+    <section class="dg-section" id="cv">
+      <h2>Comparativo compra × venda</h2>
+      <p class="dg-lead">Componente <code>.cli-xml-cv</code> (completo ou <code>.is-compact</code>). Compra = warn · Venda = accent.</p>
+      <div class="dg-demo dg-xml-frame" style="max-width:520px">
+        <article class="cli-xml-cv" aria-label="Comparativo">
+          <div class="cli-xml-cv-head">
+            <div>
+              <h4 style="margin:0;font-size:.88rem;color:var(--navy-deep)">Resultado bruto</h4>
+              <p class="hint" style="margin:4px 0 0">Compra documentada × preço de venda</p>
+            </div>
+            <div class="cli-xml-cv-diff is-ok">+ R$ 4,20</div>
+          </div>
+          <div class="cli-xml-cv-sides">
+            <div class="cli-xml-cv-side is-compra">
+              <span>Compra</span>
+              <strong>R$ 18,50</strong>
+            </div>
+            <div class="cli-xml-cv-side is-venda">
+              <span>Venda</span>
+              <strong>R$ 22,70</strong>
+            </div>
+          </div>
+          <div class="cli-xml-cv-bars" aria-hidden="true">
+            <div class="track"><i class="is-compra" style="width:72%"></i></div>
+            <div class="track"><i class="is-venda" style="width:88%"></i></div>
+          </div>
+        </article>
+      </div>
+      <div class="dg-type-spec">
+        <span>Track h 10px</span>
+        <span class="dg-flutter">Flutter 10</span>
+        <span>Diff is-ok | is-neg | is-muted</span>
+        <span>Side strong ~1.05rem → 17.sp</span>
+      </div>
+    </section>
+
+    <!-- MODAL -->
+    <section class="dg-section" id="modal">
+      <h2>Modal de produto</h2>
+      <p class="dg-lead">
+        Classe <code>.modal.cli-xml-prod-modal</code> · largura <code>min(980px, 96vw)</code>.
+        Body: CV + memória de cálculo + NFs relacionadas.
+        Footer: <strong>somente Fechar</strong> (<code>btn-ghost</code> + <code>data-close</code>) — é visualização, não formulário.
+        X do header permanece oculto (regra global).
+      </p>
+      <div class="dg-grid-2">
+        <div class="dg-card">
+          <strong>Estrutura</strong>
+          <div class="dg-spec" style="margin-top:8px">
+            .cli-xml-prod-detail<br />
+            · .cli-xml-prod-cv-grid (CV + unitário)<br />
+            · .cli-xml-memoria (dl)<br />
+            · .cli-xml-nf-rel (tabela sm)
+          </div>
+        </div>
+        <div class="dg-card">
+          <strong>Footer canônico</strong>
+          <div class="dg-row" style="margin-top:10px">
+            <button type="button" class="btn-ghost">Fechar</button>
+          </div>
+          <div class="dg-spec">Não usar Cancelar · não usar btn-primary neste modal</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONFIG -->
+    <section class="dg-section" id="config">
+      <h2>Aba Configurações</h2>
+      <p class="dg-lead">Section <code>.cli-xml-config</code> · cards de % operacionais e metas · CTA <code>Aplicar e recalcular</code>.</p>
+      <div class="dg-demo dg-xml-frame" style="max-width:360px">
+        <div class="cli-xml-card">
+          <div class="cli-xml-card-inner">
+            <h4>Custos operacionais (C_op)</h4>
+            <div class="cli-xml-config-fields">
+              <label class="cli-xml-field">
+                <span>Admin %</span>
+                <input type="number" value="4.5" readonly />
+              </label>
+              <label class="cli-xml-field">
+                <span>Financeiro %</span>
+                <input type="number" value="1.2" readonly />
+              </label>
+            </div>
+            <p class="cli-xml-field-msg is-ok">Total C_op: <strong>8,4%</strong></p>
+            <button type="button" class="btn-primary" style="margin-top:8px">Aplicar e recalcular</button>
+          </div>
+        </div>
+      </div>
+      <div class="dg-type-spec">
+        <span>Input h 40px · .90rem</span>
+        <span class="dg-flutter">height 40 · 14.sp</span>
+        <span>data-cli-xml-cfg · data-cli-xml="save-config"</span>
+      </div>
+    </section>
+
+    <!-- EMPTY -->
+    <section class="dg-section" id="empty">
+      <h2>Empty state</h2>
+      <div class="dg-demo dg-xml-frame" style="max-width:420px">
+        <div class="cli-xml-empty">
+          <h4>Sem base importada</h4>
+          <p>Importe XMLs na aba Importar para consolidar indicadores do período.</p>
+          <button type="button" class="btn-primary">Ir para Importar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLUTTER -->
+    <section class="dg-section" id="flutter">
+      <h2>Escala Flutter (resumo)</h2>
+      <div class="dg-flutter-note">
+        <strong>Regra</strong> — <code>rem × 16</code> = logical px.
+        Fonte: <code>.sp</code> · layout: número puro.
+        Pacote: <code>google_fonts</code> → <code>GoogleFonts.dmSans</code>.
+      </div>
+      <div class="dg-grid-3">
+        <div class="dg-card">
+          <strong>Radius</strong>
+          <span>sm 8 · md 12 · pill 999</span>
+          <div class="dg-spec">BorderRadius.circular(8|12|999)</div>
+        </div>
+        <div class="dg-card">
+          <strong>Alturas</strong>
+          <span>Botão 36 · campo config 40 · drop 120 · chart 220 · body min 280</span>
+          <div class="dg-spec">height: 36 / 40 / 120 / 220 / 280</div>
+        </div>
+        <div class="dg-card">
+          <strong>Gaps</strong>
+          <span>4 · 8 · 10 · 12 · 14</span>
+          <div class="dg-spec">SizedBox / Gap / EdgeInsets</div>
+        </div>
+      </div>
+      <div class="dg-card" style="margin-top:12px;overflow:auto">
+        <table class="dg-table-scale">
+          <thead>
+            <tr><th>Peça</th><th>CSS</th><th>Flutter</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Trib dot</td><td>10×10</td><td class="fl">Size(10, 10)</td></tr>
+            <tr><td>Esteira bar</td><td>h 8</td><td class="fl">height: 8</td></tr>
+            <tr><td>CV track</td><td>h 10</td><td class="fl">height: 10</td></tr>
+            <tr><td>KPI border</td><td>left 4</td><td class="fl">Border(left: 4)</td></tr>
+            <tr><td>Modal width</td><td>min(980px, 96vw)</td><td class="fl">constraints maxWidth 980</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- REGRAS -->
+    <section class="dg-section" id="regras">
+      <h2>Fazer / Não fazer</h2>
+      <div class="dg-rules">
+        <div class="dg-rule do">
+          <h3>Fazer</h3>
+          <ul>
+            <li>Usar <code>.cli-xml-mod-tabs</code> Solid nas 4 sub-abas.</li>
+            <li>CTA de ação = <code>btn-primary</code>; demo/secundário = <code>btn-ghost</code>.</li>
+            <li>Modal produto: footer <strong>Fechar</strong> apenas.</li>
+            <li>Dots IBS/CBS: ok / warn / bad — não inventar 4ª cor.</li>
+            <li>Reusar <code>.proc-filter</code> nos filtros de produtos.</li>
+            <li>Preservar <code>data-cli-xml*</code> e IDs de chart/filtro.</li>
+            <li>Editar em <code>06b-xml-analise.css</code> / <code>06-xml-analise.js</code> e regenerar build.</li>
+          </ul>
+        </div>
+        <div class="dg-rule dont">
+          <h3>Não fazer</h3>
+          <ul>
+            <li>Não reativar <code>.cli-xml-visao</code> / classes legado do 06-xml-cliente.</li>
+            <li>Não criar 4º estilo de aba azul paralelo ao Soft/Solid/Underline.</li>
+            <li>Não usar <code>btn-success</code> nem Cancelar no modal de detalhe.</li>
+            <li>Não reexibir o X do header do modal.</li>
+            <li>Não trocar dots IBS/CBS por pills coloridas soltas.</li>
+            <li>Não hardcodar hex de accent/navy fora de <code>:root</code> (semântica tributária ok se documentada).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer class="dg-foot">
+      Guia XML v1 · estático · não faz parte da aplicação.
+      Guide geral: <a href="design-guide.html">design-guide.html</a>
+      · Doc funcional: <a href="docs/xml-aba-cliente.md">docs/xml-aba-cliente.md</a>
+      · Tokens: <code>css/01-base.css</code> · UI: <code>css/06b-xml-analise.css</code>
+    </footer>
+  </div>
+
+  <script>
+    (function () {
+      var btn = document.getElementById("dgThemeToggle");
+
+      function rgbToHex(value) {
+        if (!value) return "";
+        if (value.indexOf("#") === 0) return value.toLowerCase();
+        var m = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+        if (!m) return value;
+        function h(n) {
+          var s = Number(n).toString(16);
+          return s.length === 1 ? "0" + s : s;
+        }
+        return "#" + h(m[1]) + h(m[2]) + h(m[3]);
+      }
+
+      function hexToFlutter(hex) {
+        if (!hex || hex.charAt(0) !== "#") return "";
+        var clean = hex.replace("#", "").toUpperCase();
+        if (clean.length === 3) {
+          clean = clean[0] + clean[0] + clean[1] + clean[1] + clean[2] + clean[2];
+        }
+        return "Color(0xFF" + clean + ")";
+      }
+
+      function syncColors() {
+        var styles = getComputedStyle(document.documentElement);
+        document.querySelectorAll(".dg-swatch[data-token]").forEach(function (el) {
+          var token = el.getAttribute("data-token");
+          var hexEl = el.querySelector("[data-hex]");
+          var flEl = el.querySelector("[data-flutter-color]");
+          if (!token) return;
+          var hex = rgbToHex(styles.getPropertyValue(token).trim());
+          if (hexEl) hexEl.textContent = hex;
+          if (flEl) flEl.textContent = hexToFlutter(hex);
+        });
+      }
+
+      function syncThemeBtn() {
+        if (!btn) return;
+        var dark = document.documentElement.classList.contains("dark");
+        btn.textContent = dark ? "Tema claro" : "Tema escuro";
+      }
+
+      syncThemeBtn();
+      syncColors();
+
+      if (btn) {
+        btn.addEventListener("click", function () {
+          var dark = document.documentElement.classList.toggle("dark");
+          try { localStorage.setItem("pa-theme", dark ? "dark" : "light"); } catch (_) {}
+          syncThemeBtn();
+          syncColors();
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

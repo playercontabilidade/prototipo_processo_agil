@@ -692,13 +692,71 @@
 
     function ensureCliHonorarios(c) {
       if (!cliHonorariosByClient[c.id]) {
+        const fat = Number(c.faturamento) || 0;
+        const isCritico = c.prioridade === "baixa" || c.status === "Inativo";
+        const isAbaixo = !isCritico && c.prioridade === "media";
+        const mensal = isCritico
+          ? Math.round(fat * 0.0015)
+          : isAbaixo
+            ? Math.round(fat * 0.004)
+            : Math.round(fat / 120);
         cliHonorariosByClient[c.id] = [
-          { id: "h1", origem: "Mensalidade contábil", valor: Math.round((c.faturamento || 0) / 120), recorrencia: "mensal", criado: "01/07/2026" },
-          { id: "h2", origem: "Assessoria societária", valor: 890, recorrencia: "unico", criado: "05/07/2026" },
-          { id: "h3", origem: "Folha / Pessoal", valor: Math.round(320 + (c.funcInternos || 0) * 45), recorrencia: "mensal", criado: "08/07/2026" },
+          { id: "h1", origem: "Mensalidade contábil", valor: mensal, recorrencia: "mensal", criado: "01/07/2026" },
+          { id: "h2", origem: "Assessoria societária", valor: isCritico ? 80 : isAbaixo ? 420 : 890, recorrencia: "unico", criado: "05/07/2026" },
+          { id: "h3", origem: "Folha / Pessoal", valor: Math.round((isCritico ? 90 : 320) + (c.funcInternos || 0) * 45), recorrencia: "mensal", criado: "08/07/2026" },
         ];
       }
       return cliHonorariosByClient[c.id];
+    }
+
+    /** % honorários ÷ faturamento · ideal 1% · crítico ≤ 0,4% */
+    const HONOR_PCT_IDEAL = 1;
+    const HONOR_PCT_CRITICO = 0.4;
+
+    function cliHonorTotal(items) {
+      return (items || []).reduce((acc, h) => acc + (Number(h.valor) || 0), 0);
+    }
+
+    function cliHonorPctSobreFat(c, items) {
+      const fat = Number(c?.faturamento) || 0;
+      const total = cliHonorTotal(items);
+      if (fat <= 0) return { total, fat, pct: null };
+      const pct = Math.round((total / fat) * 10000) / 100;
+      return { total, fat, pct };
+    }
+
+    function cliHonorPctMeta(pct) {
+      if (pct == null || !Number.isFinite(pct)) {
+        return {
+          cls: "muted",
+          label: "Sem faturamento",
+          hint: "Cadastre o faturamento para calcular o indicador",
+        };
+      }
+      if (pct <= HONOR_PCT_CRITICO) {
+        return {
+          cls: "critico",
+          label: "Atenção comercial",
+          hint: `≤ ${String(HONOR_PCT_CRITICO).replace(".", ",")}% do faturamento · priorizar análise`,
+        };
+      }
+      if (pct < HONOR_PCT_IDEAL) {
+        return {
+          cls: "abaixo",
+          label: "Abaixo do ideal",
+          hint: `Ideal ${String(HONOR_PCT_IDEAL).replace(".", ",")}% · cliente abaixo da meta`,
+        };
+      }
+      return {
+        cls: "ideal",
+        label: "No ideal",
+        hint: `Meta ≥ ${String(HONOR_PCT_IDEAL).replace(".", ",")}% do faturamento`,
+      };
+    }
+
+    function cliHonorPctLabel(pct) {
+      if (pct == null || !Number.isFinite(pct)) return "—";
+      return `${String(pct).replace(".", ",")}%`;
     }
 
     function parseHonorValor(raw) {
@@ -859,21 +917,87 @@
     }
 
     function openClienteDadosModal(c) {
+      const com = getCliComercial(c);
       openModal({
         title: "Dados cadastrais",
         sub: c.fantasia || c.nome,
         wide: true,
         body: `
           <div class="cli-cad-grid">
-            <div class="full"><label>Razão social</label><input value="${c.razaoSocial || c.nome}" readonly /></div>
-            <div><label>Nome fantasia</label><input value="${c.fantasia || c.nome}" readonly /></div>
-            <div><label>CNPJ</label><input value="${c.cnpj}" readonly /></div>
-            <div><label>Inscrição estadual</label><input value="${c.ie || "—"}" readonly /></div>
-            <div><label>Inscrição municipal</label><input value="${c.im || "—"}" readonly /></div>
-            <div><label>Regime tributário</label><input value="${c.regime}" readonly /></div>
-            <div><label>UF / Status</label><input value="${c.estado} · ${c.status}" readonly /></div>
-            <div class="full"><label>Endereço</label><textarea readonly>${c.endereco || "—"}</textarea></div>
-            <div class="full"><label>Sócios</label><textarea readonly>${(c.socios || []).join(", ") || "—"}</textarea></div>
+            <div class="full"><label>Razão social</label><input value="${uiSelectEscape(c.razaoSocial || c.nome)}" readonly /></div>
+            <div><label>Nome fantasia</label><input value="${uiSelectEscape(c.fantasia || c.nome)}" readonly /></div>
+            <div><label>CNPJ</label><input value="${uiSelectEscape(c.cnpj)}" readonly /></div>
+            <div><label>Inscrição estadual</label><input value="${uiSelectEscape(c.ie || "—")}" readonly /></div>
+            <div><label>Inscrição municipal</label><input value="${uiSelectEscape(c.im || "—")}" readonly /></div>
+            <div><label>Regime tributário</label><input value="${uiSelectEscape(c.regime)}" readonly /></div>
+            <div><label>UF / Status</label><input value="${uiSelectEscape(`${c.estado} · ${c.status}`)}" readonly /></div>
+            <div class="full"><label>Endereço</label><textarea readonly>${uiSelectEscape(c.endereco || "—")}</textarea></div>
+            <div class="full"><label>Sócios</label><textarea readonly>${uiSelectEscape((c.socios || []).join(", ") || "—")}</textarea></div>
+          </div>
+          <h4 class="cli-dados-com-title">Informações comerciais</h4>
+          <div class="cli-cad-grid">
+            <div><label>Rede</label><input value="${uiSelectEscape(com.pertenceRede ? (com.nomeRede || "Sim") : "Não")}" readonly /></div>
+            <div><label>Representante</label><input value="${uiSelectEscape(com.possuiRepresentante ? (com.nomeRepresentante || "Sim") : "Não")}" readonly /></div>
+            <div><label>Escritório afiliado</label><input value="${uiSelectEscape(com.escritorioAfiliado || "—")}" readonly /></div>
+            <div><label>Carteira</label><input value="${uiSelectEscape(com.carteira || "—")}" readonly /></div>
+            <div><label>Origem</label><input value="${uiSelectEscape(com.origem || "—")}" readonly /></div>
+            <div><label>Plano</label><input value="${uiSelectEscape(com.plano || "—")}" readonly /></div>
+            <div><label>Início do contrato</label><input value="${uiSelectEscape(fmtCliComData(com.dataInicioContrato))}" readonly /></div>
+          </div>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+      });
+    }
+
+    function openCliComercialReport() {
+      const rows = collectCliListRowsMeta();
+      const cf = cliComercialFiltros || {};
+      const filtrosAtivos = [
+        cf.rede && `Rede: ${cf.rede}`,
+        cf.escritorio && `Escritório: ${cf.escritorio}`,
+        cf.representante && `Representante: ${cf.representante}`,
+        cf.carteira && `Carteira: ${cf.carteira}`,
+        cf.origem && `Origem: ${cf.origem}`,
+        cf.plano && `Plano: ${cf.plano}`,
+        cliRegimeFilter && `Regime: ${cliRegimeFilter}`,
+      ].filter(Boolean);
+      openModal({
+        title: "Relatório comercial",
+        sub: filtrosAtivos.length ? filtrosAtivos.join(" · ") : "Todas as empresas no filtro atual",
+        wide: true,
+        report: true,
+        body: `
+          <p class="cli-com-report-sum">${rows.length} empresa${rows.length === 1 ? "" : "s"}</p>
+          <div class="cli-xml-table-wrap">
+            <table class="cli-xml-table sm">
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Rede</th>
+                  <th>Representante</th>
+                  <th>Escritório afiliado</th>
+                  <th>Carteira</th>
+                  <th>Origem</th>
+                  <th>Plano</th>
+                  <th>Início contrato</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.length ? rows.map(({ c }) => {
+                  const com = getCliComercial(c);
+                  return `
+                    <tr>
+                      <td><strong>${uiSelectEscape(c.fantasia || c.nome)}</strong><small>${uiSelectEscape(c.cnpj)}</small></td>
+                      <td>${uiSelectEscape(com.pertenceRede ? (com.nomeRede || "—") : "—")}</td>
+                      <td>${uiSelectEscape(com.possuiRepresentante ? (com.nomeRepresentante || "—") : "—")}</td>
+                      <td>${uiSelectEscape(com.escritorioAfiliado || "—")}</td>
+                      <td>${uiSelectEscape(com.carteira || "—")}</td>
+                      <td>${uiSelectEscape(com.origem || "—")}</td>
+                      <td>${uiSelectEscape(com.plano || "—")}</td>
+                      <td>${uiSelectEscape(fmtCliComData(com.dataInicioContrato))}</td>
+                    </tr>`;
+                }).join("") : `<tr><td colspan="8"><div class="cli-empty-panel">Nenhuma empresa no filtro</div></td></tr>`}
+              </tbody>
+            </table>
           </div>`,
         foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
       });

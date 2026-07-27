@@ -8,6 +8,21 @@
       animation: rise .3s var(--ease);
     }
 
+    .cli-dados-com-title {
+      margin: 18px 0 10px;
+      font-size: .88rem;
+      font-weight: 750;
+      color: var(--navy-deep);
+      letter-spacing: -0.02em;
+    }
+
+    .cli-com-report-sum {
+      margin: 0 0 10px;
+      font-size: .82rem;
+      font-weight: 650;
+      color: var(--muted);
+    }
+
     .cli-cadastro-head {
       display: flex;
       flex-direction: column;
@@ -243,45 +258,63 @@
 
     .cli-cad-hint.is-loading { color: var(--accent); font-weight: 600; }
 
-    .cli-input-adorn {
-      position: relative;
-      display: flex;
+    /* Ícone/@ e input na mesma célula — alinha ao centro do campo */
+    .cli-input-adorn,
+    .cli-input-prefix {
+      display: grid;
+      grid-template-columns: 1fr;
       align-items: center;
+      position: relative;
+    }
+
+    .cli-input-adorn > svg,
+    .cli-input-adorn .adorn-ico,
+    .cli-input-adorn > input,
+    .cli-input-prefix .pfx,
+    .cli-input-prefix > input {
+      grid-area: 1 / 1;
     }
 
     .cli-input-adorn > svg,
     .cli-input-adorn .adorn-ico {
-      position: absolute;
-      left: 11px;
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 11px;
       width: 15px;
       height: 15px;
       color: var(--muted);
       pointer-events: none;
       z-index: 1;
+      transform: none;
     }
 
     .cli-input-adorn > input {
-      padding-left: 36px;
-    }
-
-    .cli-input-prefix {
-      position: relative;
-      display: flex;
-      align-items: center;
+      width: 100%;
+      padding: 0 12px 0 36px;
+      margin-bottom: 0;
+      line-height: normal;
     }
 
     .cli-input-prefix .pfx {
-      position: absolute;
-      left: 12px;
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 12px;
       font-size: .84rem;
       font-weight: 650;
+      line-height: 1;
       color: var(--muted);
       pointer-events: none;
       z-index: 1;
+      transform: none;
     }
 
     .cli-input-prefix > input {
-      padding-left: 28px;
+      width: 100%;
+      padding: 0 12px 0 28px;
+      margin-bottom: 0;
+      line-height: normal;
     }
 
     .cli-cad-foot {

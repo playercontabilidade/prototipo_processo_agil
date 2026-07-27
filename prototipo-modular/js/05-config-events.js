@@ -1666,6 +1666,10 @@
         openClienteCadastro();
         return;
       }
+      if (e.target.closest("[data-cli-com-report]")) {
+        openCliComercialReport();
+        return;
+      }
       const listKpi = e.target.closest("[data-cli-list-kpi]");
       if (listKpi) {
         const next = listKpi.dataset.cliListKpi || "";
@@ -2329,6 +2333,36 @@
       }
       if (e.target.id === "cliRegimeFilter") {
         cliRegimeFilter = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComRedeFilter") {
+        cliComercialFiltros.rede = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComEscritorioFilter") {
+        cliComercialFiltros.escritorio = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComRepFilter") {
+        cliComercialFiltros.representante = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComCarteiraFilter") {
+        cliComercialFiltros.carteira = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComOrigemFilter") {
+        cliComercialFiltros.origem = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComPlanoFilter") {
+        cliComercialFiltros.plano = e.target.value || "";
         renderClientesList();
         return;
       }

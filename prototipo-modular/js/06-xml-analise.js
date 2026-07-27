@@ -124,6 +124,8 @@
           precoVendaCents: 2490,
           tribEntradaCents: 180,
           tribSaidaCents: 210,
+          ibs: { entrada: "ok", saida: "ok" },
+          cbs: { entrada: "ok", saida: "ok" },
         },
         {
           id: "xp2",
@@ -145,6 +147,8 @@
           precoVendaCents: 1290,
           tribEntradaCents: 70,
           tribSaidaCents: 85,
+          ibs: { entrada: "ok", saida: "wrong" },
+          cbs: { entrada: "ok", saida: "ok" },
         },
         {
           id: "xp3",
@@ -166,6 +170,8 @@
           precoVendaCents: 4590,
           tribEntradaCents: 290,
           tribSaidaCents: 410,
+          ibs: { entrada: "wrong", saida: "ok" },
+          cbs: { entrada: "missing", saida: "ok" },
         },
         {
           id: "xp4",
@@ -187,6 +193,8 @@
           precoVendaCents: 2890,
           tribEntradaCents: 220,
           tribSaidaCents: 195,
+          ibs: { entrada: "ok", saida: "missing" },
+          cbs: { entrada: "wrong", saida: "wrong" },
         },
         {
           id: "xp5",
@@ -208,6 +216,8 @@
           precoVendaCents: 0,
           tribEntradaCents: 45,
           tribSaidaCents: 0,
+          ibs: { entrada: "ok", saida: "missing" },
+          cbs: { entrada: "ok", saida: "missing" },
         },
         {
           id: "xp6",
@@ -229,6 +239,8 @@
           precoVendaCents: 690,
           tribEntradaCents: 32,
           tribSaidaCents: 48,
+          ibs: { entrada: "ok", saida: "ok" },
+          cbs: { entrada: "ok", saida: "wrong" },
         },
         {
           id: "xp7",
@@ -250,6 +262,8 @@
           precoVendaCents: 12990,
           tribEntradaCents: 980,
           tribSaidaCents: 1450,
+          ibs: { entrada: "missing", saida: "missing" },
+          cbs: { entrada: "missing", saida: "ok" },
         },
         {
           id: "xp8",
@@ -271,6 +285,8 @@
           precoVendaCents: 1680,
           tribEntradaCents: 90,
           tribSaidaCents: 105,
+          ibs: { entrada: "ok", saida: "ok" },
+          cbs: { entrada: "wrong", saida: "ok" },
         },
       ];
 
@@ -341,6 +357,34 @@
         saudavel: { label: "Saudável", cls: "ok" },
       };
       return map[status] || map.saudavel;
+    }
+
+    /** Status cadastral IBS/CBS: ok | missing | wrong */
+    function xmlTribCadMeta(code) {
+      const map = {
+        ok: { cls: "ok", label: "Cadastrado corretamente" },
+        missing: { cls: "bad", label: "Informação inexistente" },
+        wrong: { cls: "warn", label: "Alíquota cadastrada incorretamente" },
+      };
+      return map[code] || map.missing;
+    }
+
+    function renderCliXmlTribCadCell(trib) {
+      const entrada = xmlTribCadMeta(trib?.entrada);
+      const saida = xmlTribCadMeta(trib?.saida);
+      return `
+        <div class="cli-xml-trib-cad" role="group" aria-label="Entrada e saída">
+          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="Entrada · ${entrada.label}">
+            <span class="lab">E</span>
+            <i class="cli-xml-trib-dot is-${entrada.cls}" aria-hidden="true"></i>
+            <span class="sr-only">Entrada: ${entrada.label}</span>
+          </span>
+          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="Saída · ${saida.label}">
+            <span class="lab">S</span>
+            <i class="cli-xml-trib-dot is-${saida.cls}" aria-hidden="true"></i>
+            <span class="sr-only">Saída: ${saida.label}</span>
+          </span>
+        </div>`;
     }
 
     /** Comparativo visual compra × venda (lista, resumo e detalhe). */
@@ -728,6 +772,8 @@
                   <th>CFOP Compra</th>
                   <th>CST/CSOSN</th>
                   <th>Regime</th>
+                  <th>IBS</th>
+                  <th>CBS</th>
                   <th>Fornecedor</th>
                   <th class="num">Qtd. Compra</th>
                   <th class="num">Custo Unit.</th>
@@ -749,6 +795,8 @@
                     <td>${uiSelectEscape(p.cfopCompra)}</td>
                     <td>${uiSelectEscape(p.cst)}</td>
                     <td>${uiSelectEscape(p.regime)}</td>
+                    <td>${renderCliXmlTribCadCell(p.ibs)}</td>
+                    <td>${renderCliXmlTribCadCell(p.cbs)}</td>
                     <td>${uiSelectEscape(p.fornecedor)}</td>
                     <td class="num">${p.qtdCompra}</td>
                     <td class="num">${xmlMoney(p.calc.cef)}</td>
@@ -759,11 +807,11 @@
                     <td class="num ${p.calc.semVenda ? "" : (p.calc.mlPct < 0 ? "neg" : "")}">${p.calc.semVenda ? "—" : xmlPctLabel(p.calc.mlPct)}</td>
                     <td><span class="cli-xml-status is-${st.cls}">${st.label}</span></td>
                   </tr>`;
-                }).join("") : `<tr><td colspan="14"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
+                }).join("") : `<tr><td colspan="16"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
               </tbody>
             </table>
           </div>
-          <p class="cli-xml-legend">Clique em um produto para ver o comparativo compra × venda e a memória de cálculo. Status: Sem venda → Prejuízo → Baixa → Atenção → Saudável.</p>
+          <p class="cli-xml-legend">Clique em um produto para ver o comparativo compra × venda e a memória de cálculo. Bloco fiscal: NCM → CFOP → CST → Regime → IBS/CBS (E = entrada · S = saída · verde ok · amarelo alíquota incorreta · vermelho inexistente).</p>
         </section>`;
     }
 

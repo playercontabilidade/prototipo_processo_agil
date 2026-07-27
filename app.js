@@ -55,9 +55,21 @@
         "03/2019", "08/2020", "01/2021", "11/2018", "06/2022",
         "02/2020", "09/2021", "04/2019", "07/2023", "12/2018",
       ];
+      const redes = ["Rede Farmelhor", "Rede Saúde Norte", "Grupo Delta Farma"];
+      const reps = ["Carlos Mendes", "Patricia Alves", "Roberto Nunes", "Fernanda Dias"];
+      const escritorios = ["Palmas Centro", "Goiânia", "Belém", "Curitiba", "São Paulo"];
+      const carteiras = ["Ana Costa", "Juliana Reis", "Marcos Lima"];
+      const origens = ["Indicação", "Inbound", "Parceiro", "Prospecção", "Site"];
+      const planos = ["Básico", "Folha", "Completo", "BPO"];
+      const inicioContrato = [
+        "2019-03-10", "2020-08-01", "2021-01-15", "2018-11-20", "2022-06-05",
+        "2020-02-12", "2021-09-01", "2019-04-18", "2023-07-10", "2018-12-03",
+      ];
       CLIENTES.forEach((c, i) => {
         const isFilial = i === 2 || i === 6 || i === 8;
         const cert = certMap[c.id] || { validade: "15/03/2027", titular: `${c.short} Certificado` };
+        const naRede = i % 3 !== 2;
+        const temRep = i % 4 !== 3;
         Object.assign(c, {
           tipoUnidade: isFilial ? "Filial" : "Matriz",
           funcInternos: 4 + ((i * 3) % 11),
@@ -72,9 +84,47 @@
           certValidade: cert.validade,
           certTitular: cert.titular,
           certStatus: "ok",
+          comercial: {
+            pertenceRede: naRede,
+            nomeRede: naRede ? redes[i % redes.length] : "",
+            possuiRepresentante: temRep,
+            nomeRepresentante: temRep ? reps[i % reps.length] : "",
+            escritorioAfiliado: escritorios[i % escritorios.length],
+            carteira: carteiras[i % carteiras.length],
+            origem: origens[i % origens.length],
+            dataInicioContrato: inicioContrato[i] || "2020-01-01",
+            plano: planos[i % planos.length],
+          },
         });
       });
     })();
+
+    const CLI_COM_REDES = ["Rede Farmelhor", "Rede Saúde Norte", "Grupo Delta Farma"];
+    const CLI_COM_REPS = ["Carlos Mendes", "Patricia Alves", "Roberto Nunes", "Fernanda Dias"];
+    const CLI_COM_ESCRITORIOS = ["Palmas Centro", "Goiânia", "Belém", "Curitiba", "São Paulo"];
+    const CLI_COM_CARTEIRAS = ["Ana Costa", "Juliana Reis", "Marcos Lima"];
+    const CLI_COM_ORIGENS = ["Indicação", "Inbound", "Parceiro", "Prospecção", "Site"];
+    const CLI_COM_PLANOS = ["Básico", "Folha", "Completo", "BPO"];
+
+    function getCliComercial(c) {
+      return c?.comercial || {
+        pertenceRede: false,
+        nomeRede: "",
+        possuiRepresentante: false,
+        nomeRepresentante: "",
+        escritorioAfiliado: "",
+        carteira: "",
+        origem: "",
+        dataInicioContrato: "",
+        plano: "",
+      };
+    }
+
+    function fmtCliComData(iso) {
+      if (!iso) return "—";
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso);
+    }
 
     const PROC_STATUS_OPTIONS = [
       { value: "pendente", label: "Pendente", badge: "falha", color: "#e11d48", emoji: "🔴", sucesso: null },
@@ -1475,6 +1525,14 @@
     };
     let cliSearchQuery = "";
     let cliRegimeFilter = "";
+    let cliComercialFiltros = {
+      rede: "",
+      escritorio: "",
+      representante: "",
+      carteira: "",
+      origem: "",
+      plano: "",
+    };
     let cliEmpresaFilter = "all";
     let procEmpresaFilter = "all";
     let secEmpresaFilter = "all";
@@ -1848,6 +1906,15 @@
           website: "",
           instagram: "",
           facebook: "",
+          pertenceRede: false,
+          nomeRede: "",
+          possuiRepresentante: false,
+          nomeRepresentante: "",
+          escritorioAfiliado: "",
+          carteira: "",
+          origemCliente: "",
+          dataInicioContrato: "",
+          planoServico: "",
         },
       };
     }
@@ -1921,6 +1988,13 @@
         cadWebsite: "website",
         cadInstagram: "instagram",
         cadFacebook: "facebook",
+        cadNomeRede: "nomeRede",
+        cadNomeRepresentante: "nomeRepresentante",
+        cadEscritorioAfiliado: "escritorioAfiliado",
+        cadCarteira: "carteira",
+        cadOrigemCliente: "origemCliente",
+        cadInicioContrato: "dataInicioContrato",
+        cadPlanoServico: "planoServico",
       };
       Object.entries(map).forEach(([id, key]) => {
         const el = root.querySelector("#" + id);
@@ -1931,8 +2005,14 @@
       });
       const ativa = root.querySelector("#cadEmpresaAtiva");
       const matriz = root.querySelector("#cadEhMatriz");
+      const rede = root.querySelector("#cadPertenceRede");
+      const rep = root.querySelector("#cadPossuiRepresentante");
       if (ativa) d.empresaAtiva = !!ativa.checked;
       if (matriz) d.ehMatriz = !!matriz.checked;
+      if (rede) d.pertenceRede = !!rede.checked;
+      if (rep) d.possuiRepresentante = !!rep.checked;
+      if (!d.pertenceRede) d.nomeRede = "";
+      if (!d.possuiRepresentante) d.nomeRepresentante = "";
     }
 
     function validateCliCadastroAll() {
@@ -1953,6 +2033,10 @@
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) errors.email = "E-mail inválido";
       if (d.telefone && digitsOnly(d.telefone).length < 10) errors.telefone = "Telefone inválido";
       if (d.whatsapp && digitsOnly(d.whatsapp).length < 10) errors.whatsapp = "WhatsApp inválido";
+      if (d.pertenceRede && !String(d.nomeRede || "").trim()) errors.nomeRede = "Informe o nome da rede";
+      if (d.possuiRepresentante && !String(d.nomeRepresentante || "").trim()) {
+        errors.nomeRepresentante = "Informe o nome do representante";
+      }
       if (d.website && !/^https?:\/\//i.test(d.website) && d.website.includes(".")) {
         d.website = "https://" + d.website.replace(/^\/+/, "");
       }
@@ -2183,6 +2267,70 @@
               </div>
             </div>
           </section>
+
+          <section class="cli-cad-block">
+            <h4>Informações comerciais</h4>
+            <hr class="cli-cad-hr" />
+            <p class="cli-cad-hint" style="margin:0 0 8px">Campos usados em filtros e relatórios da carteira (rede, afiliado, representante, etc.).</p>
+            <div class="cli-cad-form">
+              <div class="cli-field full">
+                <div class="cli-cad-toggles">
+                  <label class="cfg-switch">
+                    <span class="lab">Pertence a uma rede?</span>
+                    <input type="checkbox" id="cadPertenceRede" ${d.pertenceRede ? "checked" : ""} />
+                  </label>
+                  <label class="cfg-switch">
+                    <span class="lab">Possui representante comercial?</span>
+                    <input type="checkbox" id="cadPossuiRepresentante" ${d.possuiRepresentante ? "checked" : ""} />
+                  </label>
+                </div>
+              </div>
+              <div class="cli-field span-2" id="cadNomeRedeWrap" style="${d.pertenceRede ? "" : "display:none"}">
+                <label>Nome da rede <span class="req">*</span></label>
+                <input id="cadNomeRede" list="cadNomeRedeList" placeholder="Ex.: Rede Farmelhor" value="${uiSelectEscape(d.nomeRede)}" class="${fieldInvalid("nomeRede")}" />
+                <datalist id="cadNomeRedeList">${CLI_COM_REDES.map((r) => `<option value="${uiSelectEscape(r)}"></option>`).join("")}</datalist>
+                ${fieldErrHtml("nomeRede")}
+              </div>
+              <div class="cli-field span-2" id="cadNomeRepWrap" style="${d.possuiRepresentante ? "" : "display:none"}">
+                <label>Nome do representante <span class="req">*</span></label>
+                <input id="cadNomeRepresentante" list="cadNomeRepList" placeholder="Ex.: Carlos Mendes" value="${uiSelectEscape(d.nomeRepresentante)}" class="${fieldInvalid("nomeRepresentante")}" />
+                <datalist id="cadNomeRepList">${CLI_COM_REPS.map((r) => `<option value="${uiSelectEscape(r)}"></option>`).join("")}</datalist>
+                ${fieldErrHtml("nomeRepresentante")}
+              </div>
+              <div class="cli-field">
+                <label>Escritório afiliado</label>
+                <select id="cadEscritorioAfiliado">
+                  <option value="">Selecione</option>
+                  ${CLI_COM_ESCRITORIOS.map((e) => `<option value="${uiSelectEscape(e)}" ${d.escritorioAfiliado === e ? "selected" : ""}>${uiSelectEscape(e)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="cli-field">
+                <label>Carteira (gestor interno)</label>
+                <select id="cadCarteira">
+                  <option value="">Selecione</option>
+                  ${CLI_COM_CARTEIRAS.map((e) => `<option value="${uiSelectEscape(e)}" ${d.carteira === e ? "selected" : ""}>${uiSelectEscape(e)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="cli-field">
+                <label>Origem do cliente</label>
+                <select id="cadOrigemCliente">
+                  <option value="">Selecione</option>
+                  ${CLI_COM_ORIGENS.map((e) => `<option value="${uiSelectEscape(e)}" ${d.origemCliente === e ? "selected" : ""}>${uiSelectEscape(e)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="cli-field">
+                <label>Pacote / plano de serviço</label>
+                <select id="cadPlanoServico">
+                  <option value="">Selecione</option>
+                  ${CLI_COM_PLANOS.map((e) => `<option value="${uiSelectEscape(e)}" ${d.planoServico === e ? "selected" : ""}>${uiSelectEscape(e)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="cli-field">
+                <label>Início do contrato</label>
+                <input id="cadInicioContrato" type="date" value="${uiSelectEscape(d.dataInicioContrato)}" />
+              </div>
+            </div>
+          </section>
         </div>`;
     }
 
@@ -2264,6 +2412,17 @@
           instagram: d.instagram ? "@" + d.instagram.replace(/^@+/, "") : "",
           facebook: d.facebook,
         },
+        comercial: {
+          pertenceRede: !!d.pertenceRede,
+          nomeRede: d.pertenceRede ? (d.nomeRede || "").trim() : "",
+          possuiRepresentante: !!d.possuiRepresentante,
+          nomeRepresentante: d.possuiRepresentante ? (d.nomeRepresentante || "").trim() : "",
+          escritorioAfiliado: d.escritorioAfiliado || "",
+          carteira: d.carteira || "",
+          origem: d.origemCliente || "",
+          dataInicioContrato: d.dataInicioContrato || "",
+          plano: d.planoServico || "",
+        },
       };
       try {
         await new Promise((r) => setTimeout(r, 450));
@@ -2308,6 +2467,7 @@
           certValidade: "31/12/2027",
           certTitular: "Sócio administrador",
           contato: payload.contato,
+          comercial: payload.comercial,
           ibge: payload.endereco.codigo_ibge,
           _payload: payload,
         };
@@ -2333,6 +2493,20 @@
         if (cliCadastro.data.ehMatriz) cliCadastro.data.matrizId = "";
         const box = root.querySelector("#cadMatrizWrap");
         if (box) box.style.display = cliCadastro.data.ehMatriz ? "none" : "";
+      });
+      root.querySelector("#cadPertenceRede")?.addEventListener("change", (e) => {
+        collectCliCadastroFromDom(root);
+        cliCadastro.data.pertenceRede = !!e.target.checked;
+        if (!cliCadastro.data.pertenceRede) cliCadastro.data.nomeRede = "";
+        const box = root.querySelector("#cadNomeRedeWrap");
+        if (box) box.style.display = cliCadastro.data.pertenceRede ? "" : "none";
+      });
+      root.querySelector("#cadPossuiRepresentante")?.addEventListener("change", (e) => {
+        collectCliCadastroFromDom(root);
+        cliCadastro.data.possuiRepresentante = !!e.target.checked;
+        if (!cliCadastro.data.possuiRepresentante) cliCadastro.data.nomeRepresentante = "";
+        const box = root.querySelector("#cadNomeRepWrap");
+        if (box) box.style.display = cliCadastro.data.possuiRepresentante ? "" : "none";
       });
       root.querySelector("#cadCnpj")?.addEventListener("input", (e) => {
         e.target.value = maskCnpj(e.target.value);
@@ -5616,6 +5790,25 @@
         list = list.filter((c) => c.id === cliEmpresaFilter);
       }
       if (cliRegimeFilter) list = list.filter((c) => c.regime === cliRegimeFilter);
+      const cf = cliComercialFiltros || {};
+      if (cf.rede) {
+        list = list.filter((c) => {
+          const com = getCliComercial(c);
+          return com.pertenceRede && com.nomeRede === cf.rede;
+        });
+      }
+      if (cf.escritorio) {
+        list = list.filter((c) => getCliComercial(c).escritorioAfiliado === cf.escritorio);
+      }
+      if (cf.representante) {
+        list = list.filter((c) => {
+          const com = getCliComercial(c);
+          return com.possuiRepresentante && com.nomeRepresentante === cf.representante;
+        });
+      }
+      if (cf.carteira) list = list.filter((c) => getCliComercial(c).carteira === cf.carteira);
+      if (cf.origem) list = list.filter((c) => getCliComercial(c).origem === cf.origem);
+      if (cf.plano) list = list.filter((c) => getCliComercial(c).plano === cf.plano);
 
       let rowsMeta = list.map((c) => {
         const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
@@ -6156,6 +6349,15 @@
           list = list.filter((c) => c.id === cliEmpresaFilter);
         }
         if (cliRegimeFilter) list = list.filter((c) => c.regime === cliRegimeFilter);
+        const cf = cliComercialFiltros || {};
+        if (cf.rede) list = list.filter((c) => getCliComercial(c).pertenceRede && getCliComercial(c).nomeRede === cf.rede);
+        if (cf.escritorio) list = list.filter((c) => getCliComercial(c).escritorioAfiliado === cf.escritorio);
+        if (cf.representante) {
+          list = list.filter((c) => getCliComercial(c).possuiRepresentante && getCliComercial(c).nomeRepresentante === cf.representante);
+        }
+        if (cf.carteira) list = list.filter((c) => getCliComercial(c).carteira === cf.carteira);
+        if (cf.origem) list = list.filter((c) => getCliComercial(c).origem === cf.origem);
+        if (cf.plano) list = list.filter((c) => getCliComercial(c).plano === cf.plano);
         return list.map((c) => {
           const cert = typeof getCertificadoRow === "function" ? getCertificadoRow(c) : null;
           return {
@@ -6174,6 +6376,8 @@
         certAlerta: baseForKpi.filter((r) => r.cert && r.cert.status !== "ok").length,
       };
       const kpiActive = cliListKpiFilter || "";
+      const cf = cliComercialFiltros || {};
+      const hasComercialFilter = !!(cf.rede || cf.escritorio || cf.representante || cf.carteira || cf.origem || cf.plano);
       wrap.innerHTML = `
         <div class="cli-list-toolbar" role="toolbar" aria-label="Ferramentas da carteira">
           ${renderModuleEmpresaPickerHtml("clientes")}
@@ -6184,6 +6388,45 @@
               ${REGIME_OPTIONS.map((r) => `<option value="${r}" ${cliRegimeFilter === r ? "selected" : ""}>${r}</option>`).join("")}
             </select>
           </div>
+          <div class="proc-filter field">
+            <select id="cliComRedeFilter" aria-label="Filtrar por rede">
+              <option value="">Rede</option>
+              ${CLI_COM_REDES.map((r) => `<option value="${uiSelectEscape(r)}" ${cf.rede === r ? "selected" : ""}>${uiSelectEscape(r)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="proc-filter field">
+            <select id="cliComEscritorioFilter" aria-label="Filtrar por escritório afiliado">
+              <option value="">Escritório afiliado</option>
+              ${CLI_COM_ESCRITORIOS.map((r) => `<option value="${uiSelectEscape(r)}" ${cf.escritorio === r ? "selected" : ""}>${uiSelectEscape(r)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="proc-filter field">
+            <select id="cliComRepFilter" aria-label="Filtrar por representante">
+              <option value="">Representante</option>
+              ${CLI_COM_REPS.map((r) => `<option value="${uiSelectEscape(r)}" ${cf.representante === r ? "selected" : ""}>${uiSelectEscape(r)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="proc-filter field">
+            <select id="cliComCarteiraFilter" aria-label="Filtrar por carteira">
+              <option value="">Carteira</option>
+              ${CLI_COM_CARTEIRAS.map((r) => `<option value="${uiSelectEscape(r)}" ${cf.carteira === r ? "selected" : ""}>${uiSelectEscape(r)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="proc-filter field">
+            <select id="cliComOrigemFilter" aria-label="Filtrar por origem">
+              <option value="">Origem</option>
+              ${CLI_COM_ORIGENS.map((r) => `<option value="${uiSelectEscape(r)}" ${cf.origem === r ? "selected" : ""}>${uiSelectEscape(r)}</option>`).join("")}
+            </select>
+          </div>
+          <div class="proc-filter field">
+            <select id="cliComPlanoFilter" aria-label="Filtrar por plano">
+              <option value="">Plano</option>
+              ${CLI_COM_PLANOS.map((r) => `<option value="${uiSelectEscape(r)}" ${cf.plano === r ? "selected" : ""}>${uiSelectEscape(r)}</option>`).join("")}
+            </select>
+          </div>
+          <button type="button" class="btn-ghost tip-bottom" data-cli-com-report data-tip="Relatório comercial do filtro atual">
+            Relatório
+          </button>
           <button type="button" class="btn-primary cli-add-btn" data-cli-add-empresa>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
             Nova empresa
@@ -6276,7 +6519,7 @@
                 </div>
               </div>
               ${dossieHtml}`;
-          }).join("") : `<div class="cli-empty-panel">${cliEmpresaFilter !== "all" || cliRegimeFilter || kpiActive ? "Nenhuma empresa correspondente aos filtros" : "Nenhum cliente cadastrado"}</div>`}
+          }).join("") : `<div class="cli-empty-panel">${cliEmpresaFilter !== "all" || cliRegimeFilter || hasComercialFilter || kpiActive ? "Nenhuma empresa correspondente aos filtros" : "Nenhum cliente cadastrado"}</div>`}
         </div>`;
       enhanceUiSelects(wrap);
       if (cliDrawerOpen && cliListSelectedId && !dossieId) {
@@ -7576,7 +7819,9 @@
       }
       if (cliPerfilTab === "honorarios") {
         const items = ensureCliHonorarios(c);
-        const total = items.reduce((acc, h) => acc + (Number(h.valor) || 0), 0);
+        const total = cliHonorTotal(items);
+        const pctInfo = cliHonorPctSobreFat(c, items);
+        const pctMeta = cliHonorPctMeta(pctInfo.pct);
         const recLabel = { mensal: "Mensal", anual: "Anual", unico: "Único" };
         return `
           <div class="cli-honor-form">
@@ -7615,7 +7860,18 @@
               <span>Total da empresa</span>
               <strong>${money(total)}</strong>
             </div>
+            <div class="cli-honor-kpi pct is-${pctMeta.cls}" title="${pctMeta.hint}">
+              <span>Honorário / faturamento</span>
+              <strong>${cliHonorPctLabel(pctInfo.pct)}</strong>
+              <em class="cli-honor-pct-badge">${pctMeta.label}</em>
+              <small>Ideal ${String(HONOR_PCT_IDEAL).replace(".", ",")}% · faturamento ${money(pctInfo.fat)}</small>
+            </div>
           </div>
+          <p class="cli-honor-pct-legend">
+            Ideal <b>${String(HONOR_PCT_IDEAL).replace(".", ",")}%</b>
+            · abaixo do ideal &lt; ${String(HONOR_PCT_IDEAL).replace(".", ",")}%
+            · atenção comercial ≤ <b>${String(HONOR_PCT_CRITICO).replace(".", ",")}%</b>
+          </p>
           <section class="cli-honor-report" aria-label="Relatório de honorários">
             <div class="cli-honor-report-head">
               <div>
@@ -11059,13 +11315,71 @@
 
     function ensureCliHonorarios(c) {
       if (!cliHonorariosByClient[c.id]) {
+        const fat = Number(c.faturamento) || 0;
+        const isCritico = c.prioridade === "baixa" || c.status === "Inativo";
+        const isAbaixo = !isCritico && c.prioridade === "media";
+        const mensal = isCritico
+          ? Math.round(fat * 0.0015)
+          : isAbaixo
+            ? Math.round(fat * 0.004)
+            : Math.round(fat / 120);
         cliHonorariosByClient[c.id] = [
-          { id: "h1", origem: "Mensalidade contábil", valor: Math.round((c.faturamento || 0) / 120), recorrencia: "mensal", criado: "01/07/2026" },
-          { id: "h2", origem: "Assessoria societária", valor: 890, recorrencia: "unico", criado: "05/07/2026" },
-          { id: "h3", origem: "Folha / Pessoal", valor: Math.round(320 + (c.funcInternos || 0) * 45), recorrencia: "mensal", criado: "08/07/2026" },
+          { id: "h1", origem: "Mensalidade contábil", valor: mensal, recorrencia: "mensal", criado: "01/07/2026" },
+          { id: "h2", origem: "Assessoria societária", valor: isCritico ? 80 : isAbaixo ? 420 : 890, recorrencia: "unico", criado: "05/07/2026" },
+          { id: "h3", origem: "Folha / Pessoal", valor: Math.round((isCritico ? 90 : 320) + (c.funcInternos || 0) * 45), recorrencia: "mensal", criado: "08/07/2026" },
         ];
       }
       return cliHonorariosByClient[c.id];
+    }
+
+    /** % honorários ÷ faturamento · ideal 1% · crítico ≤ 0,4% */
+    const HONOR_PCT_IDEAL = 1;
+    const HONOR_PCT_CRITICO = 0.4;
+
+    function cliHonorTotal(items) {
+      return (items || []).reduce((acc, h) => acc + (Number(h.valor) || 0), 0);
+    }
+
+    function cliHonorPctSobreFat(c, items) {
+      const fat = Number(c?.faturamento) || 0;
+      const total = cliHonorTotal(items);
+      if (fat <= 0) return { total, fat, pct: null };
+      const pct = Math.round((total / fat) * 10000) / 100;
+      return { total, fat, pct };
+    }
+
+    function cliHonorPctMeta(pct) {
+      if (pct == null || !Number.isFinite(pct)) {
+        return {
+          cls: "muted",
+          label: "Sem faturamento",
+          hint: "Cadastre o faturamento para calcular o indicador",
+        };
+      }
+      if (pct <= HONOR_PCT_CRITICO) {
+        return {
+          cls: "critico",
+          label: "Atenção comercial",
+          hint: `≤ ${String(HONOR_PCT_CRITICO).replace(".", ",")}% do faturamento · priorizar análise`,
+        };
+      }
+      if (pct < HONOR_PCT_IDEAL) {
+        return {
+          cls: "abaixo",
+          label: "Abaixo do ideal",
+          hint: `Ideal ${String(HONOR_PCT_IDEAL).replace(".", ",")}% · cliente abaixo da meta`,
+        };
+      }
+      return {
+        cls: "ideal",
+        label: "No ideal",
+        hint: `Meta ≥ ${String(HONOR_PCT_IDEAL).replace(".", ",")}% do faturamento`,
+      };
+    }
+
+    function cliHonorPctLabel(pct) {
+      if (pct == null || !Number.isFinite(pct)) return "—";
+      return `${String(pct).replace(".", ",")}%`;
     }
 
     function parseHonorValor(raw) {
@@ -11226,21 +11540,87 @@
     }
 
     function openClienteDadosModal(c) {
+      const com = getCliComercial(c);
       openModal({
         title: "Dados cadastrais",
         sub: c.fantasia || c.nome,
         wide: true,
         body: `
           <div class="cli-cad-grid">
-            <div class="full"><label>Razão social</label><input value="${c.razaoSocial || c.nome}" readonly /></div>
-            <div><label>Nome fantasia</label><input value="${c.fantasia || c.nome}" readonly /></div>
-            <div><label>CNPJ</label><input value="${c.cnpj}" readonly /></div>
-            <div><label>Inscrição estadual</label><input value="${c.ie || "—"}" readonly /></div>
-            <div><label>Inscrição municipal</label><input value="${c.im || "—"}" readonly /></div>
-            <div><label>Regime tributário</label><input value="${c.regime}" readonly /></div>
-            <div><label>UF / Status</label><input value="${c.estado} · ${c.status}" readonly /></div>
-            <div class="full"><label>Endereço</label><textarea readonly>${c.endereco || "—"}</textarea></div>
-            <div class="full"><label>Sócios</label><textarea readonly>${(c.socios || []).join(", ") || "—"}</textarea></div>
+            <div class="full"><label>Razão social</label><input value="${uiSelectEscape(c.razaoSocial || c.nome)}" readonly /></div>
+            <div><label>Nome fantasia</label><input value="${uiSelectEscape(c.fantasia || c.nome)}" readonly /></div>
+            <div><label>CNPJ</label><input value="${uiSelectEscape(c.cnpj)}" readonly /></div>
+            <div><label>Inscrição estadual</label><input value="${uiSelectEscape(c.ie || "—")}" readonly /></div>
+            <div><label>Inscrição municipal</label><input value="${uiSelectEscape(c.im || "—")}" readonly /></div>
+            <div><label>Regime tributário</label><input value="${uiSelectEscape(c.regime)}" readonly /></div>
+            <div><label>UF / Status</label><input value="${uiSelectEscape(`${c.estado} · ${c.status}`)}" readonly /></div>
+            <div class="full"><label>Endereço</label><textarea readonly>${uiSelectEscape(c.endereco || "—")}</textarea></div>
+            <div class="full"><label>Sócios</label><textarea readonly>${uiSelectEscape((c.socios || []).join(", ") || "—")}</textarea></div>
+          </div>
+          <h4 class="cli-dados-com-title">Informações comerciais</h4>
+          <div class="cli-cad-grid">
+            <div><label>Rede</label><input value="${uiSelectEscape(com.pertenceRede ? (com.nomeRede || "Sim") : "Não")}" readonly /></div>
+            <div><label>Representante</label><input value="${uiSelectEscape(com.possuiRepresentante ? (com.nomeRepresentante || "Sim") : "Não")}" readonly /></div>
+            <div><label>Escritório afiliado</label><input value="${uiSelectEscape(com.escritorioAfiliado || "—")}" readonly /></div>
+            <div><label>Carteira</label><input value="${uiSelectEscape(com.carteira || "—")}" readonly /></div>
+            <div><label>Origem</label><input value="${uiSelectEscape(com.origem || "—")}" readonly /></div>
+            <div><label>Plano</label><input value="${uiSelectEscape(com.plano || "—")}" readonly /></div>
+            <div><label>Início do contrato</label><input value="${uiSelectEscape(fmtCliComData(com.dataInicioContrato))}" readonly /></div>
+          </div>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+      });
+    }
+
+    function openCliComercialReport() {
+      const rows = collectCliListRowsMeta();
+      const cf = cliComercialFiltros || {};
+      const filtrosAtivos = [
+        cf.rede && `Rede: ${cf.rede}`,
+        cf.escritorio && `Escritório: ${cf.escritorio}`,
+        cf.representante && `Representante: ${cf.representante}`,
+        cf.carteira && `Carteira: ${cf.carteira}`,
+        cf.origem && `Origem: ${cf.origem}`,
+        cf.plano && `Plano: ${cf.plano}`,
+        cliRegimeFilter && `Regime: ${cliRegimeFilter}`,
+      ].filter(Boolean);
+      openModal({
+        title: "Relatório comercial",
+        sub: filtrosAtivos.length ? filtrosAtivos.join(" · ") : "Todas as empresas no filtro atual",
+        wide: true,
+        report: true,
+        body: `
+          <p class="cli-com-report-sum">${rows.length} empresa${rows.length === 1 ? "" : "s"}</p>
+          <div class="cli-xml-table-wrap">
+            <table class="cli-xml-table sm">
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Rede</th>
+                  <th>Representante</th>
+                  <th>Escritório afiliado</th>
+                  <th>Carteira</th>
+                  <th>Origem</th>
+                  <th>Plano</th>
+                  <th>Início contrato</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.length ? rows.map(({ c }) => {
+                  const com = getCliComercial(c);
+                  return `
+                    <tr>
+                      <td><strong>${uiSelectEscape(c.fantasia || c.nome)}</strong><small>${uiSelectEscape(c.cnpj)}</small></td>
+                      <td>${uiSelectEscape(com.pertenceRede ? (com.nomeRede || "—") : "—")}</td>
+                      <td>${uiSelectEscape(com.possuiRepresentante ? (com.nomeRepresentante || "—") : "—")}</td>
+                      <td>${uiSelectEscape(com.escritorioAfiliado || "—")}</td>
+                      <td>${uiSelectEscape(com.carteira || "—")}</td>
+                      <td>${uiSelectEscape(com.origem || "—")}</td>
+                      <td>${uiSelectEscape(com.plano || "—")}</td>
+                      <td>${uiSelectEscape(fmtCliComData(com.dataInicioContrato))}</td>
+                    </tr>`;
+                }).join("") : `<tr><td colspan="8"><div class="cli-empty-panel">Nenhuma empresa no filtro</div></td></tr>`}
+              </tbody>
+            </table>
           </div>`,
         foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
       });
@@ -22824,6 +23204,10 @@
         openClienteCadastro();
         return;
       }
+      if (e.target.closest("[data-cli-com-report]")) {
+        openCliComercialReport();
+        return;
+      }
       const listKpi = e.target.closest("[data-cli-list-kpi]");
       if (listKpi) {
         const next = listKpi.dataset.cliListKpi || "";
@@ -23487,6 +23871,36 @@
       }
       if (e.target.id === "cliRegimeFilter") {
         cliRegimeFilter = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComRedeFilter") {
+        cliComercialFiltros.rede = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComEscritorioFilter") {
+        cliComercialFiltros.escritorio = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComRepFilter") {
+        cliComercialFiltros.representante = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComCarteiraFilter") {
+        cliComercialFiltros.carteira = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComOrigemFilter") {
+        cliComercialFiltros.origem = e.target.value || "";
+        renderClientesList();
+        return;
+      }
+      if (e.target.id === "cliComPlanoFilter") {
+        cliComercialFiltros.plano = e.target.value || "";
         renderClientesList();
         return;
       }
@@ -25522,6 +25936,8 @@
           precoVendaCents: 2490,
           tribEntradaCents: 180,
           tribSaidaCents: 210,
+          ibs: { entrada: "ok", saida: "ok" },
+          cbs: { entrada: "ok", saida: "ok" },
         },
         {
           id: "xp2",
@@ -25543,6 +25959,8 @@
           precoVendaCents: 1290,
           tribEntradaCents: 70,
           tribSaidaCents: 85,
+          ibs: { entrada: "ok", saida: "wrong" },
+          cbs: { entrada: "ok", saida: "ok" },
         },
         {
           id: "xp3",
@@ -25564,6 +25982,8 @@
           precoVendaCents: 4590,
           tribEntradaCents: 290,
           tribSaidaCents: 410,
+          ibs: { entrada: "wrong", saida: "ok" },
+          cbs: { entrada: "missing", saida: "ok" },
         },
         {
           id: "xp4",
@@ -25585,6 +26005,8 @@
           precoVendaCents: 2890,
           tribEntradaCents: 220,
           tribSaidaCents: 195,
+          ibs: { entrada: "ok", saida: "missing" },
+          cbs: { entrada: "wrong", saida: "wrong" },
         },
         {
           id: "xp5",
@@ -25606,6 +26028,8 @@
           precoVendaCents: 0,
           tribEntradaCents: 45,
           tribSaidaCents: 0,
+          ibs: { entrada: "ok", saida: "missing" },
+          cbs: { entrada: "ok", saida: "missing" },
         },
         {
           id: "xp6",
@@ -25627,6 +26051,8 @@
           precoVendaCents: 690,
           tribEntradaCents: 32,
           tribSaidaCents: 48,
+          ibs: { entrada: "ok", saida: "ok" },
+          cbs: { entrada: "ok", saida: "wrong" },
         },
         {
           id: "xp7",
@@ -25648,6 +26074,8 @@
           precoVendaCents: 12990,
           tribEntradaCents: 980,
           tribSaidaCents: 1450,
+          ibs: { entrada: "missing", saida: "missing" },
+          cbs: { entrada: "missing", saida: "ok" },
         },
         {
           id: "xp8",
@@ -25669,6 +26097,8 @@
           precoVendaCents: 1680,
           tribEntradaCents: 90,
           tribSaidaCents: 105,
+          ibs: { entrada: "ok", saida: "ok" },
+          cbs: { entrada: "wrong", saida: "ok" },
         },
       ];
 
@@ -25739,6 +26169,34 @@
         saudavel: { label: "Saudável", cls: "ok" },
       };
       return map[status] || map.saudavel;
+    }
+
+    /** Status cadastral IBS/CBS: ok | missing | wrong */
+    function xmlTribCadMeta(code) {
+      const map = {
+        ok: { cls: "ok", label: "Cadastrado corretamente" },
+        missing: { cls: "bad", label: "Informação inexistente" },
+        wrong: { cls: "warn", label: "Alíquota cadastrada incorretamente" },
+      };
+      return map[code] || map.missing;
+    }
+
+    function renderCliXmlTribCadCell(trib) {
+      const entrada = xmlTribCadMeta(trib?.entrada);
+      const saida = xmlTribCadMeta(trib?.saida);
+      return `
+        <div class="cli-xml-trib-cad" role="group" aria-label="Entrada e saída">
+          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="Entrada · ${entrada.label}">
+            <span class="lab">E</span>
+            <i class="cli-xml-trib-dot is-${entrada.cls}" aria-hidden="true"></i>
+            <span class="sr-only">Entrada: ${entrada.label}</span>
+          </span>
+          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="Saída · ${saida.label}">
+            <span class="lab">S</span>
+            <i class="cli-xml-trib-dot is-${saida.cls}" aria-hidden="true"></i>
+            <span class="sr-only">Saída: ${saida.label}</span>
+          </span>
+        </div>`;
     }
 
     /** Comparativo visual compra × venda (lista, resumo e detalhe). */
@@ -26126,6 +26584,8 @@
                   <th>CFOP Compra</th>
                   <th>CST/CSOSN</th>
                   <th>Regime</th>
+                  <th>IBS</th>
+                  <th>CBS</th>
                   <th>Fornecedor</th>
                   <th class="num">Qtd. Compra</th>
                   <th class="num">Custo Unit.</th>
@@ -26147,6 +26607,8 @@
                     <td>${uiSelectEscape(p.cfopCompra)}</td>
                     <td>${uiSelectEscape(p.cst)}</td>
                     <td>${uiSelectEscape(p.regime)}</td>
+                    <td>${renderCliXmlTribCadCell(p.ibs)}</td>
+                    <td>${renderCliXmlTribCadCell(p.cbs)}</td>
                     <td>${uiSelectEscape(p.fornecedor)}</td>
                     <td class="num">${p.qtdCompra}</td>
                     <td class="num">${xmlMoney(p.calc.cef)}</td>
@@ -26157,11 +26619,11 @@
                     <td class="num ${p.calc.semVenda ? "" : (p.calc.mlPct < 0 ? "neg" : "")}">${p.calc.semVenda ? "—" : xmlPctLabel(p.calc.mlPct)}</td>
                     <td><span class="cli-xml-status is-${st.cls}">${st.label}</span></td>
                   </tr>`;
-                }).join("") : `<tr><td colspan="14"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
+                }).join("") : `<tr><td colspan="16"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
               </tbody>
             </table>
           </div>
-          <p class="cli-xml-legend">Clique em um produto para ver o comparativo compra × venda e a memória de cálculo. Status: Sem venda → Prejuízo → Baixa → Atenção → Saudável.</p>
+          <p class="cli-xml-legend">Clique em um produto para ver o comparativo compra × venda e a memória de cálculo. Bloco fiscal: NCM → CFOP → CST → Regime → IBS/CBS (E = entrada · S = saída · verde ok · amarelo alíquota incorreta · vermelho inexistente).</p>
         </section>`;
     }
 

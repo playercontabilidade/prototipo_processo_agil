@@ -55,9 +55,21 @@
         "03/2019", "08/2020", "01/2021", "11/2018", "06/2022",
         "02/2020", "09/2021", "04/2019", "07/2023", "12/2018",
       ];
+      const redes = ["Rede Farmelhor", "Rede Saúde Norte", "Grupo Delta Farma"];
+      const reps = ["Carlos Mendes", "Patricia Alves", "Roberto Nunes", "Fernanda Dias"];
+      const escritorios = ["Palmas Centro", "Goiânia", "Belém", "Curitiba", "São Paulo"];
+      const carteiras = ["Ana Costa", "Juliana Reis", "Marcos Lima"];
+      const origens = ["Indicação", "Inbound", "Parceiro", "Prospecção", "Site"];
+      const planos = ["Básico", "Folha", "Completo", "BPO"];
+      const inicioContrato = [
+        "2019-03-10", "2020-08-01", "2021-01-15", "2018-11-20", "2022-06-05",
+        "2020-02-12", "2021-09-01", "2019-04-18", "2023-07-10", "2018-12-03",
+      ];
       CLIENTES.forEach((c, i) => {
         const isFilial = i === 2 || i === 6 || i === 8;
         const cert = certMap[c.id] || { validade: "15/03/2027", titular: `${c.short} Certificado` };
+        const naRede = i % 3 !== 2;
+        const temRep = i % 4 !== 3;
         Object.assign(c, {
           tipoUnidade: isFilial ? "Filial" : "Matriz",
           funcInternos: 4 + ((i * 3) % 11),
@@ -72,9 +84,47 @@
           certValidade: cert.validade,
           certTitular: cert.titular,
           certStatus: "ok",
+          comercial: {
+            pertenceRede: naRede,
+            nomeRede: naRede ? redes[i % redes.length] : "",
+            possuiRepresentante: temRep,
+            nomeRepresentante: temRep ? reps[i % reps.length] : "",
+            escritorioAfiliado: escritorios[i % escritorios.length],
+            carteira: carteiras[i % carteiras.length],
+            origem: origens[i % origens.length],
+            dataInicioContrato: inicioContrato[i] || "2020-01-01",
+            plano: planos[i % planos.length],
+          },
         });
       });
     })();
+
+    const CLI_COM_REDES = ["Rede Farmelhor", "Rede Saúde Norte", "Grupo Delta Farma"];
+    const CLI_COM_REPS = ["Carlos Mendes", "Patricia Alves", "Roberto Nunes", "Fernanda Dias"];
+    const CLI_COM_ESCRITORIOS = ["Palmas Centro", "Goiânia", "Belém", "Curitiba", "São Paulo"];
+    const CLI_COM_CARTEIRAS = ["Ana Costa", "Juliana Reis", "Marcos Lima"];
+    const CLI_COM_ORIGENS = ["Indicação", "Inbound", "Parceiro", "Prospecção", "Site"];
+    const CLI_COM_PLANOS = ["Básico", "Folha", "Completo", "BPO"];
+
+    function getCliComercial(c) {
+      return c?.comercial || {
+        pertenceRede: false,
+        nomeRede: "",
+        possuiRepresentante: false,
+        nomeRepresentante: "",
+        escritorioAfiliado: "",
+        carteira: "",
+        origem: "",
+        dataInicioContrato: "",
+        plano: "",
+      };
+    }
+
+    function fmtCliComData(iso) {
+      if (!iso) return "—";
+      const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return m ? `${m[3]}/${m[2]}/${m[1]}` : String(iso);
+    }
 
     const PROC_STATUS_OPTIONS = [
       { value: "pendente", label: "Pendente", badge: "falha", color: "#e11d48", emoji: "🔴", sucesso: null },
@@ -1475,6 +1525,14 @@
     };
     let cliSearchQuery = "";
     let cliRegimeFilter = "";
+    let cliComercialFiltros = {
+      rede: "",
+      escritorio: "",
+      representante: "",
+      carteira: "",
+      origem: "",
+      plano: "",
+    };
     let cliEmpresaFilter = "all";
     let procEmpresaFilter = "all";
     let secEmpresaFilter = "all";
@@ -1848,6 +1906,15 @@
           website: "",
           instagram: "",
           facebook: "",
+          pertenceRede: false,
+          nomeRede: "",
+          possuiRepresentante: false,
+          nomeRepresentante: "",
+          escritorioAfiliado: "",
+          carteira: "",
+          origemCliente: "",
+          dataInicioContrato: "",
+          planoServico: "",
         },
       };
     }
@@ -1921,6 +1988,13 @@
         cadWebsite: "website",
         cadInstagram: "instagram",
         cadFacebook: "facebook",
+        cadNomeRede: "nomeRede",
+        cadNomeRepresentante: "nomeRepresentante",
+        cadEscritorioAfiliado: "escritorioAfiliado",
+        cadCarteira: "carteira",
+        cadOrigemCliente: "origemCliente",
+        cadInicioContrato: "dataInicioContrato",
+        cadPlanoServico: "planoServico",
       };
       Object.entries(map).forEach(([id, key]) => {
         const el = root.querySelector("#" + id);
@@ -1931,8 +2005,14 @@
       });
       const ativa = root.querySelector("#cadEmpresaAtiva");
       const matriz = root.querySelector("#cadEhMatriz");
+      const rede = root.querySelector("#cadPertenceRede");
+      const rep = root.querySelector("#cadPossuiRepresentante");
       if (ativa) d.empresaAtiva = !!ativa.checked;
       if (matriz) d.ehMatriz = !!matriz.checked;
+      if (rede) d.pertenceRede = !!rede.checked;
+      if (rep) d.possuiRepresentante = !!rep.checked;
+      if (!d.pertenceRede) d.nomeRede = "";
+      if (!d.possuiRepresentante) d.nomeRepresentante = "";
     }
 
     function validateCliCadastroAll() {
@@ -1953,6 +2033,10 @@
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)) errors.email = "E-mail inválido";
       if (d.telefone && digitsOnly(d.telefone).length < 10) errors.telefone = "Telefone inválido";
       if (d.whatsapp && digitsOnly(d.whatsapp).length < 10) errors.whatsapp = "WhatsApp inválido";
+      if (d.pertenceRede && !String(d.nomeRede || "").trim()) errors.nomeRede = "Informe o nome da rede";
+      if (d.possuiRepresentante && !String(d.nomeRepresentante || "").trim()) {
+        errors.nomeRepresentante = "Informe o nome do representante";
+      }
       if (d.website && !/^https?:\/\//i.test(d.website) && d.website.includes(".")) {
         d.website = "https://" + d.website.replace(/^\/+/, "");
       }
@@ -2183,6 +2267,70 @@
               </div>
             </div>
           </section>
+
+          <section class="cli-cad-block">
+            <h4>Informações comerciais</h4>
+            <hr class="cli-cad-hr" />
+            <p class="cli-cad-hint" style="margin:0 0 8px">Campos usados em filtros e relatórios da carteira (rede, afiliado, representante, etc.).</p>
+            <div class="cli-cad-form">
+              <div class="cli-field full">
+                <div class="cli-cad-toggles">
+                  <label class="cfg-switch">
+                    <span class="lab">Pertence a uma rede?</span>
+                    <input type="checkbox" id="cadPertenceRede" ${d.pertenceRede ? "checked" : ""} />
+                  </label>
+                  <label class="cfg-switch">
+                    <span class="lab">Possui representante comercial?</span>
+                    <input type="checkbox" id="cadPossuiRepresentante" ${d.possuiRepresentante ? "checked" : ""} />
+                  </label>
+                </div>
+              </div>
+              <div class="cli-field span-2" id="cadNomeRedeWrap" style="${d.pertenceRede ? "" : "display:none"}">
+                <label>Nome da rede <span class="req">*</span></label>
+                <input id="cadNomeRede" list="cadNomeRedeList" placeholder="Ex.: Rede Farmelhor" value="${uiSelectEscape(d.nomeRede)}" class="${fieldInvalid("nomeRede")}" />
+                <datalist id="cadNomeRedeList">${CLI_COM_REDES.map((r) => `<option value="${uiSelectEscape(r)}"></option>`).join("")}</datalist>
+                ${fieldErrHtml("nomeRede")}
+              </div>
+              <div class="cli-field span-2" id="cadNomeRepWrap" style="${d.possuiRepresentante ? "" : "display:none"}">
+                <label>Nome do representante <span class="req">*</span></label>
+                <input id="cadNomeRepresentante" list="cadNomeRepList" placeholder="Ex.: Carlos Mendes" value="${uiSelectEscape(d.nomeRepresentante)}" class="${fieldInvalid("nomeRepresentante")}" />
+                <datalist id="cadNomeRepList">${CLI_COM_REPS.map((r) => `<option value="${uiSelectEscape(r)}"></option>`).join("")}</datalist>
+                ${fieldErrHtml("nomeRepresentante")}
+              </div>
+              <div class="cli-field">
+                <label>Escritório afiliado</label>
+                <select id="cadEscritorioAfiliado">
+                  <option value="">Selecione</option>
+                  ${CLI_COM_ESCRITORIOS.map((e) => `<option value="${uiSelectEscape(e)}" ${d.escritorioAfiliado === e ? "selected" : ""}>${uiSelectEscape(e)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="cli-field">
+                <label>Carteira (gestor interno)</label>
+                <select id="cadCarteira">
+                  <option value="">Selecione</option>
+                  ${CLI_COM_CARTEIRAS.map((e) => `<option value="${uiSelectEscape(e)}" ${d.carteira === e ? "selected" : ""}>${uiSelectEscape(e)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="cli-field">
+                <label>Origem do cliente</label>
+                <select id="cadOrigemCliente">
+                  <option value="">Selecione</option>
+                  ${CLI_COM_ORIGENS.map((e) => `<option value="${uiSelectEscape(e)}" ${d.origemCliente === e ? "selected" : ""}>${uiSelectEscape(e)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="cli-field">
+                <label>Pacote / plano de serviço</label>
+                <select id="cadPlanoServico">
+                  <option value="">Selecione</option>
+                  ${CLI_COM_PLANOS.map((e) => `<option value="${uiSelectEscape(e)}" ${d.planoServico === e ? "selected" : ""}>${uiSelectEscape(e)}</option>`).join("")}
+                </select>
+              </div>
+              <div class="cli-field">
+                <label>Início do contrato</label>
+                <input id="cadInicioContrato" type="date" value="${uiSelectEscape(d.dataInicioContrato)}" />
+              </div>
+            </div>
+          </section>
         </div>`;
     }
 
@@ -2264,6 +2412,17 @@
           instagram: d.instagram ? "@" + d.instagram.replace(/^@+/, "") : "",
           facebook: d.facebook,
         },
+        comercial: {
+          pertenceRede: !!d.pertenceRede,
+          nomeRede: d.pertenceRede ? (d.nomeRede || "").trim() : "",
+          possuiRepresentante: !!d.possuiRepresentante,
+          nomeRepresentante: d.possuiRepresentante ? (d.nomeRepresentante || "").trim() : "",
+          escritorioAfiliado: d.escritorioAfiliado || "",
+          carteira: d.carteira || "",
+          origem: d.origemCliente || "",
+          dataInicioContrato: d.dataInicioContrato || "",
+          plano: d.planoServico || "",
+        },
       };
       try {
         await new Promise((r) => setTimeout(r, 450));
@@ -2308,6 +2467,7 @@
           certValidade: "31/12/2027",
           certTitular: "Sócio administrador",
           contato: payload.contato,
+          comercial: payload.comercial,
           ibge: payload.endereco.codigo_ibge,
           _payload: payload,
         };
@@ -2333,6 +2493,20 @@
         if (cliCadastro.data.ehMatriz) cliCadastro.data.matrizId = "";
         const box = root.querySelector("#cadMatrizWrap");
         if (box) box.style.display = cliCadastro.data.ehMatriz ? "none" : "";
+      });
+      root.querySelector("#cadPertenceRede")?.addEventListener("change", (e) => {
+        collectCliCadastroFromDom(root);
+        cliCadastro.data.pertenceRede = !!e.target.checked;
+        if (!cliCadastro.data.pertenceRede) cliCadastro.data.nomeRede = "";
+        const box = root.querySelector("#cadNomeRedeWrap");
+        if (box) box.style.display = cliCadastro.data.pertenceRede ? "" : "none";
+      });
+      root.querySelector("#cadPossuiRepresentante")?.addEventListener("change", (e) => {
+        collectCliCadastroFromDom(root);
+        cliCadastro.data.possuiRepresentante = !!e.target.checked;
+        if (!cliCadastro.data.possuiRepresentante) cliCadastro.data.nomeRepresentante = "";
+        const box = root.querySelector("#cadNomeRepWrap");
+        if (box) box.style.display = cliCadastro.data.possuiRepresentante ? "" : "none";
       });
       root.querySelector("#cadCnpj")?.addEventListener("input", (e) => {
         e.target.value = maskCnpj(e.target.value);

@@ -12791,6 +12791,17 @@
       .fin-ops-detail { grid-template-columns: repeat(2, 1fr); }
     }
 
+    .cli-list-toolbar {
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+
+    .cli-list-toolbar .btn-ghost[data-cli-com-report] {
+      height: 36px;
+      padding: 0 12px;
+      flex: 0 0 auto;
+    }
+
     @media (max-width: 640px) {
       .fin-dash-kpis { grid-template-columns: 1fr; }
       .fin-donut-wrap { align-items: stretch; }
@@ -15562,6 +15573,39 @@
     .cli-xml-status.is-warn { background: rgba(196, 127, 22, .14); color: #9a5f0c; }
     .cli-xml-status.is-warn2 { background: rgba(234, 179, 8, .16); color: #854d0e; }
     .cli-xml-status.is-muted { background: rgba(100, 116, 139, .12); color: #475569; }
+
+    .cli-xml-trib-cad {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cli-xml-trib-cad-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .cli-xml-trib-cad-item .lab {
+      font-size: .64rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .cli-xml-trib-dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 0 1px rgba(19, 42, 82, 0.12);
+    }
+
+    .cli-xml-trib-dot.is-ok { background: #2f9e6b; }
+    .cli-xml-trib-dot.is-bad { background: #b33a4a; }
+    .cli-xml-trib-dot.is-warn { background: #eab308; }
 
     .cli-xml-legend {
       margin: 10px 0 0;
@@ -18558,9 +18602,9 @@
 
     .cli-honor-kpis {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
-      margin-bottom: 14px;
+      margin-bottom: 8px;
     }
 
     .cli-honor-kpi {
@@ -18572,6 +18616,11 @@
     }
 
     .cli-honor-kpi.total { border-left-color: #2f9e6b; }
+
+    .cli-honor-kpi.pct.is-ideal { border-left-color: #2f9e6b; }
+    .cli-honor-kpi.pct.is-abaixo { border-left-color: #c47f16; }
+    .cli-honor-kpi.pct.is-critico { border-left-color: #b33a4a; }
+    .cli-honor-kpi.pct.is-muted { border-left-color: #64748b; }
 
     .cli-honor-kpi span {
       display: block;
@@ -18589,6 +18638,59 @@
       font-weight: 750;
       color: var(--navy-deep);
     }
+
+    .cli-honor-kpi.pct.is-ideal strong { color: #1a6b45; }
+    .cli-honor-kpi.pct.is-abaixo strong { color: #9a5f0c; }
+    .cli-honor-kpi.pct.is-critico strong { color: #9a2f3c; }
+
+    .cli-honor-pct-badge {
+      display: inline-flex;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      font-size: .68rem;
+      font-style: normal;
+      font-weight: 700;
+    }
+
+    .cli-honor-kpi.pct.is-ideal .cli-honor-pct-badge {
+      background: rgba(47, 158, 107, .12);
+      color: #1a6b45;
+    }
+
+    .cli-honor-kpi.pct.is-abaixo .cli-honor-pct-badge {
+      background: rgba(196, 127, 22, .14);
+      color: #9a5f0c;
+    }
+
+    .cli-honor-kpi.pct.is-critico .cli-honor-pct-badge {
+      background: rgba(179, 58, 74, .12);
+      color: #9a2f3c;
+    }
+
+    .cli-honor-kpi.pct.is-muted .cli-honor-pct-badge {
+      background: rgba(100, 116, 139, .12);
+      color: #475569;
+    }
+
+    .cli-honor-kpi.pct small {
+      display: block;
+      margin-top: 6px;
+      font-size: .68rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .cli-honor-pct-legend {
+      margin: 0 0 14px;
+      font-size: .74rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .cli-honor-pct-legend b { color: var(--navy); font-weight: 700; }
 
     .cli-honor-report {
       border: 1px solid var(--border);
@@ -18782,6 +18884,21 @@
       min-height: 0;
       flex: 1;
       animation: rise .3s var(--ease);
+    }
+
+    .cli-dados-com-title {
+      margin: 18px 0 10px;
+      font-size: .88rem;
+      font-weight: 750;
+      color: var(--navy-deep);
+      letter-spacing: -0.02em;
+    }
+
+    .cli-com-report-sum {
+      margin: 0 0 10px;
+      font-size: .82rem;
+      font-weight: 650;
+      color: var(--muted);
     }
 
     .cli-cadastro-head {
@@ -19019,45 +19136,63 @@
 
     .cli-cad-hint.is-loading { color: var(--accent); font-weight: 600; }
 
-    .cli-input-adorn {
-      position: relative;
-      display: flex;
+    /* Ícone/@ e input na mesma célula — alinha ao centro do campo */
+    .cli-input-adorn,
+    .cli-input-prefix {
+      display: grid;
+      grid-template-columns: 1fr;
       align-items: center;
+      position: relative;
+    }
+
+    .cli-input-adorn > svg,
+    .cli-input-adorn .adorn-ico,
+    .cli-input-adorn > input,
+    .cli-input-prefix .pfx,
+    .cli-input-prefix > input {
+      grid-area: 1 / 1;
     }
 
     .cli-input-adorn > svg,
     .cli-input-adorn .adorn-ico {
-      position: absolute;
-      left: 11px;
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 11px;
       width: 15px;
       height: 15px;
       color: var(--muted);
       pointer-events: none;
       z-index: 1;
+      transform: none;
     }
 
     .cli-input-adorn > input {
-      padding-left: 36px;
-    }
-
-    .cli-input-prefix {
-      position: relative;
-      display: flex;
-      align-items: center;
+      width: 100%;
+      padding: 0 12px 0 36px;
+      margin-bottom: 0;
+      line-height: normal;
     }
 
     .cli-input-prefix .pfx {
-      position: absolute;
-      left: 12px;
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 12px;
       font-size: .84rem;
       font-weight: 650;
+      line-height: 1;
       color: var(--muted);
       pointer-events: none;
       z-index: 1;
+      transform: none;
     }
 
     .cli-input-prefix > input {
-      padding-left: 28px;
+      width: 100%;
+      padding: 0 12px 0 28px;
+      margin-bottom: 0;
+      line-height: normal;
     }
 
     .cli-cad-foot {
@@ -27587,6 +27722,46 @@
       box-shadow: none;
     }
 
+    .modal.cli-cad-modal .cli-cad-form .cli-input-adorn > svg,
+    .modal.cli-cad-modal .cli-cad-form .cli-input-adorn .adorn-ico {
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 11px;
+      width: 15px;
+      height: 15px;
+      opacity: .55;
+      z-index: 1;
+      pointer-events: none;
+      transform: none;
+    }
+
+    .modal.cli-cad-modal .cli-cad-form .cli-input-adorn > input {
+      padding: 0 11px 0 36px;
+      margin-bottom: 0;
+      line-height: normal;
+    }
+
+    .modal.cli-cad-modal .cli-cad-form .cli-input-prefix .pfx {
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 12px;
+      font-size: .8125rem;
+      font-weight: 650;
+      line-height: 1;
+      opacity: .65;
+      z-index: 1;
+      pointer-events: none;
+      transform: none;
+    }
+
+    .modal.cli-cad-modal .cli-cad-form .cli-input-prefix > input {
+      padding: 0 11px 0 28px;
+      margin-bottom: 0;
+      line-height: normal;
+    }
+
     .modal.cli-cad-modal .cli-cad-form input:hover,
     .modal.cli-cad-modal .cli-cad-form select:hover {
       border-color: color-mix(in srgb, var(--muted) 35%, var(--border));
@@ -27682,25 +27857,6 @@
       font-weight: 500;
       margin-top: 5px;
     }
-
-    .modal.cli-cad-modal .cli-input-adorn > svg,
-    .modal.cli-cad-modal .cli-input-adorn .adorn-ico {
-      left: 10px;
-      width: 14px;
-      height: 14px;
-      opacity: .45;
-    }
-
-    .modal.cli-cad-modal .cli-input-adorn > input { padding-left: 32px; }
-
-    .modal.cli-cad-modal .cli-input-prefix .pfx {
-      left: 11px;
-      font-size: .8125rem;
-      font-weight: 500;
-      opacity: .55;
-    }
-
-    .modal.cli-cad-modal .cli-input-prefix > input { padding-left: 26px; }
 
     .modal.cli-cad-modal .ui-select-btn {
       height: 36px;
@@ -29731,6 +29887,60 @@
       background: var(--surface);
       color: var(--navy-deep);
       box-shadow: none;
+    }
+
+    /* Inputs com ícone/@ — mesma célula do grid; sem margin que desloca o centro */
+    .modal-body .cli-input-adorn,
+    .modal-body .cli-input-prefix {
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: center;
+    }
+
+    .modal-body .cli-input-adorn > svg,
+    .modal-body .cli-input-adorn .adorn-ico,
+    .modal-body .cli-input-adorn > input,
+    .modal-body .cli-input-prefix .pfx,
+    .modal-body .cli-input-prefix > input {
+      grid-area: 1 / 1;
+    }
+
+    .modal-body .cli-input-adorn > input,
+    .modal-body .cli-input-prefix > input {
+      margin-bottom: 0;
+      line-height: normal;
+    }
+
+    .modal-body .cli-input-adorn > input {
+      padding: 0 11px 0 36px;
+    }
+
+    .modal-body .cli-input-prefix > input {
+      padding: 0 11px 0 28px;
+    }
+
+    .modal-body .cli-input-adorn > svg,
+    .modal-body .cli-input-adorn .adorn-ico {
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 11px;
+      width: 15px;
+      height: 15px;
+      pointer-events: none;
+      z-index: 1;
+      transform: none;
+    }
+
+    .modal-body .cli-input-prefix .pfx {
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 12px;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 1;
+      transform: none;
     }
 
     .modal-body textarea {

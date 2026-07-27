@@ -197,18 +197,69 @@
       color: var(--navy-deep);
     }
 
+    .dg-swatch-meta .dg-swatch-name {
+      display: block;
+      font-size: .66rem;
+      color: var(--muted);
+      margin: 2px 0 6px;
+    }
+
     .dg-swatch-meta code {
+      display: block;
       font-size: .66rem;
       color: var(--muted);
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      line-height: 1.45;
+    }
+
+    .dg-swatch-meta code + code { margin-top: 1px; }
+
+    .dg-swatch-meta .dg-hex {
+      color: var(--navy);
+      font-weight: 650;
     }
 
     /* Tipografia */
+    .dg-type-family {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: baseline;
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: var(--radius);
+      border: 1px solid color-mix(in srgb, var(--accent) 12%, var(--border));
+      background: var(--surface);
+    }
+
+    .dg-type-family .dg-type-sample {
+      font-family: "DM Sans", sans-serif;
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--navy-deep);
+      line-height: 1.1;
+    }
+
+    .dg-type-family .dg-type-family-meta {
+      font-size: .76rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .dg-type-family .dg-type-family-meta strong {
+      display: block;
+      font-size: .84rem;
+      font-weight: 700;
+      color: var(--navy-deep);
+      margin-bottom: 2px;
+    }
+
     .dg-type-row {
       display: grid;
       grid-template-columns: 150px 1fr;
       gap: 12px;
-      align-items: baseline;
+      align-items: start;
       padding: 12px 0;
       border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
     }
@@ -222,14 +273,68 @@
       letter-spacing: .03em;
       text-transform: uppercase;
       color: var(--muted);
+      padding-top: 4px;
     }
 
-    .dg-type-page { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; color: var(--navy-deep); }
-    .dg-type-modal { font-size: .98rem; font-weight: 700; letter-spacing: -0.025em; color: var(--navy-deep); }
-    .dg-type-section { font-size: .88rem; font-weight: 700; color: var(--navy-deep); }
-    .dg-type-body { font-size: .84rem; font-weight: 400; color: var(--muted); }
-    .dg-type-label-ui { font-size: .66rem; font-weight: 700; color: color-mix(in srgb, var(--muted) 70%, var(--navy-deep)); }
-    .dg-type-meta { font-size: .7rem; color: var(--muted); }
+    .dg-type-page { font-family: "DM Sans", sans-serif; font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; color: var(--navy-deep); }
+    .dg-type-modal { font-family: "DM Sans", sans-serif; font-size: .98rem; font-weight: 700; letter-spacing: -0.025em; color: var(--navy-deep); }
+    .dg-type-section { font-family: "DM Sans", sans-serif; font-size: .88rem; font-weight: 700; color: var(--navy-deep); }
+    .dg-type-body { font-family: "DM Sans", sans-serif; font-size: .84rem; font-weight: 400; color: var(--muted); }
+    .dg-type-label-ui { font-family: "DM Sans", sans-serif; font-size: .66rem; font-weight: 700; color: color-mix(in srgb, var(--muted) 70%, var(--navy-deep)); }
+    .dg-type-meta { font-family: "DM Sans", sans-serif; font-size: .7rem; font-weight: 400; color: var(--muted); }
+
+    .dg-type-spec {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      margin-top: 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .64rem;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .dg-type-spec span {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+    }
+
+    .dg-type-spec .dg-type-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+    }
+
+    .dg-type-spec .dg-flutter {
+      background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+      border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+      color: var(--accent);
+      font-weight: 650;
+    }
+
+    .dg-flutter-note {
+      margin: 0 0 14px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+      background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+      font-size: .74rem;
+      color: var(--navy);
+      line-height: 1.45;
+    }
+
+    .dg-flutter-note code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: .7rem;
+      color: var(--navy-deep);
+    }
 
     /* Specs */
     .dg-spec {
@@ -513,6 +618,7 @@
         <span class="dg-chip">DM Sans</span>
         <span class="dg-chip">Sistema Modular</span>
         <span class="dg-chip">Tema Claro e Escuro</span>
+        <a class="dg-chip" href="design-guide-xml-cliente.html">Guide XML do Cliente →</a>
         <button type="button" class="dg-theme-btn" id="dgThemeToggle" aria-label="Alternar tema">Tema escuro</button>
       </div>
     </header>
@@ -545,101 +651,250 @@
     <!-- ========== 3. PALETA ========== -->
     <section class="dg-section" id="cores">
       <h2>Paleta de cores</h2>
-      <p class="dg-lead">Tokens reais de <code>:root</code> em <code>css/01-base.css</code>. O preview muda com o tema.</p>
-      <div class="dg-grid-4">
-        <div class="dg-swatch">
+      <p class="dg-lead">Tokens reais de <code>:root</code> em <code>css/01-base.css</code>. Em cada amostra: <strong>nome</strong>, token e hex (atualiza com o tema).</p>
+      <div class="dg-grid-4" id="dgSwatches">
+        <div class="dg-swatch" data-token="--navy">
           <div class="dg-swatch-color" style="background: var(--navy)"></div>
-          <div class="dg-swatch-meta"><strong>Navy</strong><code>--navy</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Navy</strong>
+            <span class="dg-swatch-name">Azul principal · links e destaques</span>
+            <code>--navy</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--navy-deep">
           <div class="dg-swatch-color" style="background: var(--navy-deep)"></div>
-          <div class="dg-swatch-meta"><strong>Navy deep</strong><code>--navy-deep</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Navy deep</strong>
+            <span class="dg-swatch-name">Azul profundo · títulos e texto forte</span>
+            <code>--navy-deep</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--secondary">
           <div class="dg-swatch-color" style="background: var(--secondary)"></div>
-          <div class="dg-swatch-meta"><strong>Secondary</strong><code>--secondary</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Secondary</strong>
+            <span class="dg-swatch-name">Amarelo secundário · acento pontual</span>
+            <code>--secondary</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--accent">
           <div class="dg-swatch-color" style="background: var(--accent)"></div>
-          <div class="dg-swatch-meta"><strong>Accent</strong><code>--accent</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Accent</strong>
+            <span class="dg-swatch-name">Azul de ação · CTA e foco</span>
+            <code>--accent</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--bg">
           <div class="dg-swatch-color" style="background: var(--bg)"></div>
-          <div class="dg-swatch-meta"><strong>Background</strong><code>--bg</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Background</strong>
+            <span class="dg-swatch-name">Fundo da página</span>
+            <code>--bg</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--surface">
           <div class="dg-swatch-color" style="background: var(--surface); border-bottom: 1px solid var(--border)"></div>
-          <div class="dg-swatch-meta"><strong>Surface</strong><code>--surface</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Surface</strong>
+            <span class="dg-swatch-name">Branco de superfície · cards</span>
+            <code>--surface</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--surface-2">
           <div class="dg-swatch-color" style="background: var(--surface-2)"></div>
-          <div class="dg-swatch-meta"><strong>Surface 2</strong><code>--surface-2</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Surface 2</strong>
+            <span class="dg-swatch-name">Cinza-azulado · fundo interno</span>
+            <code>--surface-2</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--muted">
           <div class="dg-swatch-color" style="background: var(--muted)"></div>
-          <div class="dg-swatch-meta"><strong>Muted</strong><code>--muted</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Muted</strong>
+            <span class="dg-swatch-name">Cinza texto · corpo e meta</span>
+            <code>--muted</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--border">
           <div class="dg-swatch-color" style="background: var(--border)"></div>
-          <div class="dg-swatch-meta"><strong>Border</strong><code>--border</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Border</strong>
+            <span class="dg-swatch-name">Cinza de borda</span>
+            <code>--border</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--sidebar">
           <div class="dg-swatch-color" style="background: var(--sidebar)"></div>
-          <div class="dg-swatch-meta"><strong>Sidebar</strong><code>--sidebar</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Sidebar</strong>
+            <span class="dg-swatch-name">Fundo da barra lateral</span>
+            <code>--sidebar</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--header-muted">
           <div class="dg-swatch-color" style="background: var(--header-muted)"></div>
-          <div class="dg-swatch-meta"><strong>Header muted</strong><code>--header-muted</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Header muted</strong>
+            <span class="dg-swatch-name">Fundo suave de header</span>
+            <code>--header-muted</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--toolbar">
+          <div class="dg-swatch-color" style="background: var(--toolbar)"></div>
+          <div class="dg-swatch-meta">
+            <strong>Toolbar</strong>
+            <span class="dg-swatch-name">Fundo de barra / rodapé</span>
+            <code>--toolbar</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
+        </div>
+        <div class="dg-swatch" data-token="--danger">
           <div class="dg-swatch-color" style="background: var(--danger)"></div>
-          <div class="dg-swatch-meta"><strong>Danger</strong><code>--danger</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Danger</strong>
+            <span class="dg-swatch-name">Vermelho · erro / destrutivo</span>
+            <code>--danger</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--ok">
           <div class="dg-swatch-color" style="background: var(--ok)"></div>
-          <div class="dg-swatch-meta"><strong>Ok</strong><code>--ok</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Ok</strong>
+            <span class="dg-swatch-name">Verde · sucesso / positivo</span>
+            <code>--ok</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
-        <div class="dg-swatch">
+        <div class="dg-swatch" data-token="--warn">
           <div class="dg-swatch-color" style="background: var(--warn)"></div>
-          <div class="dg-swatch-meta"><strong>Warn</strong><code>--warn</code></div>
+          <div class="dg-swatch-meta">
+            <strong>Warn</strong>
+            <span class="dg-swatch-name">Âmbar · atenção</span>
+            <code>--warn</code>
+            <code class="dg-hex" data-hex></code>
+          </div>
         </div>
       </div>
       <p class="dg-lead" style="margin-top:14px;margin-bottom:0">
-        Hex claro de referência (só em <code>:root</code>): navy/accent <code>#28519c</code> · deep <code>#1c386e</code> · secondary <code>#ffd519</code> · ok <code>#2f9e6b</code> · warn <code>#c47f16</code> · danger <code>#b42318</code> · border <code>#d4dce8</code>.
-        No CSS de componentes use tokens (<code>var(--accent)</code>, <code>var(--secondary)</code>…) — não repetir o hex.
-        Removidos aliases pouco usados: <code>--primary</code>, <code>--navy-soft</code>, <code>--chart-ant</code>.
-        No tema escuro, os valores mudam via <code>html.dark</code>.
+        No CSS de componentes use tokens (<code>var(--accent)</code>, <code>var(--navy-deep)</code>…) — não repetir o hex fora de <code>:root</code>.
+        No tema escuro, os valores mudam via <code>html.dark</code> (o hex acima acompanha).
       </p>
     </section>
 
     <!-- ========== 4. TIPOGRAFIA ========== -->
     <section class="dg-section" id="tipografia">
       <h2>Tipografia</h2>
-      <p class="dg-lead">Família única: DM Sans. Escala usada nas telas do protótipo.</p>
+      <p class="dg-lead">Família única do produto. Cada nível lista fonte, peso, tamanho (CSS + Flutter) e cor (token + nome).</p>
+
+      <div class="dg-flutter-note">
+        <strong>Conversão Flutter</strong> — base <code>1rem = 16px = 16.0</code> logical pixels.
+        Texto usa <code>.sp</code> (escala com acessibilidade); layout/raio/altura usam logical px (<code>12</code>, <code>32.0</code>…).
+        Fórmula: <code>rem × 16</code> → arredondar para o uso em <code>fontSize</code> / <code>height</code>.
+        Pacote sugerido: <code>google_fonts</code> → <code>GoogleFonts.dmSans(...)</code>.
+      </div>
+
+      <div class="dg-type-family">
+        <div class="dg-type-sample">Aa Bb Cc</div>
+        <div class="dg-type-family-meta">
+          <strong>DM Sans</strong>
+          Web: <code>"DM Sans", sans-serif</code><br />
+          Flutter: <code>GoogleFonts.dmSans()</code> · pesos 400 / 500 / 600 / 700<br />
+          Cor padrão do body: <code>--navy-deep</code> (Navy deep) → <code>Color(0xFF1C386E)</code>
+        </div>
+      </div>
+
       <div class="dg-card">
         <div class="dg-type-row">
           <div class="dg-type-label">Título da página</div>
-          <div class="dg-type-page">Visão Geral</div>
+          <div>
+            <div class="dg-type-page">Visão Geral</div>
+            <div class="dg-type-spec">
+              <span>DM Sans</span>
+              <span>700 Bold</span>
+              <span>1.35rem · 21.6px</span>
+              <span class="dg-flutter">Flutter 21.6.sp → 22.sp</span>
+              <span><i class="dg-type-dot" style="background:var(--navy-deep)"></i>--navy-deep · Navy deep</span>
+            </div>
+          </div>
         </div>
         <div class="dg-type-row">
           <div class="dg-type-label">Título de modal</div>
-          <div class="dg-type-modal">Regras e Adquirentes</div>
+          <div>
+            <div class="dg-type-modal">Regras e Adquirentes</div>
+            <div class="dg-type-spec">
+              <span>DM Sans</span>
+              <span>700 Bold</span>
+              <span>.98rem · 15.68px</span>
+              <span class="dg-flutter">Flutter 15.68.sp → 16.sp</span>
+              <span><i class="dg-type-dot" style="background:var(--navy-deep)"></i>--navy-deep · Navy deep</span>
+            </div>
+          </div>
         </div>
         <div class="dg-type-row">
           <div class="dg-type-label">Título de seção</div>
-          <div class="dg-type-section">Acordo comercial</div>
+          <div>
+            <div class="dg-type-section">Acordo comercial</div>
+            <div class="dg-type-spec">
+              <span>DM Sans</span>
+              <span>700 Bold</span>
+              <span>.88rem · 14.08px</span>
+              <span class="dg-flutter">Flutter 14.08.sp → 14.sp</span>
+              <span><i class="dg-type-dot" style="background:var(--navy-deep)"></i>--navy-deep · Navy deep</span>
+            </div>
+          </div>
         </div>
         <div class="dg-type-row">
           <div class="dg-type-label">Texto</div>
-          <div class="dg-type-body">Cadastre operadora, bandeiras e taxas usadas no cruzamento.</div>
+          <div>
+            <div class="dg-type-body">Cadastre operadora, bandeiras e taxas usadas no cruzamento.</div>
+            <div class="dg-type-spec">
+              <span>DM Sans</span>
+              <span>400 Regular</span>
+              <span>.84rem · 13.44px</span>
+              <span class="dg-flutter">Flutter 13.44.sp → 13.sp</span>
+              <span><i class="dg-type-dot" style="background:var(--muted)"></i>--muted · Muted</span>
+            </div>
+          </div>
         </div>
         <div class="dg-type-row">
           <div class="dg-type-label">Label</div>
-          <div class="dg-type-label-ui">Nome da Adquirente</div>
+          <div>
+            <div class="dg-type-label-ui">Nome da Adquirente</div>
+            <div class="dg-type-spec">
+              <span>DM Sans</span>
+              <span>700 Bold</span>
+              <span>.66rem · 10.56px</span>
+              <span class="dg-flutter">Flutter 10.56.sp → 11.sp</span>
+              <span><i class="dg-type-dot" style="background:color-mix(in srgb, var(--muted) 70%, var(--navy-deep))"></i>Muted + Navy deep (mix)</span>
+            </div>
+          </div>
         </div>
         <div class="dg-type-row">
           <div class="dg-type-label">Meta</div>
-          <div class="dg-type-meta">Cliente · taxas usadas no cruzamento da auditoria</div>
+          <div>
+            <div class="dg-type-meta">Cliente · taxas usadas no cruzamento da auditoria</div>
+            <div class="dg-type-spec">
+              <span>DM Sans</span>
+              <span>400 Regular</span>
+              <span>.70rem · 11.2px</span>
+              <span class="dg-flutter">Flutter 11.2.sp → 11.sp</span>
+              <span><i class="dg-type-dot" style="background:var(--muted)"></i>--muted · Muted</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -647,7 +902,12 @@
     <!-- ========== 5. ESPAÇO E FORMA ========== -->
     <section class="dg-section" id="espaco">
       <h2>Espaçamento e forma</h2>
-      <p class="dg-lead">Valores recorrentes. Controles abaixo usam as alturas-alvo do sistema.</p>
+      <p class="dg-lead">Valores recorrentes. Controles abaixo usam as alturas-alvo do sistema. Em Flutter, <code>px</code> CSS = logical pixels.</p>
+      <div class="dg-flutter-note">
+        <strong>Flutter (layout)</strong> —
+        <code>BorderRadius.circular(8)</code> · <code>height: 32</code> ·
+        <code>EdgeInsets</code> com os mesmos números em logical px (não usar <code>.sp</code> em raio/altura/gap).
+      </div>
       <div class="dg-grid-2">
         <div class="dg-card">
           <strong>Radius</strong>
@@ -656,12 +916,12 @@
             <div class="dg-radius-box" style="width:56px;height:40px;border-radius:var(--radius-sm)">8</div>
             <div class="dg-radius-box" style="width:48px;height:32px;border-radius:var(--radius-pill)">pill</div>
           </div>
-          <div class="dg-spec">--radius: 12px · --radius-sm: 8px · --radius-pill: 999px</div>
+          <div class="dg-spec">CSS: --radius 12px · --radius-sm 8px · --radius-pill 999px<br />Flutter: BorderRadius.circular(12) · circular(8) · StadiumBorder / circular(999)</div>
         </div>
         <div class="dg-card">
           <strong>Shadow</strong>
           <div style="margin-top:10px;height:56px;border-radius: var(--radius);background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--border)"></div>
-          <div class="dg-spec">--shadow · cards: sombra azulada leve</div>
+          <div class="dg-spec">--shadow · cards: sombra azulada leve<br />Flutter: BoxShadow(color: Color(0x1F1C386E), blurRadius: 28, offset: Offset(0, 8))</div>
         </div>
         <div class="dg-card">
           <strong>Alturas</strong>
@@ -669,11 +929,14 @@
             <input type="text" value="Input 32px" readonly style="height:32px;width:140px;border:1px solid var(--border);border-radius: var(--radius-sm);padding:0 10px;font:inherit;font-size:.78rem;background:var(--surface);color:var(--navy)" />
             <button type="button" class="btn-primary" style="height:36px">Botão 36px</button>
           </div>
-          <div class="dg-spec">input/select: 32px · botão: 36px · faixa: ~30px</div>
+          <div class="dg-spec">CSS: input 32px · botão 36px · faixa ~30px<br />Flutter: height 32 / 36 / 30 · font input ≈ 12.5.sp (.78rem)</div>
         </div>
         <div class="dg-card">
           <strong>Espaçamentos</strong>
-          <div class="dg-spec" style="margin-top:0">grade form: 14–16px · grupos: +4–8px · cards gap: 12–18px · modal head: ~12px 20px 10px</div>
+          <div class="dg-spec" style="margin-top:0">
+            CSS: grade form 14–16px · grupos +4–8px · cards gap 12–18px · modal head ~12px 20px 10px<br />
+            Flutter: EdgeInsets / gap 14–16 · 4–8 · 12–18 · EdgeInsets.fromLTRB(20, 12, 20, 10)
+          </div>
         </div>
       </div>
     </section>
@@ -968,17 +1231,47 @@
   <script>
     (function () {
       var btn = document.getElementById("dgThemeToggle");
-      if (!btn) return;
-      function sync() {
+
+      function rgbToHex(value) {
+        if (!value) return "";
+        if (value.indexOf("#") === 0) return value.toLowerCase();
+        var m = value.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+        if (!m) return value;
+        function h(n) {
+          var s = Number(n).toString(16);
+          return s.length === 1 ? "0" + s : s;
+        }
+        return "#" + h(m[1]) + h(m[2]) + h(m[3]);
+      }
+
+      function syncHex() {
+        var root = document.documentElement;
+        var styles = getComputedStyle(root);
+        document.querySelectorAll(".dg-swatch[data-token]").forEach(function (el) {
+          var token = el.getAttribute("data-token");
+          var hexEl = el.querySelector("[data-hex]");
+          if (!token || !hexEl) return;
+          hexEl.textContent = rgbToHex(styles.getPropertyValue(token).trim());
+        });
+      }
+
+      function syncThemeBtn() {
+        if (!btn) return;
         var dark = document.documentElement.classList.contains("dark");
         btn.textContent = dark ? "Tema claro" : "Tema escuro";
       }
-      sync();
-      btn.addEventListener("click", function () {
-        var dark = document.documentElement.classList.toggle("dark");
-        try { localStorage.setItem("pa-theme", dark ? "dark" : "light"); } catch (_) {}
-        sync();
-      });
+
+      syncThemeBtn();
+      syncHex();
+
+      if (btn) {
+        btn.addEventListener("click", function () {
+          var dark = document.documentElement.classList.toggle("dark");
+          try { localStorage.setItem("pa-theme", dark ? "dark" : "light"); } catch (_) {}
+          syncThemeBtn();
+          syncHex();
+        });
+      }
     })();
   </script>
 </body>

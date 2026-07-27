@@ -1216,6 +1216,60 @@
       box-shadow: none;
     }
 
+    /* Inputs com ícone/@ — mesma célula do grid; sem margin que desloca o centro */
+    .modal-body .cli-input-adorn,
+    .modal-body .cli-input-prefix {
+      display: grid;
+      grid-template-columns: 1fr;
+      align-items: center;
+    }
+
+    .modal-body .cli-input-adorn > svg,
+    .modal-body .cli-input-adorn .adorn-ico,
+    .modal-body .cli-input-adorn > input,
+    .modal-body .cli-input-prefix .pfx,
+    .modal-body .cli-input-prefix > input {
+      grid-area: 1 / 1;
+    }
+
+    .modal-body .cli-input-adorn > input,
+    .modal-body .cli-input-prefix > input {
+      margin-bottom: 0;
+      line-height: normal;
+    }
+
+    .modal-body .cli-input-adorn > input {
+      padding: 0 11px 0 36px;
+    }
+
+    .modal-body .cli-input-prefix > input {
+      padding: 0 11px 0 28px;
+    }
+
+    .modal-body .cli-input-adorn > svg,
+    .modal-body .cli-input-adorn .adorn-ico {
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 11px;
+      width: 15px;
+      height: 15px;
+      pointer-events: none;
+      z-index: 1;
+      transform: none;
+    }
+
+    .modal-body .cli-input-prefix .pfx {
+      position: static;
+      justify-self: start;
+      align-self: center;
+      margin-left: 12px;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 1;
+      transform: none;
+    }
+
     .modal-body textarea {
       height: auto;
       min-height: 72px;

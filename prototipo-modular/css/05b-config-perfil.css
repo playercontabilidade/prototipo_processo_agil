@@ -634,6 +634,17 @@
       .fin-ops-detail { grid-template-columns: repeat(2, 1fr); }
     }
 
+    .cli-list-toolbar {
+      flex-wrap: wrap;
+      row-gap: 8px;
+    }
+
+    .cli-list-toolbar .btn-ghost[data-cli-com-report] {
+      height: 36px;
+      padding: 0 12px;
+      flex: 0 0 auto;
+    }
+
     @media (max-width: 640px) {
       .fin-dash-kpis { grid-template-columns: 1fr; }
       .fin-donut-wrap { align-items: stretch; }
