@@ -13,6 +13,13 @@
       gap: 12px;
     }
 
+    .cli-xml-mod-head-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
     .cli-xml-mod-head .kicker {
       margin: 0 0 4px;
       font-size: .66rem;
@@ -578,6 +585,56 @@
       min-width: 120px;
     }
 
+    .cli-xml-filtros-btn.has-active {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+      color: var(--accent);
+    }
+
+    .cli-xml-legend-modal {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: .84rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .cli-xml-legend-modal p { margin: 0; }
+    .cli-xml-legend-modal strong { color: var(--navy-deep); }
+
+    .cli-xml-legend-modal ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cli-xml-legend-modal li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--navy-deep);
+    }
+
+    .cli-xml-legend-modal .lab {
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--muted);
+      min-width: 1rem;
+    }
+
+    .cli-xml-adv-filters .cli-xml-config-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
     .cli-xml-table-wrap {
       overflow: auto;
       border: 1px solid var(--border);
@@ -692,9 +749,26 @@
     .cli-xml-trib-dot.is-warn { background: #eab308; }
 
     .cli-xml-legend {
-      margin: 10px 0 0;
+      margin: 0;
       font-size: .74rem;
+      font-weight: 550;
       color: var(--muted);
+      line-height: 1.4;
+      max-width: 32rem;
+    }
+
+    .cli-xml-legend-row td {
+      border: none;
+      background: transparent;
+      vertical-align: top;
+    }
+
+    .cli-xml-legend-pad {
+      padding: 0 !important;
+    }
+
+    .cli-xml-legend-cell {
+      padding: 10px 8px 4px !important;
     }
 
     .cli-xml-config-grid {

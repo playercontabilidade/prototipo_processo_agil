@@ -516,7 +516,7 @@
     .cli-docs-hub {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       --cli-docs-blue: var(--accent);
     }
 
@@ -531,16 +531,76 @@
     .cli-docs-toolbar-left {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 8px 14px;
       min-width: 0;
+      flex-wrap: wrap;
     }
 
     .cli-docs-folder-heading {
       margin: 0;
-      font-size: .95rem;
+      font-size: .88rem;
       font-weight: 700;
       color: var(--navy-deep);
+      line-height: 1.25;
     }
+
+    .cli-docs-storage {
+      --storage-accent: var(--accent);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 148px;
+      max-width: 220px;
+      flex: 0 1 180px;
+    }
+
+    .cli-docs-storage-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .cli-docs-storage-label {
+      font-size: .66rem;
+      font-weight: 650;
+      color: var(--muted);
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .cli-docs-storage-text strong {
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--navy-deep);
+      font-variant-numeric: tabular-nums;
+      line-height: 1.2;
+    }
+
+    .cli-docs-storage-of {
+      font-weight: 550;
+      color: var(--muted);
+    }
+
+    .cli-docs-storage-meter {
+      display: block;
+      width: 100%;
+      height: 4px;
+      border-radius: var(--radius-pill);
+      background: color-mix(in srgb, var(--border) 85%, var(--surface-2));
+      overflow: hidden;
+    }
+
+    .cli-docs-storage-meter > i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--storage-accent);
+      transition: width .35s var(--ease);
+    }
+
+    .cli-docs-storage.is-warn { --storage-accent: var(--warn); }
+    .cli-docs-storage.is-full { --storage-accent: var(--danger); }
 
     .cli-docs-back {
       display: inline-flex;
@@ -591,7 +651,7 @@
       gap: 0;
       min-height: 148px;
       padding: 22px 20px 20px;
-      margin-bottom: 16px;
+      margin-bottom: 0;
       border: 2px dashed color-mix(in srgb, var(--cli-docs-blue) 48%, var(--border));
       border-radius: var(--radius);
       background:
@@ -2710,11 +2770,56 @@
       white-space: nowrap;
     }
 
+    .cli-honor-kpis-wrap {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .cli-honor-kpis-tools {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 6px;
+    }
+
     .cli-honor-kpis {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 10px;
-      margin-bottom: 8px;
+      margin-bottom: 0;
+    }
+
+    .cli-honor-ref-modal .cli-honor-ref-lead {
+      margin: 0 0 12px;
+      font-size: .84rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .cli-honor-ref-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cli-honor-ref-list li {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      font-size: .84rem;
+      color: var(--muted);
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+    }
+
+    .cli-honor-ref-list .lab {
+      font-weight: 700;
+      color: var(--navy-deep);
+      min-width: 9.5rem;
     }
 
     .cli-honor-kpi {
@@ -2794,13 +2899,28 @@
     }
 
     .cli-honor-pct-legend {
-      margin: 0 0 14px;
-      font-size: .74rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px 16px;
+      margin: 0 0 12px;
+      font-size: .76rem;
+      font-weight: 550;
       color: var(--muted);
-      line-height: 1.4;
+      line-height: 1.35;
     }
 
-    .cli-honor-pct-legend b { color: var(--navy); font-weight: 700; }
+    .cli-honor-pct-legend-item {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    .cli-honor-pct-legend-item .lab {
+      font-weight: 700;
+      color: var(--navy-deep);
+    }
 
     .cli-honor-report {
       border: 1px solid var(--border);

@@ -656,7 +656,7 @@
       <p class="dg-lead">
         Section <code>.cli-xml-produtos</code>.
         Filtros reutilizam <code>.proc-filter</code>. Tabela clicável abre modal.
-        Bloco fiscal: NCM → CFOP → CST → Regime → <strong>IBS/CBS</strong> (dots E/S).
+        Bloco fiscal: NCM → CFOP → CST → Regime → <strong>IBS/CBS/IS</strong> (dots E/S).
       </p>
       <div class="dg-demo dg-xml-frame">
         <div class="dg-demo-label">Filtros + tabela (trecho)</div>
@@ -676,6 +676,7 @@
                 <th>NCM</th>
                 <th>IBS</th>
                 <th>CBS</th>
+                <th>IS</th>
                 <th class="num">Margem</th>
                 <th>Status</th>
               </tr>
@@ -696,15 +697,27 @@
                     <span class="cli-xml-trib-cad-item"><span class="lab">S</span><i class="cli-xml-trib-dot is-bad"></i></span>
                   </div>
                 </td>
+                <td>
+                  <div class="cli-xml-trib-cad">
+                    <span class="cli-xml-trib-cad-item"><span class="lab">E</span><i class="cli-xml-trib-dot is-ok"></i></span>
+                    <span class="cli-xml-trib-cad-item"><span class="lab">S</span><i class="cli-xml-trib-dot is-warn"></i></span>
+                  </div>
+                </td>
                 <td class="num">12,8%</td>
                 <td><span class="cli-xml-status is-warn2">Atenção</span></td>
               </tr>
             </tbody>
+            <tfoot>
+              <tr class="cli-xml-legend-row">
+                <td colspan="2" class="cli-xml-legend-pad"></td>
+                <td colspan="3" class="cli-xml-legend-cell">
+                  <p class="cli-xml-legend">IBS / CBS / IS: verde ok · amarelo alíquota incorreta · vermelho inexistente.</p>
+                </td>
+                <td colspan="2" class="cli-xml-legend-pad"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
-        <p class="cli-xml-legend" style="margin-top:10px">
-          IBS/CBS: verde ok · amarelo alíquota incorreta · vermelho inexistente.
-        </p>
       </div>
     </section>
 

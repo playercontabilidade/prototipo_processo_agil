@@ -1390,7 +1390,7 @@
       gap: 8px;
       height: 54px;
       min-height: 54px;
-      padding: 0 56px 0 16px;
+      padding: 0 52px 0 16px;
       box-sizing: border-box;
       background: var(--toolbar);
       border-bottom: 1px solid var(--border);
@@ -1423,6 +1423,7 @@
       width: max-content;
       max-width: min(420px, 46vw);
       min-width: 0;
+      margin-right: auto;
     }
 
     .content-panel.toolbar-compact:has(.clientes-wrap.show) .cli-list-toolbar .module-empresa-picker .empresa-wrap,
@@ -1603,6 +1604,35 @@
     .content-panel.toolbar-compact .panel-body:has(.fake-list.show .cfg-shell) {
       padding-top: 12px;
       padding-right: 52px;
+    }
+
+    /* Configuração: expandir alinhado à faixa das abas */
+    .content-panel.toolbar-compact:has(.fake-list.show .cfg-shell) .panel-tools {
+      top: 12px;
+      right: 16px;
+      height: 46px;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+
+    .content-panel.toolbar-compact:has(.fake-list.show .cfg-shell) .btn-expand {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      min-height: 36px;
+      margin: 0;
+      flex-shrink: 0;
+      box-sizing: border-box;
+    }
+
+    .content-panel.toolbar-compact:has(.fake-list.show .cfg-shell) .cfg-tabs {
+      min-height: 46px;
+      box-sizing: border-box;
+      padding-top: 6px;
+      padding-bottom: 6px;
     }
 
     .page-rich-identity {
@@ -2233,7 +2263,8 @@
     /* Conteúdo preenche o painel — scroll só no panel-body (sem barra interna duplicada) */
     .panel-body:has(.clientes-wrap.show) .clientes-wrap,
     .panel-body:has(.financeiro-wrap.show) .financeiro-wrap,
-    .panel-body:has(.agenda-wrap.show) .agenda-wrap {
+    .panel-body:has(.agenda-wrap.show) .agenda-wrap,
+    .panel-body:has(.processos-wrap.show) .processos-wrap {
       flex: 1 1 auto;
       max-height: 100%;
       overflow: auto;
@@ -3652,7 +3683,9 @@
       width: 100%;
       align-self: stretch;
       min-height: 0;
-      flex: 1;
+      flex: 1 1 auto;
+      max-height: 100%;
+      overflow: auto;
       animation: rise .3s var(--ease);
     }
 

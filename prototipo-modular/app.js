@@ -1475,6 +1475,8 @@
     /** Documentos · pasta aberta (null = grid) e menu de arquivo aberto */
     let cliDocsFolderId = null;
     let cliDocsFileMenuId = null;
+    /** Menu de ações da recorrência: `list:moldeId` | `modal:moldeId` */
+    let cliProcRecMenuKey = null;
     let cliXmlLote = {
       active: false,
       pct: 0,
@@ -1487,7 +1489,7 @@
 
     /** Extrator XML · Análise de NF-e (Acesso ao Cliente) */
     let cliXmlAnalise = {
-      tab: "dashboard", /* importar | dashboard | produtos | config */
+      tab: "dashboard", /* importar | dashboard | produtos */
       cnpj: "",
       imported: true,
       _simReady: false,
@@ -1733,6 +1735,27 @@
       const list = ensureCliProcRecorrencias(clienteId);
       if (list.some((r) => r.moldeId === moldeId)) return { ok: false, reason: "exists" };
       list.push({ moldeId, status: "ativa", associadaEm: "14/07/2026" });
+      return { ok: true };
+    }
+
+    function getCliProcRecorrencia(clienteId, moldeId) {
+      if (!clienteId || !moldeId) return null;
+      return ensureCliProcRecorrencias(clienteId).find((r) => r.moldeId === moldeId) || null;
+    }
+
+    function updateCliProcRecorrenciaStatus(clienteId, moldeId, status) {
+      const rec = getCliProcRecorrencia(clienteId, moldeId);
+      if (!rec) return { ok: false, reason: "missing" };
+      if (status !== "ativa" && status !== "pausada") return { ok: false, reason: "invalid" };
+      rec.status = status;
+      return { ok: true, rec };
+    }
+
+    function disassociateCliProcRecorrencia(clienteId, moldeId) {
+      const list = ensureCliProcRecorrencias(clienteId);
+      const idx = list.findIndex((r) => r.moldeId === moldeId);
+      if (idx < 0) return { ok: false, reason: "missing" };
+      list.splice(idx, 1);
       return { ok: true };
     }
 
@@ -6887,24 +6910,103 @@
         </div>`;
     }
 
+    function renderCliProcRecMenuHtml(moldeId, status, scope) {
+      const key = `${scope}:${moldeId}`;
+      const open = cliProcRecMenuKey === key;
+      const pauseLabel = status === "pausada" ? "Retomar" : "Pausar";
+      return `
+        <div class="cli-proc-rec-menu" role="menu" aria-label="Ações da recorrência" ${open ? "" : "hidden"}>
+          <button type="button" role="menuitem" data-cli-proc-rec-act="toggle-status" data-molde-id="${moldeId}">${pauseLabel}</button>
+          <button type="button" role="menuitem" class="is-danger" data-cli-proc-rec-act="desassociar" data-molde-id="${moldeId}">Desassociar</button>
+        </div>`;
+    }
+
+    function syncCliProcRecMenusDom() {
+      document.querySelectorAll("[data-cli-proc-rec-wrap]").forEach((wrap) => {
+        const key = wrap.dataset.cliProcRecWrap;
+        const open = key && cliProcRecMenuKey === key;
+        wrap.classList.toggle("is-menu-open", open);
+        wrap.querySelector(".cli-proc-molde-assoc-wrap")?.classList.toggle("is-menu-open", open);
+        const menu = wrap.querySelector(".cli-proc-rec-menu");
+        if (menu) menu.hidden = !open;
+        const btn = wrap.querySelector("[data-cli-proc-rec-toggle]");
+        if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
+
+    function refreshCliProcRecorrenciaViews(clienteId) {
+      cliProcRecMenuKey = null;
+      if (cliView === "perfil" && cliPerfilTab === "processos") renderClientes();
+      const cid = clienteId || modal?.dataset?.cliProcRecCliente || cliPerfilId;
+      if (cid && backdrop?.classList.contains("open") && modal?.dataset?.cliProcRecCliente === String(cid)) {
+        if (modalBody?.querySelector(".cli-proc-molde-pick")) {
+          modalBody.innerHTML = renderProcMoldePickListHtml(cid);
+        }
+      }
+    }
+
+    function confirmCliProcRecDesassociar(clienteId, moldeId) {
+      const molde = getProcMoldeById(moldeId);
+      const returnToPick = !!modal?.dataset?.cliProcRecCliente;
+      openCfgConfirmModal({
+        title: "Desassociar recorrência",
+        message: `Remover a associação de <strong>${molde?.nome || "processo molde"}</strong> deste cliente?`,
+        confirmLabel: "Desassociar",
+        danger: true,
+        onConfirm: () => {
+          const res = disassociateCliProcRecorrencia(clienteId, moldeId);
+          if (!res.ok) {
+            toast("Não foi possível desassociar");
+            return;
+          }
+          toast("Recorrência desassociada");
+          cliProcSubTab = "recorrencias";
+          if (cliView === "perfil") renderClientes();
+          if (returnToPick) openProcRecorrenciaModal(clienteId);
+        },
+      });
+    }
+
     function renderProcMoldePickListHtml(clienteId) {
       const associated = new Set(ensureCliProcRecorrencias(clienteId).map((r) => r.moldeId));
       const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
       const sync = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 0 0-14.3-7.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 14.3 7.2L21 16"/><path d="M16 21h5v-5"/></svg>`;
+      const chev = `<svg class="cli-proc-rec-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
       return `
         <div class="cli-proc-molde-pick">
           ${PROC_MOLDES_CATALOG.map((m) => {
             const done = associated.has(m.id);
+            const rec = done ? getCliProcRecorrencia(clienteId, m.id) : null;
+            const key = `modal:${m.id}`;
+            const menuOpen = cliProcRecMenuKey === key;
+            if (done) {
+              return `
+              <div class="cli-proc-molde-row is-associated" data-cli-proc-rec-wrap="${key}">
+                <span class="cli-proc-molde-ico">${ico}</span>
+                <div class="cli-proc-molde-info">
+                  <strong>${m.nome}</strong>
+                  <span>${m.etapas} etapas · ${m.obrigatorias} obrigatórias${rec?.status === "pausada" ? " · pausada" : ""}</span>
+                </div>
+                <div class="cli-proc-molde-assoc-wrap${menuOpen ? " is-menu-open" : ""}">
+                  <button type="button" class="btn-ghost cli-proc-molde-assoc" data-cli-proc-rec-toggle="${key}" aria-haspopup="menu" aria-expanded="${menuOpen ? "true" : "false"}" aria-label="Ações · ${m.nome}">
+                    ${sync}
+                    <span>Associada</span>
+                    ${chev}
+                  </button>
+                  ${renderCliProcRecMenuHtml(m.id, rec?.status || "ativa", "modal")}
+                </div>
+              </div>`;
+            }
             return `
-              <div class="cli-proc-molde-row${done ? " is-associated" : ""}">
+              <div class="cli-proc-molde-row">
                 <span class="cli-proc-molde-ico">${ico}</span>
                 <div class="cli-proc-molde-info">
                   <strong>${m.nome}</strong>
                   <span>${m.etapas} etapas · ${m.obrigatorias} obrigatórias</span>
                 </div>
-                <button type="button" class="btn-primary cli-proc-molde-criar" data-cli-proc-molde-criar="${m.id}" ${done ? "disabled" : ""} aria-label="${done ? "Já associada" : `Criar recorrência: ${m.nome}`}">
+                <button type="button" class="btn-primary cli-proc-molde-criar" data-cli-proc-molde-criar="${m.id}" aria-label="Criar recorrência: ${m.nome}">
                   ${sync}
-                  <span>${done ? "Associada" : "Criar"}</span>
+                  <span>Criar</span>
                 </button>
               </div>`;
           }).join("")}
@@ -6917,6 +7019,7 @@
         toast("Selecione uma empresa para criar a recorrência");
         return;
       }
+      cliProcRecMenuKey = null;
       openModal({
         title: "Criar Recorrência de Processo",
         sub: "Selecione um processo molde para criar uma recorrência:",
@@ -6930,21 +7033,30 @@
     function renderCliPerfilProcessosRecorrencias(c) {
       const items = getCliProcRecorrenciasDetalhe(c.id);
       const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
+      const chev = `<svg class="cli-proc-rec-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
       return `
         <div class="cli-proc-rec-panel">
           <div class="cli-obr-actions">
             <button type="button" class="btn-primary" data-cli-proc-rec="criar">Criar recorrência</button>
           </div>
           <div class="cli-proc-rec-list">
-            ${items.length ? items.map((r) => `
-              <article class="cli-proc-rec-card">
-                <span class="cli-proc-molde-ico">${ico}</span>
-                <div class="cli-proc-molde-info">
-                  <strong>${r.molde.nome}</strong>
-                  <span>${r.molde.etapas} etapas · ${r.molde.obrigatorias} obrigatórias${r.associadaEm ? ` · desde ${r.associadaEm}` : ""}</span>
-                </div>
-                <span class="cli-badge ${r.status === "pausada" ? "filial" : "matriz"}">${r.status === "pausada" ? "Pausada" : "Ativa"}</span>
-              </article>`).join("") : `<div class="cli-empty-panel">Nenhuma recorrência associada a este cliente</div>`}
+            ${items.length ? items.map((r) => {
+              const key = `list:${r.moldeId}`;
+              const menuOpen = cliProcRecMenuKey === key;
+              return `
+              <article class="cli-proc-rec-card${menuOpen ? " is-menu-open" : ""}" data-cli-proc-rec-wrap="${key}" data-cli-proc-rec-item="${r.moldeId}">
+                <button type="button" class="cli-proc-rec-main" data-cli-proc-rec-toggle="${key}" aria-haspopup="menu" aria-expanded="${menuOpen ? "true" : "false"}" aria-label="Ações · ${r.molde.nome}">
+                  <span class="cli-proc-molde-ico">${ico}</span>
+                  <div class="cli-proc-molde-info">
+                    <strong>${r.molde.nome}</strong>
+                    <span>${r.molde.etapas} etapas · ${r.molde.obrigatorias} obrigatórias${r.associadaEm ? ` · desde ${r.associadaEm}` : ""}</span>
+                  </div>
+                  <span class="cli-badge ${r.status === "pausada" ? "filial" : "matriz"}">${r.status === "pausada" ? "Pausada" : "Ativa"}</span>
+                  ${chev}
+                </button>
+                ${renderCliProcRecMenuHtml(r.moldeId, r.status, "list")}
+              </article>`;
+            }).join("") : `<div class="cli-empty-panel">Nenhuma recorrência associada a este cliente</div>`}
           </div>
         </div>`;
     }
@@ -7753,6 +7865,70 @@
       return `${(n / (1024 * 1024)).toFixed(1)} MB`;
     }
 
+    /** Cota de demonstração por cliente (protótipo). */
+    const CLI_DOCS_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024 * 1024;
+
+    function parseCliDocsSizeToBytes(label) {
+      const m = String(label || "").trim().match(/^([\d.,]+)\s*(B|KB|MB|GB)$/i);
+      if (!m) return 0;
+      const n = parseFloat(m[1].replace(",", "."));
+      if (!Number.isFinite(n)) return 0;
+      const unit = m[2].toUpperCase();
+      const mult = { B: 1, KB: 1024, MB: 1024 * 1024, GB: 1024 * 1024 * 1024 };
+      return Math.round(n * (mult[unit] || 0));
+    }
+
+    function cliDocsFileBytes(file) {
+      if (file && file.sizeBytes != null && Number.isFinite(Number(file.sizeBytes))) {
+        return Math.max(0, Number(file.sizeBytes));
+      }
+      return parseCliDocsSizeToBytes(file?.tamanho);
+    }
+
+    function formatCliDocsStorageAmount(bytes) {
+      const n = Math.max(0, Number(bytes) || 0);
+      const fmt = (v, digits) => String(digits ? v.toFixed(digits) : Math.round(v)).replace(".", ",");
+      if (n >= 1024 * 1024 * 1024) return `${fmt(n / (1024 * 1024 * 1024), 1)} GB`;
+      if (n >= 1024 * 1024) {
+        const mb = n / (1024 * 1024);
+        return `${fmt(mb, mb < 10 ? 1 : 0)} MB`;
+      }
+      if (n >= 1024) return `${fmt(n / 1024, 0)} KB`;
+      return `${fmt(n, 0)} B`;
+    }
+
+    function getCliDocsStorageUsage() {
+      let used = 0;
+      Object.entries(cliDocsFilesByFolder).forEach(([folderId, files]) => {
+        (files || []).forEach((f) => {
+          // Recentes: atalhos/espelhos não contam; só upload direto na pasta
+          if (folderId === "recentes") {
+            const id = String(f.id || "");
+            if (!id.startsWith("u") || id.endsWith("-r")) return;
+          }
+          used += cliDocsFileBytes(f);
+        });
+      });
+      const quota = CLI_DOCS_STORAGE_QUOTA_BYTES;
+      const pct = quota > 0 ? Math.min(100, Math.round((used / quota) * 100)) : 0;
+      return { used, quota, pct };
+    }
+
+    function renderCliDocsStorageHtml() {
+      const { used, quota, pct } = getCliDocsStorageUsage();
+      const usedLabel = formatCliDocsStorageAmount(used);
+      const quotaLabel = formatCliDocsStorageAmount(quota);
+      const tone = pct >= 95 ? "is-full" : pct >= 80 ? "is-warn" : "";
+      return `
+        <div class="cli-docs-storage ${tone}" role="status" aria-label="Armazenamento do cliente: ${usedLabel} de ${quotaLabel}">
+          <div class="cli-docs-storage-text">
+            <span class="cli-docs-storage-label">Armazenamento</span>
+            <strong>${usedLabel} <span class="cli-docs-storage-of">de</span> ${quotaLabel}</strong>
+          </div>
+          <span class="cli-docs-storage-meter" aria-hidden="true"><i style="width:${pct}%"></i></span>
+        </div>`;
+    }
+
     function formatCliDocsTodayLabel() {
       const d = APP_TODAY;
       const pad = (n) => String(n).padStart(2, "0");
@@ -7774,6 +7950,7 @@
           tipo: ext,
           atualizado: when,
           tamanho: formatCliDocsFileSize(file.size),
+          sizeBytes: Number(file.size) || 0,
         };
         cliDocsFilesByFolder[target].unshift(entry);
         if (target !== "recentes") {
@@ -7818,6 +7995,7 @@
               </button>
               <h3 class="cli-docs-folder-heading">${folderMeta.title}</h3>
             ` : `<h3 class="cli-docs-folder-heading">Documentos</h3>`}
+            ${renderCliDocsStorageHtml()}
           </div>
           <div class="cli-docs-toolbar-actions">
             ${portal ? "" : `
@@ -8119,7 +8297,13 @@
             </div>
             <button type="button" class="btn-primary honor-add" data-cli-honor-add>Adicionar</button>
           </div>
-          <div class="cli-honor-kpis">
+          <div class="cli-honor-kpis-wrap">
+            <div class="cli-honor-kpis-tools">
+              <button type="button" class="btn-icon tip-bottom" data-cli-honor-ref data-tip="Faixas de referência" aria-label="Faixas de referência">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+              </button>
+            </div>
+            <div class="cli-honor-kpis">
             <div class="cli-honor-kpi">
               <span>Itens salvos</span>
               <strong>${items.length}</strong>
@@ -8134,12 +8318,8 @@
               <em class="cli-honor-pct-badge">${pctMeta.label}</em>
               <small>Ideal ${String(HONOR_PCT_IDEAL).replace(".", ",")}% · faturamento ${money(pctInfo.fat)}</small>
             </div>
+            </div>
           </div>
-          <p class="cli-honor-pct-legend">
-            Ideal <b>${String(HONOR_PCT_IDEAL).replace(".", ",")}%</b>
-            · abaixo do ideal &lt; ${String(HONOR_PCT_IDEAL).replace(".", ",")}%
-            · atenção comercial ≤ <b>${String(HONOR_PCT_CRITICO).replace(".", ",")}%</b>
-          </p>
           <section class="cli-honor-report" aria-label="Relatório de honorários">
             <div class="cli-honor-report-head">
               <div>
@@ -11655,6 +11835,23 @@
     function cliHonorPctLabel(pct) {
       if (pct == null || !Number.isFinite(pct)) return "—";
       return `${String(pct).replace(".", ",")}%`;
+    }
+
+    function openCliHonorRefModal() {
+      openModal({
+        title: "Faixas de referência",
+        sub: "Honorário / faturamento",
+        body: `
+          <div class="cli-honor-ref-modal" aria-label="Faixas de referência do honorário">
+            <p class="cli-honor-ref-lead">Indicador usado nos cards de Honorários. Compare o percentual do cliente com as faixas abaixo.</p>
+            <ul class="cli-honor-ref-list">
+              <li><span class="lab">Ideal</span> ≥ ${String(HONOR_PCT_IDEAL).replace(".", ",")}%</li>
+              <li><span class="lab">Abaixo do ideal</span> &lt; ${String(HONOR_PCT_IDEAL).replace(".", ",")}%</li>
+              <li><span class="lab">Atenção comercial</span> ≤ ${String(HONOR_PCT_CRITICO).replace(".", ",")}%</li>
+            </ul>
+          </div>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+      });
     }
 
     function parseHonorValor(raw) {
@@ -22717,7 +22914,6 @@
             ${hasEmpresaFilter
               ? `<button type="button" class="btn-ghost sec-clear-btn" id="secClearCliFilter">Limpar filtro</button>`
               : ""}
-            <span class="sec-monitor-count">${rows.length} certificado${rows.length === 1 ? "" : "s"} no filtro</span>
           </div>
           <div class="cli-list-kpis sec-kpis" role="toolbar" aria-label="Indicadores de certificados">
             <button type="button" class="cli-list-kpi${securityCertFilterMode === "all" ? " is-active" : ""}" data-sec-filter="all" aria-pressed="${securityCertFilterMode === "all"}">
@@ -24024,6 +24220,43 @@
         }
         return;
       }
+      const procRecToggle = e.target.closest("[data-cli-proc-rec-toggle]");
+      if (procRecToggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = procRecToggle.dataset.cliProcRecToggle;
+        cliProcRecMenuKey = cliProcRecMenuKey === key ? null : key;
+        syncCliProcRecMenusDom();
+        return;
+      }
+      const procRecMenuAct = e.target.closest("[data-cli-proc-rec-act]");
+      if (procRecMenuAct) {
+        e.preventDefault();
+        e.stopPropagation();
+        const act = procRecMenuAct.dataset.cliProcRecAct;
+        const moldeId = procRecMenuAct.dataset.moldeId;
+        const cid = modal?.dataset?.cliProcRecCliente || cliPerfilId;
+        cliProcRecMenuKey = null;
+        syncCliProcRecMenusDom();
+        if (!cid || !moldeId) return;
+        if (act === "toggle-status") {
+          const rec = getCliProcRecorrencia(cid, moldeId);
+          const next = rec?.status === "pausada" ? "ativa" : "pausada";
+          const res = updateCliProcRecorrenciaStatus(cid, moldeId, next);
+          if (!res.ok) {
+            toast("Não foi possível atualizar o status");
+            return;
+          }
+          toast(next === "pausada" ? "Recorrência pausada" : "Recorrência retomada");
+          refreshCliProcRecorrenciaViews(cid);
+          return;
+        }
+        if (act === "desassociar") {
+          confirmCliProcRecDesassociar(cid, moldeId);
+          return;
+        }
+        return;
+      }
       const cliAuditAct = e.target.closest("[data-cli-fin-audit]");
       if (cliAuditAct) {
         const act = cliAuditAct.dataset.cliFinAudit;
@@ -24090,6 +24323,10 @@
       const planoAction = e.target.closest("[data-cli-fin-plano]");
       if (planoAction || e.target.closest("[data-fin-plano-open]") || e.target.closest("[data-fin-plano-toggle]") || e.target.closest("[data-fin-plano-conta]") || e.target.closest("[data-fin-plano-flag]")) {
         if (handleFinPlanoContasClick(e)) return;
+      }
+      if (e.target.closest("[data-cli-honor-ref]")) {
+        openCliHonorRefModal();
+        return;
       }
       if (e.target.closest("[data-cli-honor-add]")) {
         const c = CLIENTES.find((x) => x.id === cliPerfilId);
@@ -25322,6 +25559,43 @@
         if (cliView === "perfil") renderClientes();
         return;
       }
+      const procRecToggleModal = e.target.closest("[data-cli-proc-rec-toggle]");
+      if (procRecToggleModal) {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = procRecToggleModal.dataset.cliProcRecToggle;
+        cliProcRecMenuKey = cliProcRecMenuKey === key ? null : key;
+        syncCliProcRecMenusDom();
+        return;
+      }
+      const procRecMenuActModal = e.target.closest("[data-cli-proc-rec-act]");
+      if (procRecMenuActModal) {
+        e.preventDefault();
+        e.stopPropagation();
+        const act = procRecMenuActModal.dataset.cliProcRecAct;
+        const moldeId = procRecMenuActModal.dataset.moldeId;
+        const cid = modal?.dataset?.cliProcRecCliente || cliPerfilId;
+        cliProcRecMenuKey = null;
+        syncCliProcRecMenusDom();
+        if (!cid || !moldeId) return;
+        if (act === "toggle-status") {
+          const rec = getCliProcRecorrencia(cid, moldeId);
+          const next = rec?.status === "pausada" ? "ativa" : "pausada";
+          const res = updateCliProcRecorrenciaStatus(cid, moldeId, next);
+          if (!res.ok) {
+            toast("Não foi possível atualizar o status");
+            return;
+          }
+          toast(next === "pausada" ? "Recorrência pausada" : "Recorrência retomada");
+          refreshCliProcRecorrenciaViews(cid);
+          return;
+        }
+        if (act === "desassociar") {
+          confirmCliProcRecDesassociar(cid, moldeId);
+          return;
+        }
+        return;
+      }
       const etapa = e.target.closest("[data-etapa-id]");
       if (!etapa) return;
       const proc = sections.find((s) => s.id === "processos")?.items.find((p) => String(p.id) === etapa.dataset.procId);
@@ -25331,6 +25605,7 @@
     });
 
     modalBody.addEventListener("input", (e) => {
+      if (handleCliXmlModInput(e)) return;
       if (e.target?.id === "procMoldeAvulsoSearch") {
         const list = document.getElementById("procMoldeAvulsoList");
         if (!list) return;
@@ -25354,6 +25629,9 @@
     });
 
     modalBody.addEventListener("change", (e) => {
+      if (e.target?.matches?.("[data-cli-xml-cfg]") || e.target?.id?.startsWith("cliXmlFiltro")) {
+        if (handleCliXmlModInput(e)) return;
+      }
       if (e.target?.id === "procCriarNomeCustom") {
         const wrap = document.getElementById("procCriarNomeWrap");
         if (wrap) wrap.hidden = !e.target.checked;
@@ -25786,6 +26064,7 @@
           return;
         }
       }
+      if (handleCliXmlModClick(e)) return;
       if (e.target === backdrop || e.target.closest("[data-close]")) closeModal();
     });
     backdrop.addEventListener("change", (e) => {
@@ -25997,6 +26276,10 @@
       if (!e.target.closest("[data-cli-doc-file]") && cliDocsFileMenuId) {
         cliDocsFileMenuId = null;
         syncCliDocsFileMenusDom();
+      }
+      if (!e.target.closest("[data-cli-proc-rec-wrap]") && !e.target.closest(".cli-proc-molde-assoc-wrap") && cliProcRecMenuKey) {
+        cliProcRecMenuKey = null;
+        syncCliProcRecMenusDom();
       }
       if (!e.target.closest("#finEmpresaWrap") && finDash.acOpen) {
         finDash.acOpen = false;
@@ -26430,6 +26713,7 @@
           tribSaidaCents: 210,
           ibs: { entrada: "ok", saida: "ok" },
           cbs: { entrada: "ok", saida: "ok" },
+          is: { entrada: "ok", saida: "ok" },
         },
         {
           id: "xp2",
@@ -26453,6 +26737,7 @@
           tribSaidaCents: 85,
           ibs: { entrada: "ok", saida: "wrong" },
           cbs: { entrada: "ok", saida: "ok" },
+          is: { entrada: "wrong", saida: "ok" },
         },
         {
           id: "xp3",
@@ -26476,6 +26761,7 @@
           tribSaidaCents: 410,
           ibs: { entrada: "wrong", saida: "ok" },
           cbs: { entrada: "missing", saida: "ok" },
+          is: { entrada: "ok", saida: "wrong" },
         },
         {
           id: "xp4",
@@ -26499,6 +26785,7 @@
           tribSaidaCents: 195,
           ibs: { entrada: "ok", saida: "missing" },
           cbs: { entrada: "wrong", saida: "wrong" },
+          is: { entrada: "missing", saida: "ok" },
         },
         {
           id: "xp5",
@@ -26522,6 +26809,7 @@
           tribSaidaCents: 0,
           ibs: { entrada: "ok", saida: "missing" },
           cbs: { entrada: "ok", saida: "missing" },
+          is: { entrada: "ok", saida: "missing" },
         },
         {
           id: "xp6",
@@ -26545,6 +26833,7 @@
           tribSaidaCents: 48,
           ibs: { entrada: "ok", saida: "ok" },
           cbs: { entrada: "ok", saida: "wrong" },
+          is: { entrada: "wrong", saida: "wrong" },
         },
         {
           id: "xp7",
@@ -26568,6 +26857,7 @@
           tribSaidaCents: 1450,
           ibs: { entrada: "missing", saida: "missing" },
           cbs: { entrada: "missing", saida: "ok" },
+          is: { entrada: "ok", saida: "ok" },
         },
         {
           id: "xp8",
@@ -26591,6 +26881,7 @@
           tribSaidaCents: 105,
           ibs: { entrada: "ok", saida: "ok" },
           cbs: { entrada: "wrong", saida: "ok" },
+          is: { entrada: "missing", saida: "missing" },
         },
       ];
 
@@ -26663,7 +26954,7 @@
       return map[status] || map.saudavel;
     }
 
-    /** Status cadastral IBS/CBS: ok | missing | wrong */
+    /** Status cadastral IBS/CBS/IS: ok | missing | wrong */
     function xmlTribCadMeta(code) {
       const map = {
         ok: { cls: "ok", label: "Cadastrado corretamente" },
@@ -26673,17 +26964,18 @@
       return map[code] || map.missing;
     }
 
-    function renderCliXmlTribCadCell(trib) {
+    function renderCliXmlTribCadCell(trib, taxLabel = "") {
       const entrada = xmlTribCadMeta(trib?.entrada);
       const saida = xmlTribCadMeta(trib?.saida);
+      const groupLabel = taxLabel ? `${taxLabel} · entrada e saída` : "Entrada e saída";
       return `
-        <div class="cli-xml-trib-cad" role="group" aria-label="Entrada e saída">
-          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="Entrada · ${entrada.label}">
+        <div class="cli-xml-trib-cad" role="group" aria-label="${groupLabel}">
+          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="${taxLabel ? taxLabel + " · " : ""}Entrada · ${entrada.label}">
             <span class="lab">E</span>
             <i class="cli-xml-trib-dot is-${entrada.cls}" aria-hidden="true"></i>
             <span class="sr-only">Entrada: ${entrada.label}</span>
           </span>
-          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="Saída · ${saida.label}">
+          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="${taxLabel ? taxLabel + " · " : ""}Saída · ${saida.label}">
             <span class="lab">S</span>
             <i class="cli-xml-trib-dot is-${saida.cls}" aria-hidden="true"></i>
             <span class="sr-only">Saída: ${saida.label}</span>
@@ -26824,18 +27116,17 @@
 
     function renderCliXmlAnaliseModule(c) {
       ensureCliXmlAnalise(c);
+      if (cliXmlAnalise.tab === "config") cliXmlAnalise.tab = "dashboard";
       const tabs = [
         { id: "importar", label: "Importar" },
         { id: "dashboard", label: "Dashboard" },
         { id: "produtos", label: "Produtos" },
-        { id: "config", label: "Configurações" },
       ];
       const tab = cliXmlAnalise.tab;
       let body = "";
       if (tab === "importar") body = renderCliXmlImportTab(c);
       else if (tab === "dashboard") body = renderCliXmlDashboardTab(c);
-      else if (tab === "produtos") body = renderCliXmlProdutosTab(c);
-      else body = renderCliXmlConfigTab(c);
+      else body = renderCliXmlProdutosTab(c);
 
       return `
         <div class="cli-xml-mod" data-cli-xml-mod="1">
@@ -26845,7 +27136,8 @@
               <h3>Análise de Notas Fiscais</h3>
               <p class="sub">Foco analítico — não substitui escrituração ou apuração fiscal oficial.</p>
             </div>
-            <div class="cli-xml-mod-badge">
+            <div class="cli-xml-mod-head-actions">
+              <button type="button" class="btn-ghost" data-cli-xml="open-config" aria-label="Configurações de custos e margens">Configurar</button>
               <span class="cli-xml-pill">${cliXmlAnalise.imported ? "Base carregada" : "Aguardando importação"}</span>
             </div>
           </div>
@@ -27005,6 +27297,107 @@
         </section>`;
     }
 
+    function cliXmlAdvFiltrosCount() {
+      const f = cliXmlAnalise.filtros || {};
+      return ["ncm", "cfop", "fornecedor", "cliente", "margem", "regime", "status"]
+        .filter((k) => String(f[k] || "").trim()).length;
+    }
+
+    function openCliXmlLegendModal() {
+      openModal({
+        title: "Legenda fiscal",
+        sub: "IBS · CBS · IS",
+        body: `
+          <div class="cli-xml-legend-modal">
+            <p>Clique em um produto na grade para ver o comparativo compra × venda e a memória de cálculo.</p>
+            <p><strong>Bloco fiscal:</strong> NCM → CFOP → CST → Regime → IBS / CBS / IS</p>
+            <ul>
+              <li><span class="lab">E</span> Entrada</li>
+              <li><span class="lab">S</span> Saída</li>
+              <li><i class="cli-xml-trib-dot is-ok" aria-hidden="true"></i> Verde — cadastrado corretamente</li>
+              <li><i class="cli-xml-trib-dot is-warn" aria-hidden="true"></i> Amarelo — alíquota incorreta</li>
+              <li><i class="cli-xml-trib-dot is-bad" aria-hidden="true"></i> Vermelho — informação inexistente</li>
+            </ul>
+          </div>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+      });
+    }
+
+    function openCliXmlConfigModal(c) {
+      const cliente = c || CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+      openModal({
+        title: "Configurações",
+        sub: "Custos operacionais e metas de margem",
+        wide: true,
+        body: renderCliXmlConfigTab(cliente),
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" data-cli-xml="save-config">Aplicar e recalcular</button>`,
+      });
+    }
+
+    function openCliXmlFiltrosModal() {
+      const f = cliXmlAnalise.filtros;
+      openModal({
+        title: "Filtros avançados",
+        sub: "Catálogo de produtos",
+        wide: true,
+        body: `
+          <div class="cli-xml-adv-filters">
+            <div class="cli-xml-config-fields">
+              <label class="cli-xml-field">
+                <span>NCM</span>
+                <input type="text" id="cliXmlFiltroNcm" value="${uiSelectEscape(f.ncm)}" placeholder="NCM" />
+              </label>
+              <label class="cli-xml-field">
+                <span>CFOP</span>
+                <input type="text" id="cliXmlFiltroCfop" value="${uiSelectEscape(f.cfop)}" placeholder="CFOP" />
+              </label>
+              <label class="cli-xml-field">
+                <span>Fornecedor</span>
+                <input type="text" id="cliXmlFiltroForn" value="${uiSelectEscape(f.fornecedor)}" placeholder="Fornecedor" />
+              </label>
+              <label class="cli-xml-field">
+                <span>Cliente</span>
+                <input type="text" id="cliXmlFiltroCli" value="${uiSelectEscape(f.cliente)}" placeholder="Cliente" />
+              </label>
+              <label class="cli-xml-field">
+                <span>Margem</span>
+                <select id="cliXmlFiltroMargem" aria-label="Margem">
+                  <option value="">Todas</option>
+                  <option value="sem" ${f.margem === "sem" ? "selected" : ""}>Sem venda</option>
+                  <option value="neg" ${f.margem === "neg" ? "selected" : ""}>Negativa</option>
+                  <option value="pos" ${f.margem === "pos" ? "selected" : ""}>Positiva</option>
+                </select>
+              </label>
+              <label class="cli-xml-field">
+                <span>Regime</span>
+                <select id="cliXmlFiltroRegime" aria-label="Regime">
+                  <option value="">Todos</option>
+                  <option value="Simples Nacional" ${f.regime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option>
+                  <option value="Lucro Presumido" ${f.regime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option>
+                </select>
+              </label>
+              <label class="cli-xml-field">
+                <span>Status</span>
+                <select id="cliXmlFiltroStatus" aria-label="Status">
+                  <option value="">Todos</option>
+                  <option value="sem-venda" ${f.status === "sem-venda" ? "selected" : ""}>Sem venda</option>
+                  <option value="prejuizo" ${f.status === "prejuizo" ? "selected" : ""}>Prejuízo</option>
+                  <option value="baixa" ${f.status === "baixa" ? "selected" : ""}>Baixa</option>
+                  <option value="atencao" ${f.status === "atencao" ? "selected" : ""}>Atenção</option>
+                  <option value="saudavel" ${f.status === "saudavel" ? "selected" : ""}>Saudável</option>
+                </select>
+              </label>
+            </div>
+          </div>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-cli-xml="clear-adv-filtros">Limpar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" data-cli-xml="apply-adv-filtros">Aplicar</button>`,
+      });
+    }
+
     function renderCliXmlProdutosTab(c) {
       if (!cliXmlAnalise.imported) {
         return `
@@ -27016,6 +27409,7 @@
       }
       const f = cliXmlAnalise.filtros;
       const rows = filterCliXmlProdutos(c);
+      const advN = cliXmlAdvFiltrosCount();
       return `
         <section class="cli-xml-produtos" aria-label="Catálogo de produtos">
           <div class="cli-xml-filters">
@@ -27029,43 +27423,12 @@
             <div class="proc-filter field">
               <input type="date" id="cliXmlFiltroAte" value="${uiSelectEscape(f.ate)}" aria-label="Até" title="Até" />
             </div>
-            <div class="proc-filter field">
-              <input type="text" id="cliXmlFiltroNcm" value="${uiSelectEscape(f.ncm)}" placeholder="NCM" aria-label="NCM" />
-            </div>
-            <div class="proc-filter field">
-              <input type="text" id="cliXmlFiltroCfop" value="${uiSelectEscape(f.cfop)}" placeholder="CFOP" aria-label="CFOP" />
-            </div>
-            <div class="proc-filter field">
-              <input type="text" id="cliXmlFiltroForn" value="${uiSelectEscape(f.fornecedor)}" placeholder="Fornecedor" aria-label="Fornecedor" />
-            </div>
-            <div class="proc-filter field">
-              <input type="text" id="cliXmlFiltroCli" value="${uiSelectEscape(f.cliente)}" placeholder="Cliente" aria-label="Cliente" />
-            </div>
-            <div class="proc-filter field">
-              <select id="cliXmlFiltroMargem" aria-label="Margem">
-                <option value="">Margem · todas</option>
-                <option value="sem" ${f.margem === "sem" ? "selected" : ""}>Sem venda</option>
-                <option value="neg" ${f.margem === "neg" ? "selected" : ""}>Negativa</option>
-                <option value="pos" ${f.margem === "pos" ? "selected" : ""}>Positiva</option>
-              </select>
-            </div>
-            <div class="proc-filter field">
-              <select id="cliXmlFiltroRegime" aria-label="Regime">
-                <option value="">Regime · todos</option>
-                <option value="Simples Nacional" ${f.regime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option>
-                <option value="Lucro Presumido" ${f.regime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option>
-              </select>
-            </div>
-            <div class="proc-filter field">
-              <select id="cliXmlFiltroStatus" aria-label="Status">
-                <option value="">Status · todos</option>
-                <option value="sem-venda" ${f.status === "sem-venda" ? "selected" : ""}>Sem venda</option>
-                <option value="prejuizo" ${f.status === "prejuizo" ? "selected" : ""}>Prejuízo</option>
-                <option value="baixa" ${f.status === "baixa" ? "selected" : ""}>Baixa</option>
-                <option value="atencao" ${f.status === "atencao" ? "selected" : ""}>Atenção</option>
-                <option value="saudavel" ${f.status === "saudavel" ? "selected" : ""}>Saudável</option>
-              </select>
-            </div>
+            <button type="button" class="btn-ghost cli-xml-filtros-btn${advN ? " has-active" : ""}" data-cli-xml="open-filtros" aria-label="Filtros avançados">
+              Filtros${advN ? ` · ${advN}` : ""}
+            </button>
+            <button type="button" class="btn-icon tip-bottom" data-cli-xml="open-legend" data-tip="Legenda IBS / CBS / IS" aria-label="Legenda fiscal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+            </button>
           </div>
           <div class="cli-xml-table-wrap">
             <table class="cli-xml-table">
@@ -27078,6 +27441,7 @@
                   <th>Regime</th>
                   <th>IBS</th>
                   <th>CBS</th>
+                  <th>IS</th>
                   <th>Fornecedor</th>
                   <th class="num">Qtd. Compra</th>
                   <th class="num">Custo Unit.</th>
@@ -27099,8 +27463,9 @@
                     <td>${uiSelectEscape(p.cfopCompra)}</td>
                     <td>${uiSelectEscape(p.cst)}</td>
                     <td>${uiSelectEscape(p.regime)}</td>
-                    <td>${renderCliXmlTribCadCell(p.ibs)}</td>
-                    <td>${renderCliXmlTribCadCell(p.cbs)}</td>
+                    <td>${renderCliXmlTribCadCell(p.ibs, "IBS")}</td>
+                    <td>${renderCliXmlTribCadCell(p.cbs, "CBS")}</td>
+                    <td>${renderCliXmlTribCadCell(p.is, "IS")}</td>
                     <td>${uiSelectEscape(p.fornecedor)}</td>
                     <td class="num">${p.qtdCompra}</td>
                     <td class="num">${xmlMoney(p.calc.cef)}</td>
@@ -27111,11 +27476,10 @@
                     <td class="num ${p.calc.semVenda ? "" : (p.calc.mlPct < 0 ? "neg" : "")}">${p.calc.semVenda ? "—" : xmlPctLabel(p.calc.mlPct)}</td>
                     <td><span class="cli-xml-status is-${st.cls}">${st.label}</span></td>
                   </tr>`;
-                }).join("") : `<tr><td colspan="16"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
+                }).join("") : `<tr><td colspan="17"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
               </tbody>
             </table>
           </div>
-          <p class="cli-xml-legend">Clique em um produto para ver o comparativo compra × venda e a memória de cálculo. Bloco fiscal: NCM → CFOP → CST → Regime → IBS/CBS (E = entrada · S = saída · verde ok · amarelo alíquota incorreta · vermelho inexistente).</p>
         </section>`;
     }
 
@@ -27160,7 +27524,6 @@
                   <input type="number" step="0.1" min="0" max="100" data-cli-xml-cfg="margemAtencaoPct" value="${cfg.margemAtencaoPct}" />
                 </label>
               </div>
-              <button type="button" class="btn-primary" data-cli-xml="save-config">Aplicar e recalcular</button>
             </div>
           </div>
         </section>`;
@@ -27484,8 +27847,47 @@
           refreshCliXmlUi();
           return true;
         }
+        if (kind === "open-config") {
+          const c = CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+          openCliXmlConfigModal(c);
+          return true;
+        }
+        if (kind === "open-legend") {
+          openCliXmlLegendModal();
+          return true;
+        }
+        if (kind === "open-filtros") {
+          openCliXmlFiltrosModal();
+          return true;
+        }
+        if (kind === "clear-adv-filtros") {
+          const f = cliXmlAnalise.filtros;
+          f.ncm = "";
+          f.cfop = "";
+          f.fornecedor = "";
+          f.cliente = "";
+          f.margem = "";
+          f.regime = "";
+          f.status = "";
+          ["cliXmlFiltroNcm", "cliXmlFiltroCfop", "cliXmlFiltroForn", "cliXmlFiltroCli"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+          });
+          ["cliXmlFiltroMargem", "cliXmlFiltroRegime", "cliXmlFiltroStatus"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+          });
+          return true;
+        }
+        if (kind === "apply-adv-filtros") {
+          syncCliXmlFiltrosFromDom();
+          closeModal();
+          refreshCliXmlUi();
+          return true;
+        }
         if (kind === "save-config") {
           toast("Parâmetros aplicados — estimativas recalculadas (histórico preservado)", { success: true });
+          closeModal();
           refreshCliXmlUi();
           return true;
         }
@@ -27529,9 +27931,12 @@
       }
 
       if (e.target.id?.startsWith("cliXmlFiltro")) {
+        const id = e.target.id;
+        const live = id === "cliXmlFiltroQ" || id === "cliXmlFiltroDe" || id === "cliXmlFiltroAte";
+        if (!live) return true;
         syncCliXmlFiltrosFromDom();
         refreshCliXmlUi();
-        const el = document.getElementById(e.target.id);
+        const el = document.getElementById(id);
         if (el && e.target.type === "search") {
           try { el.focus(); el.setSelectionRange(e.target.selectionStart, e.target.selectionStart); } catch (_) { /* ignore */ }
         }

@@ -1087,7 +1087,7 @@
       gap: 0;
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      overflow: hidden;
+      overflow: visible;
       background: var(--surface);
     }
 
@@ -1762,14 +1762,6 @@
       min-height: 36px;
     }
 
-    .sec-monitor-count {
-      margin-left: auto;
-      font-size: .74rem;
-      font-weight: 600;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
     .sec-clear-btn {
       flex: 0 0 auto;
       height: 36px;
@@ -2229,7 +2221,6 @@
     }
 
     @media (max-width: 720px) {
-      .sec-monitor-count { margin-left: 0; width: 100%; }
       .sec-kpis.cli-list-kpis { grid-template-columns: 1fr 1fr; }
       .sec-list { min-width: 0; }
       .sec-list-head { display: none; }

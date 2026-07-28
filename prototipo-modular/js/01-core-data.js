@@ -1475,6 +1475,8 @@
     /** Documentos · pasta aberta (null = grid) e menu de arquivo aberto */
     let cliDocsFolderId = null;
     let cliDocsFileMenuId = null;
+    /** Menu de ações da recorrência: `list:moldeId` | `modal:moldeId` */
+    let cliProcRecMenuKey = null;
     let cliXmlLote = {
       active: false,
       pct: 0,
@@ -1487,7 +1489,7 @@
 
     /** Extrator XML · Análise de NF-e (Acesso ao Cliente) */
     let cliXmlAnalise = {
-      tab: "dashboard", /* importar | dashboard | produtos | config */
+      tab: "dashboard", /* importar | dashboard | produtos */
       cnpj: "",
       imported: true,
       _simReady: false,
@@ -1733,6 +1735,27 @@
       const list = ensureCliProcRecorrencias(clienteId);
       if (list.some((r) => r.moldeId === moldeId)) return { ok: false, reason: "exists" };
       list.push({ moldeId, status: "ativa", associadaEm: "14/07/2026" });
+      return { ok: true };
+    }
+
+    function getCliProcRecorrencia(clienteId, moldeId) {
+      if (!clienteId || !moldeId) return null;
+      return ensureCliProcRecorrencias(clienteId).find((r) => r.moldeId === moldeId) || null;
+    }
+
+    function updateCliProcRecorrenciaStatus(clienteId, moldeId, status) {
+      const rec = getCliProcRecorrencia(clienteId, moldeId);
+      if (!rec) return { ok: false, reason: "missing" };
+      if (status !== "ativa" && status !== "pausada") return { ok: false, reason: "invalid" };
+      rec.status = status;
+      return { ok: true, rec };
+    }
+
+    function disassociateCliProcRecorrencia(clienteId, moldeId) {
+      const list = ensureCliProcRecorrencias(clienteId);
+      const idx = list.findIndex((r) => r.moldeId === moldeId);
+      if (idx < 0) return { ok: false, reason: "missing" };
+      list.splice(idx, 1);
       return { ok: true };
     }
 

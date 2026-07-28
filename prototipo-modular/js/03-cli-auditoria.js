@@ -759,6 +759,23 @@
       return `${String(pct).replace(".", ",")}%`;
     }
 
+    function openCliHonorRefModal() {
+      openModal({
+        title: "Faixas de referência",
+        sub: "Honorário / faturamento",
+        body: `
+          <div class="cli-honor-ref-modal" aria-label="Faixas de referência do honorário">
+            <p class="cli-honor-ref-lead">Indicador usado nos cards de Honorários. Compare o percentual do cliente com as faixas abaixo.</p>
+            <ul class="cli-honor-ref-list">
+              <li><span class="lab">Ideal</span> ≥ ${String(HONOR_PCT_IDEAL).replace(".", ",")}%</li>
+              <li><span class="lab">Abaixo do ideal</span> &lt; ${String(HONOR_PCT_IDEAL).replace(".", ",")}%</li>
+              <li><span class="lab">Atenção comercial</span> ≤ ${String(HONOR_PCT_CRITICO).replace(".", ",")}%</li>
+            </ul>
+          </div>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+      });
+    }
+
     function parseHonorValor(raw) {
       const n = Number(String(raw || "").replace(/[^\d,.-]/g, "").replace(",", "."));
       return Number.isFinite(n) ? n : NaN;

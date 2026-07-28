@@ -2034,10 +2034,11 @@
     }
 
     .cli-proc-rec-card {
+      position: relative;
       display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
+      align-items: stretch;
+      gap: 0;
+      padding: 0;
       border: 1px solid var(--border);
       border-radius: var(--radius);
       background: var(--surface);
@@ -2046,6 +2047,91 @@
     .cli-proc-rec-card .cli-badge {
       margin-left: auto;
       flex-shrink: 0;
+    }
+
+    .cli-proc-rec-main {
+      appearance: none;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border: none;
+      background: transparent;
+      border-radius: inherit;
+      font: inherit;
+      text-align: left;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .cli-proc-rec-main:hover {
+      background: color-mix(in srgb, var(--accent) 6%, transparent);
+    }
+
+    .cli-proc-rec-card.is-menu-open {
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+      z-index: 5;
+    }
+
+    .cli-proc-rec-card.is-menu-open .cli-proc-rec-chev {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .cli-proc-rec-chev {
+      flex: 0 0 auto;
+      color: var(--muted);
+      transition: transform .15s ease, color .15s ease;
+    }
+
+    .cli-proc-rec-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 12px;
+      right: 12px;
+      z-index: 40;
+      padding: 6px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      box-shadow: 0 10px 28px rgba(28, 56, 110, 0.14);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cli-proc-rec-menu[hidden] {
+      display: none;
+    }
+
+    .cli-proc-rec-menu button {
+      border: none;
+      background: transparent;
+      text-align: left;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: .8rem;
+      font-weight: 650;
+      color: var(--navy);
+      cursor: pointer;
+      width: 100%;
+    }
+
+    .cli-proc-rec-menu button:hover {
+      background: color-mix(in srgb, var(--accent) 8%, transparent);
+      color: var(--accent);
+    }
+
+    .cli-proc-rec-menu button.is-danger {
+      color: var(--danger);
+    }
+
+    .cli-proc-rec-menu button.is-danger:hover {
+      background: color-mix(in srgb, var(--danger) 8%, transparent);
+      color: var(--danger);
     }
 
     .cli-proc-molde-ico {
@@ -2099,6 +2185,7 @@
     }
 
     .cli-proc-molde-row {
+      position: relative;
       display: flex;
       align-items: center;
       gap: 12px;
@@ -2109,7 +2196,41 @@
     }
 
     .cli-proc-molde-row.is-associated {
-      opacity: .72;
+      opacity: 1;
+    }
+
+    .cli-proc-molde-row.is-associated.is-menu-open {
+      border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+      z-index: 5;
+    }
+
+    .cli-proc-molde-assoc-wrap {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .cli-proc-molde-assoc {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      white-space: nowrap;
+      min-height: 36px;
+    }
+
+    .cli-proc-molde-assoc-wrap.is-menu-open .cli-proc-rec-chev,
+    .cli-proc-molde-row.is-menu-open .cli-proc-molde-assoc .cli-proc-rec-chev {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .cli-proc-molde-assoc-wrap .cli-proc-rec-menu {
+      left: auto;
+      right: 0;
+      min-width: 180px;
+      width: max-content;
     }
 
     .cli-proc-molde-criar {

@@ -126,6 +126,7 @@
           tribSaidaCents: 210,
           ibs: { entrada: "ok", saida: "ok" },
           cbs: { entrada: "ok", saida: "ok" },
+          is: { entrada: "ok", saida: "ok" },
         },
         {
           id: "xp2",
@@ -149,6 +150,7 @@
           tribSaidaCents: 85,
           ibs: { entrada: "ok", saida: "wrong" },
           cbs: { entrada: "ok", saida: "ok" },
+          is: { entrada: "wrong", saida: "ok" },
         },
         {
           id: "xp3",
@@ -172,6 +174,7 @@
           tribSaidaCents: 410,
           ibs: { entrada: "wrong", saida: "ok" },
           cbs: { entrada: "missing", saida: "ok" },
+          is: { entrada: "ok", saida: "wrong" },
         },
         {
           id: "xp4",
@@ -195,6 +198,7 @@
           tribSaidaCents: 195,
           ibs: { entrada: "ok", saida: "missing" },
           cbs: { entrada: "wrong", saida: "wrong" },
+          is: { entrada: "missing", saida: "ok" },
         },
         {
           id: "xp5",
@@ -218,6 +222,7 @@
           tribSaidaCents: 0,
           ibs: { entrada: "ok", saida: "missing" },
           cbs: { entrada: "ok", saida: "missing" },
+          is: { entrada: "ok", saida: "missing" },
         },
         {
           id: "xp6",
@@ -241,6 +246,7 @@
           tribSaidaCents: 48,
           ibs: { entrada: "ok", saida: "ok" },
           cbs: { entrada: "ok", saida: "wrong" },
+          is: { entrada: "wrong", saida: "wrong" },
         },
         {
           id: "xp7",
@@ -264,6 +270,7 @@
           tribSaidaCents: 1450,
           ibs: { entrada: "missing", saida: "missing" },
           cbs: { entrada: "missing", saida: "ok" },
+          is: { entrada: "ok", saida: "ok" },
         },
         {
           id: "xp8",
@@ -287,6 +294,7 @@
           tribSaidaCents: 105,
           ibs: { entrada: "ok", saida: "ok" },
           cbs: { entrada: "wrong", saida: "ok" },
+          is: { entrada: "missing", saida: "missing" },
         },
       ];
 
@@ -359,7 +367,7 @@
       return map[status] || map.saudavel;
     }
 
-    /** Status cadastral IBS/CBS: ok | missing | wrong */
+    /** Status cadastral IBS/CBS/IS: ok | missing | wrong */
     function xmlTribCadMeta(code) {
       const map = {
         ok: { cls: "ok", label: "Cadastrado corretamente" },
@@ -369,17 +377,18 @@
       return map[code] || map.missing;
     }
 
-    function renderCliXmlTribCadCell(trib) {
+    function renderCliXmlTribCadCell(trib, taxLabel = "") {
       const entrada = xmlTribCadMeta(trib?.entrada);
       const saida = xmlTribCadMeta(trib?.saida);
+      const groupLabel = taxLabel ? `${taxLabel} · entrada e saída` : "Entrada e saída";
       return `
-        <div class="cli-xml-trib-cad" role="group" aria-label="Entrada e saída">
-          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="Entrada · ${entrada.label}">
+        <div class="cli-xml-trib-cad" role="group" aria-label="${groupLabel}">
+          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="${taxLabel ? taxLabel + " · " : ""}Entrada · ${entrada.label}">
             <span class="lab">E</span>
             <i class="cli-xml-trib-dot is-${entrada.cls}" aria-hidden="true"></i>
             <span class="sr-only">Entrada: ${entrada.label}</span>
           </span>
-          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="Saída · ${saida.label}">
+          <span class="cli-xml-trib-cad-item tip-bottom" data-tip="${taxLabel ? taxLabel + " · " : ""}Saída · ${saida.label}">
             <span class="lab">S</span>
             <i class="cli-xml-trib-dot is-${saida.cls}" aria-hidden="true"></i>
             <span class="sr-only">Saída: ${saida.label}</span>
@@ -520,18 +529,17 @@
 
     function renderCliXmlAnaliseModule(c) {
       ensureCliXmlAnalise(c);
+      if (cliXmlAnalise.tab === "config") cliXmlAnalise.tab = "dashboard";
       const tabs = [
         { id: "importar", label: "Importar" },
         { id: "dashboard", label: "Dashboard" },
         { id: "produtos", label: "Produtos" },
-        { id: "config", label: "Configurações" },
       ];
       const tab = cliXmlAnalise.tab;
       let body = "";
       if (tab === "importar") body = renderCliXmlImportTab(c);
       else if (tab === "dashboard") body = renderCliXmlDashboardTab(c);
-      else if (tab === "produtos") body = renderCliXmlProdutosTab(c);
-      else body = renderCliXmlConfigTab(c);
+      else body = renderCliXmlProdutosTab(c);
 
       return `
         <div class="cli-xml-mod" data-cli-xml-mod="1">
@@ -541,7 +549,8 @@
               <h3>Análise de Notas Fiscais</h3>
               <p class="sub">Foco analítico — não substitui escrituração ou apuração fiscal oficial.</p>
             </div>
-            <div class="cli-xml-mod-badge">
+            <div class="cli-xml-mod-head-actions">
+              <button type="button" class="btn-ghost" data-cli-xml="open-config" aria-label="Configurações de custos e margens">Configurar</button>
               <span class="cli-xml-pill">${cliXmlAnalise.imported ? "Base carregada" : "Aguardando importação"}</span>
             </div>
           </div>
@@ -701,6 +710,107 @@
         </section>`;
     }
 
+    function cliXmlAdvFiltrosCount() {
+      const f = cliXmlAnalise.filtros || {};
+      return ["ncm", "cfop", "fornecedor", "cliente", "margem", "regime", "status"]
+        .filter((k) => String(f[k] || "").trim()).length;
+    }
+
+    function openCliXmlLegendModal() {
+      openModal({
+        title: "Legenda fiscal",
+        sub: "IBS · CBS · IS",
+        body: `
+          <div class="cli-xml-legend-modal">
+            <p>Clique em um produto na grade para ver o comparativo compra × venda e a memória de cálculo.</p>
+            <p><strong>Bloco fiscal:</strong> NCM → CFOP → CST → Regime → IBS / CBS / IS</p>
+            <ul>
+              <li><span class="lab">E</span> Entrada</li>
+              <li><span class="lab">S</span> Saída</li>
+              <li><i class="cli-xml-trib-dot is-ok" aria-hidden="true"></i> Verde — cadastrado corretamente</li>
+              <li><i class="cli-xml-trib-dot is-warn" aria-hidden="true"></i> Amarelo — alíquota incorreta</li>
+              <li><i class="cli-xml-trib-dot is-bad" aria-hidden="true"></i> Vermelho — informação inexistente</li>
+            </ul>
+          </div>`,
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+      });
+    }
+
+    function openCliXmlConfigModal(c) {
+      const cliente = c || CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+      openModal({
+        title: "Configurações",
+        sub: "Custos operacionais e metas de margem",
+        wide: true,
+        body: renderCliXmlConfigTab(cliente),
+        foot: `
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" data-cli-xml="save-config">Aplicar e recalcular</button>`,
+      });
+    }
+
+    function openCliXmlFiltrosModal() {
+      const f = cliXmlAnalise.filtros;
+      openModal({
+        title: "Filtros avançados",
+        sub: "Catálogo de produtos",
+        wide: true,
+        body: `
+          <div class="cli-xml-adv-filters">
+            <div class="cli-xml-config-fields">
+              <label class="cli-xml-field">
+                <span>NCM</span>
+                <input type="text" id="cliXmlFiltroNcm" value="${uiSelectEscape(f.ncm)}" placeholder="NCM" />
+              </label>
+              <label class="cli-xml-field">
+                <span>CFOP</span>
+                <input type="text" id="cliXmlFiltroCfop" value="${uiSelectEscape(f.cfop)}" placeholder="CFOP" />
+              </label>
+              <label class="cli-xml-field">
+                <span>Fornecedor</span>
+                <input type="text" id="cliXmlFiltroForn" value="${uiSelectEscape(f.fornecedor)}" placeholder="Fornecedor" />
+              </label>
+              <label class="cli-xml-field">
+                <span>Cliente</span>
+                <input type="text" id="cliXmlFiltroCli" value="${uiSelectEscape(f.cliente)}" placeholder="Cliente" />
+              </label>
+              <label class="cli-xml-field">
+                <span>Margem</span>
+                <select id="cliXmlFiltroMargem" aria-label="Margem">
+                  <option value="">Todas</option>
+                  <option value="sem" ${f.margem === "sem" ? "selected" : ""}>Sem venda</option>
+                  <option value="neg" ${f.margem === "neg" ? "selected" : ""}>Negativa</option>
+                  <option value="pos" ${f.margem === "pos" ? "selected" : ""}>Positiva</option>
+                </select>
+              </label>
+              <label class="cli-xml-field">
+                <span>Regime</span>
+                <select id="cliXmlFiltroRegime" aria-label="Regime">
+                  <option value="">Todos</option>
+                  <option value="Simples Nacional" ${f.regime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option>
+                  <option value="Lucro Presumido" ${f.regime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option>
+                </select>
+              </label>
+              <label class="cli-xml-field">
+                <span>Status</span>
+                <select id="cliXmlFiltroStatus" aria-label="Status">
+                  <option value="">Todos</option>
+                  <option value="sem-venda" ${f.status === "sem-venda" ? "selected" : ""}>Sem venda</option>
+                  <option value="prejuizo" ${f.status === "prejuizo" ? "selected" : ""}>Prejuízo</option>
+                  <option value="baixa" ${f.status === "baixa" ? "selected" : ""}>Baixa</option>
+                  <option value="atencao" ${f.status === "atencao" ? "selected" : ""}>Atenção</option>
+                  <option value="saudavel" ${f.status === "saudavel" ? "selected" : ""}>Saudável</option>
+                </select>
+              </label>
+            </div>
+          </div>`,
+        foot: `
+          <button type="button" class="btn-ghost" data-cli-xml="clear-adv-filtros">Limpar</button>
+          <button type="button" class="btn-ghost" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" data-cli-xml="apply-adv-filtros">Aplicar</button>`,
+      });
+    }
+
     function renderCliXmlProdutosTab(c) {
       if (!cliXmlAnalise.imported) {
         return `
@@ -712,6 +822,7 @@
       }
       const f = cliXmlAnalise.filtros;
       const rows = filterCliXmlProdutos(c);
+      const advN = cliXmlAdvFiltrosCount();
       return `
         <section class="cli-xml-produtos" aria-label="Catálogo de produtos">
           <div class="cli-xml-filters">
@@ -725,43 +836,12 @@
             <div class="proc-filter field">
               <input type="date" id="cliXmlFiltroAte" value="${uiSelectEscape(f.ate)}" aria-label="Até" title="Até" />
             </div>
-            <div class="proc-filter field">
-              <input type="text" id="cliXmlFiltroNcm" value="${uiSelectEscape(f.ncm)}" placeholder="NCM" aria-label="NCM" />
-            </div>
-            <div class="proc-filter field">
-              <input type="text" id="cliXmlFiltroCfop" value="${uiSelectEscape(f.cfop)}" placeholder="CFOP" aria-label="CFOP" />
-            </div>
-            <div class="proc-filter field">
-              <input type="text" id="cliXmlFiltroForn" value="${uiSelectEscape(f.fornecedor)}" placeholder="Fornecedor" aria-label="Fornecedor" />
-            </div>
-            <div class="proc-filter field">
-              <input type="text" id="cliXmlFiltroCli" value="${uiSelectEscape(f.cliente)}" placeholder="Cliente" aria-label="Cliente" />
-            </div>
-            <div class="proc-filter field">
-              <select id="cliXmlFiltroMargem" aria-label="Margem">
-                <option value="">Margem · todas</option>
-                <option value="sem" ${f.margem === "sem" ? "selected" : ""}>Sem venda</option>
-                <option value="neg" ${f.margem === "neg" ? "selected" : ""}>Negativa</option>
-                <option value="pos" ${f.margem === "pos" ? "selected" : ""}>Positiva</option>
-              </select>
-            </div>
-            <div class="proc-filter field">
-              <select id="cliXmlFiltroRegime" aria-label="Regime">
-                <option value="">Regime · todos</option>
-                <option value="Simples Nacional" ${f.regime === "Simples Nacional" ? "selected" : ""}>Simples Nacional</option>
-                <option value="Lucro Presumido" ${f.regime === "Lucro Presumido" ? "selected" : ""}>Lucro Presumido</option>
-              </select>
-            </div>
-            <div class="proc-filter field">
-              <select id="cliXmlFiltroStatus" aria-label="Status">
-                <option value="">Status · todos</option>
-                <option value="sem-venda" ${f.status === "sem-venda" ? "selected" : ""}>Sem venda</option>
-                <option value="prejuizo" ${f.status === "prejuizo" ? "selected" : ""}>Prejuízo</option>
-                <option value="baixa" ${f.status === "baixa" ? "selected" : ""}>Baixa</option>
-                <option value="atencao" ${f.status === "atencao" ? "selected" : ""}>Atenção</option>
-                <option value="saudavel" ${f.status === "saudavel" ? "selected" : ""}>Saudável</option>
-              </select>
-            </div>
+            <button type="button" class="btn-ghost cli-xml-filtros-btn${advN ? " has-active" : ""}" data-cli-xml="open-filtros" aria-label="Filtros avançados">
+              Filtros${advN ? ` · ${advN}` : ""}
+            </button>
+            <button type="button" class="btn-icon tip-bottom" data-cli-xml="open-legend" data-tip="Legenda IBS / CBS / IS" aria-label="Legenda fiscal">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+            </button>
           </div>
           <div class="cli-xml-table-wrap">
             <table class="cli-xml-table">
@@ -774,6 +854,7 @@
                   <th>Regime</th>
                   <th>IBS</th>
                   <th>CBS</th>
+                  <th>IS</th>
                   <th>Fornecedor</th>
                   <th class="num">Qtd. Compra</th>
                   <th class="num">Custo Unit.</th>
@@ -795,8 +876,9 @@
                     <td>${uiSelectEscape(p.cfopCompra)}</td>
                     <td>${uiSelectEscape(p.cst)}</td>
                     <td>${uiSelectEscape(p.regime)}</td>
-                    <td>${renderCliXmlTribCadCell(p.ibs)}</td>
-                    <td>${renderCliXmlTribCadCell(p.cbs)}</td>
+                    <td>${renderCliXmlTribCadCell(p.ibs, "IBS")}</td>
+                    <td>${renderCliXmlTribCadCell(p.cbs, "CBS")}</td>
+                    <td>${renderCliXmlTribCadCell(p.is, "IS")}</td>
                     <td>${uiSelectEscape(p.fornecedor)}</td>
                     <td class="num">${p.qtdCompra}</td>
                     <td class="num">${xmlMoney(p.calc.cef)}</td>
@@ -807,11 +889,10 @@
                     <td class="num ${p.calc.semVenda ? "" : (p.calc.mlPct < 0 ? "neg" : "")}">${p.calc.semVenda ? "—" : xmlPctLabel(p.calc.mlPct)}</td>
                     <td><span class="cli-xml-status is-${st.cls}">${st.label}</span></td>
                   </tr>`;
-                }).join("") : `<tr><td colspan="16"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
+                }).join("") : `<tr><td colspan="17"><div class="cli-empty-panel">Nenhum produto no filtro</div></td></tr>`}
               </tbody>
             </table>
           </div>
-          <p class="cli-xml-legend">Clique em um produto para ver o comparativo compra × venda e a memória de cálculo. Bloco fiscal: NCM → CFOP → CST → Regime → IBS/CBS (E = entrada · S = saída · verde ok · amarelo alíquota incorreta · vermelho inexistente).</p>
         </section>`;
     }
 
@@ -856,7 +937,6 @@
                   <input type="number" step="0.1" min="0" max="100" data-cli-xml-cfg="margemAtencaoPct" value="${cfg.margemAtencaoPct}" />
                 </label>
               </div>
-              <button type="button" class="btn-primary" data-cli-xml="save-config">Aplicar e recalcular</button>
             </div>
           </div>
         </section>`;
@@ -1180,8 +1260,47 @@
           refreshCliXmlUi();
           return true;
         }
+        if (kind === "open-config") {
+          const c = CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+          openCliXmlConfigModal(c);
+          return true;
+        }
+        if (kind === "open-legend") {
+          openCliXmlLegendModal();
+          return true;
+        }
+        if (kind === "open-filtros") {
+          openCliXmlFiltrosModal();
+          return true;
+        }
+        if (kind === "clear-adv-filtros") {
+          const f = cliXmlAnalise.filtros;
+          f.ncm = "";
+          f.cfop = "";
+          f.fornecedor = "";
+          f.cliente = "";
+          f.margem = "";
+          f.regime = "";
+          f.status = "";
+          ["cliXmlFiltroNcm", "cliXmlFiltroCfop", "cliXmlFiltroForn", "cliXmlFiltroCli"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+          });
+          ["cliXmlFiltroMargem", "cliXmlFiltroRegime", "cliXmlFiltroStatus"].forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+          });
+          return true;
+        }
+        if (kind === "apply-adv-filtros") {
+          syncCliXmlFiltrosFromDom();
+          closeModal();
+          refreshCliXmlUi();
+          return true;
+        }
         if (kind === "save-config") {
           toast("Parâmetros aplicados — estimativas recalculadas (histórico preservado)", { success: true });
+          closeModal();
           refreshCliXmlUi();
           return true;
         }
@@ -1225,9 +1344,12 @@
       }
 
       if (e.target.id?.startsWith("cliXmlFiltro")) {
+        const id = e.target.id;
+        const live = id === "cliXmlFiltroQ" || id === "cliXmlFiltroDe" || id === "cliXmlFiltroAte";
+        if (!live) return true;
         syncCliXmlFiltrosFromDom();
         refreshCliXmlUi();
-        const el = document.getElementById(e.target.id);
+        const el = document.getElementById(id);
         if (el && e.target.type === "search") {
           try { el.focus(); el.setSelectionRange(e.target.selectionStart, e.target.selectionStart); } catch (_) { /* ignore */ }
         }

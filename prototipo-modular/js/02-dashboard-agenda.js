@@ -2600,24 +2600,103 @@
         </div>`;
     }
 
+    function renderCliProcRecMenuHtml(moldeId, status, scope) {
+      const key = `${scope}:${moldeId}`;
+      const open = cliProcRecMenuKey === key;
+      const pauseLabel = status === "pausada" ? "Retomar" : "Pausar";
+      return `
+        <div class="cli-proc-rec-menu" role="menu" aria-label="Ações da recorrência" ${open ? "" : "hidden"}>
+          <button type="button" role="menuitem" data-cli-proc-rec-act="toggle-status" data-molde-id="${moldeId}">${pauseLabel}</button>
+          <button type="button" role="menuitem" class="is-danger" data-cli-proc-rec-act="desassociar" data-molde-id="${moldeId}">Desassociar</button>
+        </div>`;
+    }
+
+    function syncCliProcRecMenusDom() {
+      document.querySelectorAll("[data-cli-proc-rec-wrap]").forEach((wrap) => {
+        const key = wrap.dataset.cliProcRecWrap;
+        const open = key && cliProcRecMenuKey === key;
+        wrap.classList.toggle("is-menu-open", open);
+        wrap.querySelector(".cli-proc-molde-assoc-wrap")?.classList.toggle("is-menu-open", open);
+        const menu = wrap.querySelector(".cli-proc-rec-menu");
+        if (menu) menu.hidden = !open;
+        const btn = wrap.querySelector("[data-cli-proc-rec-toggle]");
+        if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
+
+    function refreshCliProcRecorrenciaViews(clienteId) {
+      cliProcRecMenuKey = null;
+      if (cliView === "perfil" && cliPerfilTab === "processos") renderClientes();
+      const cid = clienteId || modal?.dataset?.cliProcRecCliente || cliPerfilId;
+      if (cid && backdrop?.classList.contains("open") && modal?.dataset?.cliProcRecCliente === String(cid)) {
+        if (modalBody?.querySelector(".cli-proc-molde-pick")) {
+          modalBody.innerHTML = renderProcMoldePickListHtml(cid);
+        }
+      }
+    }
+
+    function confirmCliProcRecDesassociar(clienteId, moldeId) {
+      const molde = getProcMoldeById(moldeId);
+      const returnToPick = !!modal?.dataset?.cliProcRecCliente;
+      openCfgConfirmModal({
+        title: "Desassociar recorrência",
+        message: `Remover a associação de <strong>${molde?.nome || "processo molde"}</strong> deste cliente?`,
+        confirmLabel: "Desassociar",
+        danger: true,
+        onConfirm: () => {
+          const res = disassociateCliProcRecorrencia(clienteId, moldeId);
+          if (!res.ok) {
+            toast("Não foi possível desassociar");
+            return;
+          }
+          toast("Recorrência desassociada");
+          cliProcSubTab = "recorrencias";
+          if (cliView === "perfil") renderClientes();
+          if (returnToPick) openProcRecorrenciaModal(clienteId);
+        },
+      });
+    }
+
     function renderProcMoldePickListHtml(clienteId) {
       const associated = new Set(ensureCliProcRecorrencias(clienteId).map((r) => r.moldeId));
       const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
       const sync = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a9 9 0 0 0-14.3-7.2L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 14.3 7.2L21 16"/><path d="M16 21h5v-5"/></svg>`;
+      const chev = `<svg class="cli-proc-rec-chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
       return `
         <div class="cli-proc-molde-pick">
           ${PROC_MOLDES_CATALOG.map((m) => {
             const done = associated.has(m.id);
+            const rec = done ? getCliProcRecorrencia(clienteId, m.id) : null;
+            const key = `modal:${m.id}`;
+            const menuOpen = cliProcRecMenuKey === key;
+            if (done) {
+              return `
+              <div class="cli-proc-molde-row is-associated" data-cli-proc-rec-wrap="${key}">
+                <span class="cli-proc-molde-ico">${ico}</span>
+                <div class="cli-proc-molde-info">
+                  <strong>${m.nome}</strong>
+                  <span>${m.etapas} etapas · ${m.obrigatorias} obrigatórias${rec?.status === "pausada" ? " · pausada" : ""}</span>
+                </div>
+                <div class="cli-proc-molde-assoc-wrap${menuOpen ? " is-menu-open" : ""}">
+                  <button type="button" class="btn-ghost cli-proc-molde-assoc" data-cli-proc-rec-toggle="${key}" aria-haspopup="menu" aria-expanded="${menuOpen ? "true" : "false"}" aria-label="Ações · ${m.nome}">
+                    ${sync}
+                    <span>Associada</span>
+                    ${chev}
+                  </button>
+                  ${renderCliProcRecMenuHtml(m.id, rec?.status || "ativa", "modal")}
+                </div>
+              </div>`;
+            }
             return `
-              <div class="cli-proc-molde-row${done ? " is-associated" : ""}">
+              <div class="cli-proc-molde-row">
                 <span class="cli-proc-molde-ico">${ico}</span>
                 <div class="cli-proc-molde-info">
                   <strong>${m.nome}</strong>
                   <span>${m.etapas} etapas · ${m.obrigatorias} obrigatórias</span>
                 </div>
-                <button type="button" class="btn-primary cli-proc-molde-criar" data-cli-proc-molde-criar="${m.id}" ${done ? "disabled" : ""} aria-label="${done ? "Já associada" : `Criar recorrência: ${m.nome}`}">
+                <button type="button" class="btn-primary cli-proc-molde-criar" data-cli-proc-molde-criar="${m.id}" aria-label="Criar recorrência: ${m.nome}">
                   ${sync}
-                  <span>${done ? "Associada" : "Criar"}</span>
+                  <span>Criar</span>
                 </button>
               </div>`;
           }).join("")}
@@ -2630,6 +2709,7 @@
         toast("Selecione uma empresa para criar a recorrência");
         return;
       }
+      cliProcRecMenuKey = null;
       openModal({
         title: "Criar Recorrência de Processo",
         sub: "Selecione um processo molde para criar uma recorrência:",
@@ -2643,21 +2723,30 @@
     function renderCliPerfilProcessosRecorrencias(c) {
       const items = getCliProcRecorrenciasDetalhe(c.id);
       const ico = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h4"/></svg>`;
+      const chev = `<svg class="cli-proc-rec-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>`;
       return `
         <div class="cli-proc-rec-panel">
           <div class="cli-obr-actions">
             <button type="button" class="btn-primary" data-cli-proc-rec="criar">Criar recorrência</button>
           </div>
           <div class="cli-proc-rec-list">
-            ${items.length ? items.map((r) => `
-              <article class="cli-proc-rec-card">
-                <span class="cli-proc-molde-ico">${ico}</span>
-                <div class="cli-proc-molde-info">
-                  <strong>${r.molde.nome}</strong>
-                  <span>${r.molde.etapas} etapas · ${r.molde.obrigatorias} obrigatórias${r.associadaEm ? ` · desde ${r.associadaEm}` : ""}</span>
-                </div>
-                <span class="cli-badge ${r.status === "pausada" ? "filial" : "matriz"}">${r.status === "pausada" ? "Pausada" : "Ativa"}</span>
-              </article>`).join("") : `<div class="cli-empty-panel">Nenhuma recorrência associada a este cliente</div>`}
+            ${items.length ? items.map((r) => {
+              const key = `list:${r.moldeId}`;
+              const menuOpen = cliProcRecMenuKey === key;
+              return `
+              <article class="cli-proc-rec-card${menuOpen ? " is-menu-open" : ""}" data-cli-proc-rec-wrap="${key}" data-cli-proc-rec-item="${r.moldeId}">
+                <button type="button" class="cli-proc-rec-main" data-cli-proc-rec-toggle="${key}" aria-haspopup="menu" aria-expanded="${menuOpen ? "true" : "false"}" aria-label="Ações · ${r.molde.nome}">
+                  <span class="cli-proc-molde-ico">${ico}</span>
+                  <div class="cli-proc-molde-info">
+                    <strong>${r.molde.nome}</strong>
+                    <span>${r.molde.etapas} etapas · ${r.molde.obrigatorias} obrigatórias${r.associadaEm ? ` · desde ${r.associadaEm}` : ""}</span>
+                  </div>
+                  <span class="cli-badge ${r.status === "pausada" ? "filial" : "matriz"}">${r.status === "pausada" ? "Pausada" : "Ativa"}</span>
+                  ${chev}
+                </button>
+                ${renderCliProcRecMenuHtml(r.moldeId, r.status, "list")}
+              </article>`;
+            }).join("") : `<div class="cli-empty-panel">Nenhuma recorrência associada a este cliente</div>`}
           </div>
         </div>`;
     }
@@ -3466,6 +3555,70 @@
       return `${(n / (1024 * 1024)).toFixed(1)} MB`;
     }
 
+    /** Cota de demonstração por cliente (protótipo). */
+    const CLI_DOCS_STORAGE_QUOTA_BYTES = 5 * 1024 * 1024 * 1024;
+
+    function parseCliDocsSizeToBytes(label) {
+      const m = String(label || "").trim().match(/^([\d.,]+)\s*(B|KB|MB|GB)$/i);
+      if (!m) return 0;
+      const n = parseFloat(m[1].replace(",", "."));
+      if (!Number.isFinite(n)) return 0;
+      const unit = m[2].toUpperCase();
+      const mult = { B: 1, KB: 1024, MB: 1024 * 1024, GB: 1024 * 1024 * 1024 };
+      return Math.round(n * (mult[unit] || 0));
+    }
+
+    function cliDocsFileBytes(file) {
+      if (file && file.sizeBytes != null && Number.isFinite(Number(file.sizeBytes))) {
+        return Math.max(0, Number(file.sizeBytes));
+      }
+      return parseCliDocsSizeToBytes(file?.tamanho);
+    }
+
+    function formatCliDocsStorageAmount(bytes) {
+      const n = Math.max(0, Number(bytes) || 0);
+      const fmt = (v, digits) => String(digits ? v.toFixed(digits) : Math.round(v)).replace(".", ",");
+      if (n >= 1024 * 1024 * 1024) return `${fmt(n / (1024 * 1024 * 1024), 1)} GB`;
+      if (n >= 1024 * 1024) {
+        const mb = n / (1024 * 1024);
+        return `${fmt(mb, mb < 10 ? 1 : 0)} MB`;
+      }
+      if (n >= 1024) return `${fmt(n / 1024, 0)} KB`;
+      return `${fmt(n, 0)} B`;
+    }
+
+    function getCliDocsStorageUsage() {
+      let used = 0;
+      Object.entries(cliDocsFilesByFolder).forEach(([folderId, files]) => {
+        (files || []).forEach((f) => {
+          // Recentes: atalhos/espelhos não contam; só upload direto na pasta
+          if (folderId === "recentes") {
+            const id = String(f.id || "");
+            if (!id.startsWith("u") || id.endsWith("-r")) return;
+          }
+          used += cliDocsFileBytes(f);
+        });
+      });
+      const quota = CLI_DOCS_STORAGE_QUOTA_BYTES;
+      const pct = quota > 0 ? Math.min(100, Math.round((used / quota) * 100)) : 0;
+      return { used, quota, pct };
+    }
+
+    function renderCliDocsStorageHtml() {
+      const { used, quota, pct } = getCliDocsStorageUsage();
+      const usedLabel = formatCliDocsStorageAmount(used);
+      const quotaLabel = formatCliDocsStorageAmount(quota);
+      const tone = pct >= 95 ? "is-full" : pct >= 80 ? "is-warn" : "";
+      return `
+        <div class="cli-docs-storage ${tone}" role="status" aria-label="Armazenamento do cliente: ${usedLabel} de ${quotaLabel}">
+          <div class="cli-docs-storage-text">
+            <span class="cli-docs-storage-label">Armazenamento</span>
+            <strong>${usedLabel} <span class="cli-docs-storage-of">de</span> ${quotaLabel}</strong>
+          </div>
+          <span class="cli-docs-storage-meter" aria-hidden="true"><i style="width:${pct}%"></i></span>
+        </div>`;
+    }
+
     function formatCliDocsTodayLabel() {
       const d = APP_TODAY;
       const pad = (n) => String(n).padStart(2, "0");
@@ -3487,6 +3640,7 @@
           tipo: ext,
           atualizado: when,
           tamanho: formatCliDocsFileSize(file.size),
+          sizeBytes: Number(file.size) || 0,
         };
         cliDocsFilesByFolder[target].unshift(entry);
         if (target !== "recentes") {
@@ -3531,6 +3685,7 @@
               </button>
               <h3 class="cli-docs-folder-heading">${folderMeta.title}</h3>
             ` : `<h3 class="cli-docs-folder-heading">Documentos</h3>`}
+            ${renderCliDocsStorageHtml()}
           </div>
           <div class="cli-docs-toolbar-actions">
             ${portal ? "" : `
@@ -3832,7 +3987,13 @@
             </div>
             <button type="button" class="btn-primary honor-add" data-cli-honor-add>Adicionar</button>
           </div>
-          <div class="cli-honor-kpis">
+          <div class="cli-honor-kpis-wrap">
+            <div class="cli-honor-kpis-tools">
+              <button type="button" class="btn-icon tip-bottom" data-cli-honor-ref data-tip="Faixas de referência" aria-label="Faixas de referência">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+              </button>
+            </div>
+            <div class="cli-honor-kpis">
             <div class="cli-honor-kpi">
               <span>Itens salvos</span>
               <strong>${items.length}</strong>
@@ -3847,12 +4008,8 @@
               <em class="cli-honor-pct-badge">${pctMeta.label}</em>
               <small>Ideal ${String(HONOR_PCT_IDEAL).replace(".", ",")}% · faturamento ${money(pctInfo.fat)}</small>
             </div>
+            </div>
           </div>
-          <p class="cli-honor-pct-legend">
-            Ideal <b>${String(HONOR_PCT_IDEAL).replace(".", ",")}%</b>
-            · abaixo do ideal &lt; ${String(HONOR_PCT_IDEAL).replace(".", ",")}%
-            · atenção comercial ≤ <b>${String(HONOR_PCT_CRITICO).replace(".", ",")}%</b>
-          </p>
           <section class="cli-honor-report" aria-label="Relatório de honorários">
             <div class="cli-honor-report-head">
               <div>

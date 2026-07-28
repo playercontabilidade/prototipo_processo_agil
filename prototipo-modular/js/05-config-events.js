@@ -904,7 +904,6 @@
             ${hasEmpresaFilter
               ? `<button type="button" class="btn-ghost sec-clear-btn" id="secClearCliFilter">Limpar filtro</button>`
               : ""}
-            <span class="sec-monitor-count">${rows.length} certificado${rows.length === 1 ? "" : "s"} no filtro</span>
           </div>
           <div class="cli-list-kpis sec-kpis" role="toolbar" aria-label="Indicadores de certificados">
             <button type="button" class="cli-list-kpi${securityCertFilterMode === "all" ? " is-active" : ""}" data-sec-filter="all" aria-pressed="${securityCertFilterMode === "all"}">
@@ -2211,6 +2210,43 @@
         }
         return;
       }
+      const procRecToggle = e.target.closest("[data-cli-proc-rec-toggle]");
+      if (procRecToggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = procRecToggle.dataset.cliProcRecToggle;
+        cliProcRecMenuKey = cliProcRecMenuKey === key ? null : key;
+        syncCliProcRecMenusDom();
+        return;
+      }
+      const procRecMenuAct = e.target.closest("[data-cli-proc-rec-act]");
+      if (procRecMenuAct) {
+        e.preventDefault();
+        e.stopPropagation();
+        const act = procRecMenuAct.dataset.cliProcRecAct;
+        const moldeId = procRecMenuAct.dataset.moldeId;
+        const cid = modal?.dataset?.cliProcRecCliente || cliPerfilId;
+        cliProcRecMenuKey = null;
+        syncCliProcRecMenusDom();
+        if (!cid || !moldeId) return;
+        if (act === "toggle-status") {
+          const rec = getCliProcRecorrencia(cid, moldeId);
+          const next = rec?.status === "pausada" ? "ativa" : "pausada";
+          const res = updateCliProcRecorrenciaStatus(cid, moldeId, next);
+          if (!res.ok) {
+            toast("Não foi possível atualizar o status");
+            return;
+          }
+          toast(next === "pausada" ? "Recorrência pausada" : "Recorrência retomada");
+          refreshCliProcRecorrenciaViews(cid);
+          return;
+        }
+        if (act === "desassociar") {
+          confirmCliProcRecDesassociar(cid, moldeId);
+          return;
+        }
+        return;
+      }
       const cliAuditAct = e.target.closest("[data-cli-fin-audit]");
       if (cliAuditAct) {
         const act = cliAuditAct.dataset.cliFinAudit;
@@ -2277,6 +2313,10 @@
       const planoAction = e.target.closest("[data-cli-fin-plano]");
       if (planoAction || e.target.closest("[data-fin-plano-open]") || e.target.closest("[data-fin-plano-toggle]") || e.target.closest("[data-fin-plano-conta]") || e.target.closest("[data-fin-plano-flag]")) {
         if (handleFinPlanoContasClick(e)) return;
+      }
+      if (e.target.closest("[data-cli-honor-ref]")) {
+        openCliHonorRefModal();
+        return;
       }
       if (e.target.closest("[data-cli-honor-add]")) {
         const c = CLIENTES.find((x) => x.id === cliPerfilId);
@@ -3509,6 +3549,43 @@
         if (cliView === "perfil") renderClientes();
         return;
       }
+      const procRecToggleModal = e.target.closest("[data-cli-proc-rec-toggle]");
+      if (procRecToggleModal) {
+        e.preventDefault();
+        e.stopPropagation();
+        const key = procRecToggleModal.dataset.cliProcRecToggle;
+        cliProcRecMenuKey = cliProcRecMenuKey === key ? null : key;
+        syncCliProcRecMenusDom();
+        return;
+      }
+      const procRecMenuActModal = e.target.closest("[data-cli-proc-rec-act]");
+      if (procRecMenuActModal) {
+        e.preventDefault();
+        e.stopPropagation();
+        const act = procRecMenuActModal.dataset.cliProcRecAct;
+        const moldeId = procRecMenuActModal.dataset.moldeId;
+        const cid = modal?.dataset?.cliProcRecCliente || cliPerfilId;
+        cliProcRecMenuKey = null;
+        syncCliProcRecMenusDom();
+        if (!cid || !moldeId) return;
+        if (act === "toggle-status") {
+          const rec = getCliProcRecorrencia(cid, moldeId);
+          const next = rec?.status === "pausada" ? "ativa" : "pausada";
+          const res = updateCliProcRecorrenciaStatus(cid, moldeId, next);
+          if (!res.ok) {
+            toast("Não foi possível atualizar o status");
+            return;
+          }
+          toast(next === "pausada" ? "Recorrência pausada" : "Recorrência retomada");
+          refreshCliProcRecorrenciaViews(cid);
+          return;
+        }
+        if (act === "desassociar") {
+          confirmCliProcRecDesassociar(cid, moldeId);
+          return;
+        }
+        return;
+      }
       const etapa = e.target.closest("[data-etapa-id]");
       if (!etapa) return;
       const proc = sections.find((s) => s.id === "processos")?.items.find((p) => String(p.id) === etapa.dataset.procId);
@@ -3518,6 +3595,7 @@
     });
 
     modalBody.addEventListener("input", (e) => {
+      if (handleCliXmlModInput(e)) return;
       if (e.target?.id === "procMoldeAvulsoSearch") {
         const list = document.getElementById("procMoldeAvulsoList");
         if (!list) return;
@@ -3541,6 +3619,9 @@
     });
 
     modalBody.addEventListener("change", (e) => {
+      if (e.target?.matches?.("[data-cli-xml-cfg]") || e.target?.id?.startsWith("cliXmlFiltro")) {
+        if (handleCliXmlModInput(e)) return;
+      }
       if (e.target?.id === "procCriarNomeCustom") {
         const wrap = document.getElementById("procCriarNomeWrap");
         if (wrap) wrap.hidden = !e.target.checked;
@@ -3973,6 +4054,7 @@
           return;
         }
       }
+      if (handleCliXmlModClick(e)) return;
       if (e.target === backdrop || e.target.closest("[data-close]")) closeModal();
     });
     backdrop.addEventListener("change", (e) => {
@@ -4184,6 +4266,10 @@
       if (!e.target.closest("[data-cli-doc-file]") && cliDocsFileMenuId) {
         cliDocsFileMenuId = null;
         syncCliDocsFileMenusDom();
+      }
+      if (!e.target.closest("[data-cli-proc-rec-wrap]") && !e.target.closest(".cli-proc-molde-assoc-wrap") && cliProcRecMenuKey) {
+        cliProcRecMenuKey = null;
+        syncCliProcRecMenusDom();
       }
       if (!e.target.closest("#finEmpresaWrap") && finDash.acOpen) {
         finDash.acOpen = false;
