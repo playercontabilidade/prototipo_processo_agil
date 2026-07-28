@@ -15328,6 +15328,18 @@
       gap: 8px;
     }
 
+    .cli-xml-mod-head-actions .btn-ghost {
+      background: var(--surface);
+      color: var(--navy-deep);
+      border: 1px solid var(--border);
+    }
+
+    .cli-xml-mod-head-actions .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+    }
+
     .cli-xml-mod-head .kicker {
       margin: 0 0 4px;
       font-size: .66rem;
@@ -15456,29 +15468,16 @@
       text-align: left;
     }
 
-    .cli-xml-import-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+    .cli-xml-import > .cli-xml-card-upload {
       margin-bottom: 12px;
-      align-items: stretch;
     }
 
-    @media (max-width: 900px) {
-      .cli-xml-import-grid { grid-template-columns: 1fr; }
-    }
-
-    .cli-xml-rules,
     .cli-xml-card-upload {
-      min-height: 280px;
+      min-height: 0;
     }
 
-    .cli-xml-import-grid .cli-xml-rules .cli-xml-card-inner {
-      height: 100%;
-    }
-
-    .cli-xml-import-grid .cli-xml-rules ul {
-      margin-top: 10px;
+    .cli-xml-card-upload .cli-xml-drop {
+      min-height: 160px;
     }
 
     .cli-xml-field {
@@ -15726,11 +15725,15 @@
     .cli-xml-log .is-warn span { color: #9a5f0c; }
 
     .cli-xml-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
+      display: grid;
+      place-items: center;
+      align-content: center;
+      justify-items: center;
       gap: 8px;
-      padding: 28px 16px;
+      min-height: min(420px, calc(100vh - 320px));
+      padding: 40px 24px;
+      text-align: center;
+      box-sizing: border-box;
     }
 
     .cli-xml-empty h4 {
@@ -15740,7 +15743,8 @@
     }
 
     .cli-xml-empty p {
-      margin: 0 0 8px;
+      margin: 0;
+      max-width: 42ch;
     }
 
     .cli-xml-dash-note {
@@ -16098,6 +16102,10 @@
 
     .modal.cli-xml-prod-modal {
       width: min(980px, 96vw);
+    }
+
+    .modal.cli-xml-import-modal {
+      width: min(920px, 96vw);
     }
 
     .cli-xml-prod-detail {

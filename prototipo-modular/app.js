@@ -1489,9 +1489,9 @@
 
     /** Extrator XML · Análise de NF-e (Acesso ao Cliente) */
     let cliXmlAnalise = {
-      tab: "dashboard", /* importar | dashboard | produtos */
+      tab: "dashboard", /* dashboard | produtos */
       cnpj: "",
-      imported: true,
+      imported: false,
       _simReady: false,
       productId: null,
       charts: [],
@@ -1520,13 +1520,13 @@
       },
       import: {
         running: false,
-        pct: 100,
-        phase: "Concluído · simulação pré-aprovada",
-        filesTotal: 48,
-        filesOk: 42,
-        filesDup: 3,
-        filesBad: 1,
-        filesSkip: 2,
+        pct: 0,
+        phase: "",
+        filesTotal: 0,
+        filesOk: 0,
+        filesDup: 0,
+        filesBad: 0,
+        filesSkip: 0,
         logs: [],
         timer: null,
       },
@@ -4682,7 +4682,7 @@
     }
 
     function openModal({ title, sub, body, foot, wide, molde, obr, regras, moldeDetail, emailTpl, classif, tipoDoc, aviso, cadastro, audit, auditRules, report }) {
-      modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "fin-tit-ver-modal", "fin-tit-banco-modal", "is-expanded");
+      modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "cli-xml-import-modal", "fin-tit-ver-modal", "fin-tit-banco-modal", "is-expanded");
       modalFoot?.classList.remove("fin-tit-ver-foot");
       const resetClose = document.getElementById("modalClose");
       if (resetClose) resetClose.hidden = true;
@@ -4775,7 +4775,7 @@
           finDash.conc.ofx.modalOpen = false;
           finDash.conc.ofx.expanded = false;
         }
-        modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "is-expanded");
+        modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "cli-xml-import-modal", "is-expanded");
       }
       const wasReport = !!modalBody?.querySelector("#cliFinReportDoc");
       const headTools = document.getElementById("modalHeadTools");
@@ -26644,9 +26644,6 @@
       if (!cliXmlAnalise._seed) {
         cliXmlAnalise._seed = buildCliXmlAnaliseSeed(c);
       }
-      if (!cliXmlAnalise._simReady) {
-        applyCliXmlSimulacaoPreAprovada(c, { silent: true });
-      }
       return cliXmlAnalise;
     }
 
@@ -27116,17 +27113,15 @@
 
     function renderCliXmlAnaliseModule(c) {
       ensureCliXmlAnalise(c);
-      if (cliXmlAnalise.tab === "config") cliXmlAnalise.tab = "dashboard";
+      if (cliXmlAnalise.tab === "config" || cliXmlAnalise.tab === "importar") {
+        cliXmlAnalise.tab = "dashboard";
+      }
       const tabs = [
-        { id: "importar", label: "Importar" },
         { id: "dashboard", label: "Dashboard" },
         { id: "produtos", label: "Produtos" },
       ];
       const tab = cliXmlAnalise.tab;
-      let body = "";
-      if (tab === "importar") body = renderCliXmlImportTab(c);
-      else if (tab === "dashboard") body = renderCliXmlDashboardTab(c);
-      else body = renderCliXmlProdutosTab(c);
+      const body = tab === "produtos" ? renderCliXmlProdutosTab(c) : renderCliXmlDashboardTab(c);
 
       return `
         <div class="cli-xml-mod" data-cli-xml-mod="1">
@@ -27137,6 +27132,7 @@
               <p class="sub">Foco analítico — não substitui escrituração ou apuração fiscal oficial.</p>
             </div>
             <div class="cli-xml-mod-head-actions">
+              <button type="button" class="btn-primary" data-cli-xml="open-import" aria-label="Importar XMLs">Importar</button>
               <button type="button" class="btn-ghost" data-cli-xml="open-config" aria-label="Configurações de custos e margens">Configurar</button>
               <span class="cli-xml-pill">${cliXmlAnalise.imported ? "Base carregada" : "Aguardando importação"}</span>
             </div>
@@ -27155,39 +27151,22 @@
       const imp = st.import;
       const cnpjDigits = xmlOnlyDigits(st.cnpj || c?.cnpj || "");
       const cnpjOk = xmlValidCnpj(cnpjDigits);
-      const cnpjShow = cnpjDigits.length === 14 ? xmlFormatCnpj(cnpjDigits) : (cnpjDigits || "—");
 
       return `
         <section class="cli-xml-import" aria-label="Importação de XMLs">
-          <div class="cli-xml-import-grid">
-            <div class="cli-xml-card cli-xml-rules">
-              <div class="cli-xml-card-inner">
-                <h4>1. Regras de classificação automática</h4>
-                <p class="hint">CNPJ do cliente · ${uiSelectEscape(cnpjShow)} · usado para Entrada/Saída sem preenchimento manual.</p>
-                <ul>
-                  <li><strong>Entrada/Compra</strong> — CNPJ analisado como destinatário + CFOP de entrada</li>
-                  <li><strong>Saída/Venda</strong> — CNPJ analisado como emitente + CFOP de saída</li>
-                  <li><strong>Deduplicação</strong> — chave de acesso da NF-e + hash do arquivo</li>
-                  <li><strong>Exclusões</strong> — notas canceladas e eventos sem efeito econômico fora dos totais</li>
-                  <li><strong>Créditos</strong> — imposto destacado ≠ aumento automático de custo (créditos recuperáveis vs. não recuperáveis)</li>
-                </ul>
+          <div class="cli-xml-card cli-xml-card-upload">
+            <div class="cli-xml-card-inner">
+              <h4>Upload multiformato</h4>
+              <p class="hint">XML individual, pasta estruturada ou ZIP (leitura recursiva de subpastas).</p>
+              <div class="cli-xml-drop" data-cli-xml="drop-zone" tabindex="0" role="button" aria-label="Área de upload de XMLs">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
+                <strong>Arraste XMLs ou ZIP aqui</strong>
+                <span>ou clique para selecionar · .xml · .zip</span>
+                <input type="file" id="cliXmlFileInput" accept=".xml,.zip,application/zip,text/xml" multiple hidden />
               </div>
-            </div>
-
-            <div class="cli-xml-card cli-xml-card-upload">
-              <div class="cli-xml-card-inner">
-                <h4>2. Upload multiformato</h4>
-                <p class="hint">XML individual, pasta estruturada ou ZIP (leitura recursiva de subpastas).</p>
-                <div class="cli-xml-drop" data-cli-xml="drop-zone" tabindex="0" role="button" aria-label="Área de upload de XMLs">
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>
-                  <strong>Arraste XMLs ou ZIP aqui</strong>
-                  <span>ou clique para selecionar · .xml · .zip</span>
-                  <input type="file" id="cliXmlFileInput" accept=".xml,.zip,application/zip,text/xml" multiple hidden />
-                </div>
-                <div class="cli-xml-import-acts">
-                  <button type="button" class="btn-primary" data-cli-xml="start-import" ${!cnpjOk || imp.running ? "disabled" : ""}>Iniciar esteira</button>
-                  <button type="button" class="btn-ghost" data-cli-xml="demo-lote" ${imp.running ? "disabled" : ""}>Simular lote demo</button>
-                </div>
+              <div class="cli-xml-import-acts">
+                <button type="button" class="btn-primary" data-cli-xml="start-import" ${!cnpjOk || imp.running ? "disabled" : ""}>Iniciar esteira</button>
+                <button type="button" class="btn-ghost" data-cli-xml="demo-lote" ${imp.running ? "disabled" : ""}>Simular lote demo</button>
               </div>
             </div>
           </div>
@@ -27226,9 +27205,8 @@
       if (!cliXmlAnalise.imported) {
         return `
           <div class="cli-xml-empty">
-            <h4>Dashboard aguardando base</h4>
-            <p>Importe XMLs na aba Importar para consolidar indicadores do período.</p>
-            <button type="button" class="btn-primary" data-cli-xml-tab="importar">Ir para Importar</button>
+            <h4>Aguardando base de dados</h4>
+            <p>Use Importar na barra acima para consolidar os indicadores do período.</p>
           </div>`;
       }
       const k = getCliXmlDashboardKpis(c);
@@ -27323,6 +27301,26 @@
       });
     }
 
+    function openCliXmlImportModal(c) {
+      const cliente = c || CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+      ensureCliXmlAnalise(cliente);
+      openModal({
+        title: "Importar XMLs",
+        sub: "Upload, esteira e trilha de auditoria",
+        wide: true,
+        body: renderCliXmlImportTab(cliente),
+        foot: `<button type="button" class="btn-ghost" data-close>Fechar</button>`,
+      });
+      modal.classList.add("cli-xml-import-modal");
+    }
+
+    function paintCliXmlImportModalBody() {
+      if (!backdrop?.classList.contains("open") || !modal?.classList.contains("cli-xml-import-modal")) return;
+      const c = CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+      ensureCliXmlAnalise(c);
+      modalBody.innerHTML = renderCliXmlImportTab(c);
+    }
+
     function openCliXmlConfigModal(c) {
       const cliente = c || CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
       openModal({
@@ -27402,9 +27400,8 @@
       if (!cliXmlAnalise.imported) {
         return `
           <div class="cli-xml-empty">
-            <h4>Catálogo sem dados</h4>
-            <p>Conclua a importação para consultar produtos e margens.</p>
-            <button type="button" class="btn-primary" data-cli-xml-tab="importar">Ir para Importar</button>
+            <h4>Aguardando base de dados</h4>
+            <p>Use Importar na barra acima para consultar produtos e margens.</p>
           </div>`;
       }
       const f = cliXmlAnalise.filtros;
@@ -27712,6 +27709,7 @@
       if (inPortalXml) renderPortalClientePage("xml");
       else if (inPerfilXml) renderClientes();
       else renderClientes();
+      paintCliXmlImportModalBody();
       if (cliXmlAnalise.tab === "dashboard" && cliXmlAnalise.imported) {
         const c = CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
         requestAnimationFrame(() => initCliXmlDashboardCharts(c));
@@ -27845,6 +27843,11 @@
           applyCliXmlSimulacaoPreAprovada(c, { tab: "dashboard" });
           destroyCliXmlCharts();
           refreshCliXmlUi();
+          return true;
+        }
+        if (kind === "open-import") {
+          const c = CLIENTES.find((x) => x.id === cliPerfilId) || getPortalCliente();
+          openCliXmlImportModal(c);
           return true;
         }
         if (kind === "open-config") {

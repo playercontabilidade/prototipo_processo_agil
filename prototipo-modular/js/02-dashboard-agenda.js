@@ -372,7 +372,7 @@
     }
 
     function openModal({ title, sub, body, foot, wide, molde, obr, regras, moldeDetail, emailTpl, classif, tipoDoc, aviso, cadastro, audit, auditRules, report }) {
-      modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "fin-tit-ver-modal", "fin-tit-banco-modal", "is-expanded");
+      modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "cli-xml-import-modal", "fin-tit-ver-modal", "fin-tit-banco-modal", "is-expanded");
       modalFoot?.classList.remove("fin-tit-ver-foot");
       const resetClose = document.getElementById("modalClose");
       if (resetClose) resetClose.hidden = true;
@@ -465,7 +465,7 @@
           finDash.conc.ofx.modalOpen = false;
           finDash.conc.ofx.expanded = false;
         }
-        modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "is-expanded");
+        modal.classList.remove("fin-ofx-import-modal", "fin-conc-modal", "fin-pmap-modal", "fin-gerar-titulo-modal", "fin-plano-form-modal", "cli-xml-prod-modal", "cli-xml-import-modal", "is-expanded");
       }
       const wasReport = !!modalBody?.querySelector("#cliFinReportDoc");
       const headTools = document.getElementById("modalHeadTools");

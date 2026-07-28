@@ -1489,9 +1489,9 @@
 
     /** Extrator XML · Análise de NF-e (Acesso ao Cliente) */
     let cliXmlAnalise = {
-      tab: "dashboard", /* importar | dashboard | produtos */
+      tab: "dashboard", /* dashboard | produtos */
       cnpj: "",
-      imported: true,
+      imported: false,
       _simReady: false,
       productId: null,
       charts: [],
@@ -1520,13 +1520,13 @@
       },
       import: {
         running: false,
-        pct: 100,
-        phase: "Concluído · simulação pré-aprovada",
-        filesTotal: 48,
-        filesOk: 42,
-        filesDup: 3,
-        filesBad: 1,
-        filesSkip: 2,
+        pct: 0,
+        phase: "",
+        filesTotal: 0,
+        filesOk: 0,
+        filesDup: 0,
+        filesBad: 0,
+        filesSkip: 0,
         logs: [],
         timer: null,
       },
